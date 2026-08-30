@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @Entity
-@Table(name = "diagram_histories")
+@Table(name = "diagram_history")
 @Data
 @Builder
 @NoArgsConstructor
