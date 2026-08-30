@@ -45,8 +45,8 @@ const LoginPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#0B0F19] flex items-center justify-center p-4 relative overflow-hidden select-none">
       {/* Background ambient lighting */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 left-1/3 w-80 h-80 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] h-[480px] bg-blue-600/15 rounded-full blur-3xl animate-aurora-1 pointer-events-none" />
+      <div className="absolute bottom-1/4 left-1/3 w-[420px] h-[420px] bg-indigo-600/15 rounded-full blur-3xl animate-aurora-2 pointer-events-none" />
 
       <div className="max-w-md w-full bg-slate-900/90 border border-slate-800/80 rounded-2xl shadow-2xl p-8 backdrop-blur-xl relative z-10">
         {/* Logo Header */}

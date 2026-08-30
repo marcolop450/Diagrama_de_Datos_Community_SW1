@@ -5,7 +5,6 @@ import {
   BackgroundVariant,
   MiniMap,
   Panel,
-  ReactFlowProvider,
   Node,
   Edge,
   NodeTypes,
@@ -28,7 +27,7 @@ const edgeTypes: EdgeTypes = {
   relationship: RelationshipEdge as any,
 };
 
-const Flow = () => {
+export default function DiagramCanvas() {
   const { 
     nodes, 
     edges, 
@@ -107,13 +106,5 @@ const Flow = () => {
         </Panel>
       </ReactFlow>
     </div>
-  );
-};
-
-export default function DiagramCanvas() {
-  return (
-    <ReactFlowProvider>
-      <Flow />
-    </ReactFlowProvider>
   );
 }

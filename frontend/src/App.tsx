@@ -6,6 +6,7 @@ import LoginPage from './components/auth/LoginPage';
 import RegisterPage from './components/auth/RegisterPage';
 import { useAuthStore } from './stores/authStore';
 import { Loader2 } from 'lucide-react';
+import { CursorSpotlight } from './components/common/CursorSpotlight';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { session, isLoading } = useAuthStore();
@@ -34,7 +35,8 @@ function App() {
   }, [initialize]);
 
   return (
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <CursorSpotlight />
       <Toaster 
         position="top-right" 
         toastOptions={{

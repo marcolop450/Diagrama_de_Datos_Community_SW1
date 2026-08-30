@@ -6,29 +6,36 @@ import DiagramCanvas from '../canvas/DiagramCanvas';
 import PropertiesPanel from '../panels/PropertiesPanel';
 import CreateProjectModal from '../modals/CreateProjectModal';
 import { useUiStore } from '../../stores/uiStore';
+import { ReactFlowProvider } from '@xyflow/react';
 
 const MainLayout: React.FC = () => {
   const { sidebarOpen, propertiesPanelOpen, activeModal } = useUiStore();
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-gray-100">
-      <Header />
-      
-      <div className="flex flex-1 overflow-hidden">
-        {sidebarOpen && <Sidebar />}
+    <ReactFlowProvider>
+      <div className="flex flex-col h-screen overflow-hidden bg-[#0B0F19] text-slate-100 relative select-none">
+        {/* Animated ambient aurora lights in background */}
+        <div className="absolute top-10 left-1/4 w-[600px] h-[600px] rounded-full bg-blue-600/10 blur-[130px] animate-aurora-1 pointer-events-none z-0" />
+        <div className="absolute bottom-10 right-1/4 w-[500px] h-[500px] rounded-full bg-indigo-600/10 blur-[120px] animate-aurora-2 pointer-events-none z-0" />
+
+        <Header />
         
-        <div className="flex flex-1 relative">
-          <Toolbar />
-          <div className="flex-1 bg-gray-50 h-full relative">
-            <DiagramCanvas />
+        <div className="flex flex-1 overflow-hidden relative z-10">
+          {sidebarOpen && <Sidebar />}
+          
+          <div className="flex flex-1 relative overflow-hidden">
+            <Toolbar />
+            <main className="flex-1 bg-transparent h-full relative overflow-hidden">
+              <DiagramCanvas />
+            </main>
           </div>
+
+          {propertiesPanelOpen && <PropertiesPanel />}
         </div>
 
-        {propertiesPanelOpen && <PropertiesPanel />}
+        {activeModal === 'createProject' && <CreateProjectModal />}
       </div>
-
-      {activeModal === 'createProject' && <CreateProjectModal />}
-    </div>
+    </ReactFlowProvider>
   );
 };
 
