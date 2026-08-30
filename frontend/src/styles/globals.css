@@ -50,19 +50,21 @@ body {
   transition: stroke 0.2s ease, stroke-width 0.2s ease;
 }
 
-/* Ambient Moving Aurora Mesh Background */
+/* ================= CSS ANIMATIONS & EFFECTS ================= */
+
+/* 1. Aurora Mesh Background */
 @keyframes aurora-shift {
   0% {
     transform: translate(0, 0) scale(1) rotate(0deg);
     opacity: 0.35;
   }
   33% {
-    transform: translate(30px, -40px) scale(1.15) rotate(120deg);
-    opacity: 0.55;
+    transform: translate(25px, -30px) scale(1.1) rotate(120deg);
+    opacity: 0.5;
   }
   66% {
-    transform: translate(-30px, 20px) scale(0.9) rotate(240deg);
-    opacity: 0.4;
+    transform: translate(-25px, 15px) scale(0.95) rotate(240deg);
+    opacity: 0.38;
   }
   100% {
     transform: translate(0, 0) scale(1) rotate(360deg);
@@ -71,34 +73,77 @@ body {
 }
 
 .animate-aurora-1 {
-  animation: aurora-shift 18s ease-in-out infinite alternate;
+  animation: aurora-shift 20s ease-in-out infinite alternate;
 }
 
 .animate-aurora-2 {
-  animation: aurora-shift 24s ease-in-out infinite alternate-reverse;
+  animation: aurora-shift 26s ease-in-out infinite alternate-reverse;
 }
 
-@keyframes pulse-slow {
-  0%, 100% { opacity: 0.2; transform: scale(1); }
-  50% { opacity: 0.45; transform: scale(1.08); }
-}
-
-.animate-pulse-slow {
-  animation: pulse-slow 8s ease-in-out infinite;
-}
-
-/* Tap / Click Ripple Animation */
-@keyframes ripple-effect {
+/* 2. Shimmer Sweep on Buttons & Badges */
+@keyframes shimmer {
   0% {
-    transform: translate(-50%, -50%) scale(0.2);
-    opacity: 0.8;
+    background-position: -200% 0;
   }
   100% {
-    transform: translate(-50%, -50%) scale(2.4);
-    opacity: 0;
+    background-position: 200% 0;
   }
 }
 
-.animate-ripple {
-  animation: ripple-effect 0.6s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+.shimmer-btn {
+  background-size: 200% 100%;
+  animation: shimmer 3s infinite linear;
+}
+
+/* 3. Subtle Floating Object Effect */
+@keyframes float-subtle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.animate-float {
+  animation: float-subtle 4s ease-in-out infinite;
+}
+
+/* 4. Glowing Border Pulse */
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.2), inset 0 0 5px rgba(59, 130, 246, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.4), inset 0 0 10px rgba(99, 102, 241, 0.2);
+  }
+}
+
+.animate-glow-border {
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+/* 5. Smooth Fade & Slide In */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 6. Card Hover Transition */
+.card-hover-effect {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+}
+.card-hover-effect:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.6);
 }

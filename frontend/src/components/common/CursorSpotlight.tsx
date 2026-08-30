@@ -12,11 +12,10 @@ export const CursorSpotlight: React.FC = () => {
   const isPointerActive = useRef(false);
   const animFrameId = useRef<number | null>(null);
 
-  // Number of trail points for the elastic line
-  const NUM_POINTS = 22;
+  // Short, sleek, nimble trail (10 points max)
+  const NUM_POINTS = 10;
 
   useEffect(() => {
-    // Initialize trail points
     points.current = Array.from({ length: NUM_POINTS }, () => ({ x: -100, y: -100 }));
 
     const canvas = canvasRef.current;
@@ -31,12 +30,10 @@ export const CursorSpotlight: React.FC = () => {
     resize();
     window.addEventListener('resize', resize);
 
-    // Mouse events (Desktop)
     const handleMouseMove = (e: MouseEvent) => {
       targetPos.current = { x: e.clientX, y: e.clientY };
       if (!isPointerActive.current) {
         isPointerActive.current = true;
-        // Snap initial points to cursor
         points.current.forEach((p) => {
           p.x = e.clientX;
           p.y = e.clientY;
@@ -44,7 +41,6 @@ export const CursorSpotlight: React.FC = () => {
       }
     };
 
-    // Touch events (Mobile & Tablet)
     const handleTouchStart = (e: TouchEvent) => {
       if (e.touches.length > 0) {
         const touch = e.touches[0];
@@ -65,25 +61,24 @@ export const CursorSpotlight: React.FC = () => {
       }
     };
 
-    // Animation render loop
     const render = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       if (isPointerActive.current) {
         const pts = points.current;
 
-        // Head point chases target position with fast ease
-        pts[0].x += (targetPos.current.x - pts[0].x) * 0.45;
-        pts[0].y += (targetPos.current.y - pts[0].y) * 0.45;
+        // Head point chases target position quickly and responsively
+        pts[0].x += (targetPos.current.x - pts[0].x) * 0.65;
+        pts[0].y += (targetPos.current.y - pts[0].y) * 0.65;
 
-        // Subsequent points chase preceding points with elastic delay
+        // Subsequent points chase with tight delay (short tail)
         for (let i = 1; i < NUM_POINTS; i++) {
-          const factor = 0.38 - (i / NUM_POINTS) * 0.15; // smoother delay down the tail
+          const factor = 0.55 - (i / NUM_POINTS) * 0.2;
           pts[i].x += (pts[i - 1].x - pts[i].x) * factor;
           pts[i].y += (pts[i - 1].y - pts[i].y) * factor;
         }
 
-        // Draw elastic trailing ribbon line with gradient
+        // Draw short dynamic comet line
         if (pts.length > 1 && pts[0].x > -50) {
           ctx.beginPath();
           ctx.moveTo(pts[0].x, pts[0].y);
@@ -94,41 +89,40 @@ export const CursorSpotlight: React.FC = () => {
             ctx.quadraticCurveTo(pts[i].x, pts[i].y, xc, yc);
           }
 
-          // Dynamic line gradient from bright cyan to deep blue-indigo fade
+          // Compact gradient from cyan head to fading blue
           const grad = ctx.createLinearGradient(
             pts[0].x, pts[0].y,
             pts[NUM_POINTS - 1].x, pts[NUM_POINTS - 1].y
           );
-          grad.addColorStop(0, 'rgba(56, 189, 248, 0.85)'); // Cyan head
-          grad.addColorStop(0.3, 'rgba(96, 165, 250, 0.7)'); // Blue
-          grad.addColorStop(0.7, 'rgba(99, 102, 241, 0.4)'); // Indigo
-          grad.addColorStop(1, 'rgba(129, 140, 248, 0)'); // Fade out
+          grad.addColorStop(0, 'rgba(56, 189, 248, 0.9)'); // Bright Cyan
+          grad.addColorStop(0.5, 'rgba(96, 165, 250, 0.5)'); // Blue
+          grad.addColorStop(1, 'rgba(99, 102, 241, 0)'); // Fast fade
 
           ctx.strokeStyle = grad;
-          ctx.lineWidth = 3.5;
+          ctx.lineWidth = 2.2;
           ctx.lineCap = 'round';
           ctx.lineJoin = 'round';
-          ctx.shadowColor = 'rgba(56, 189, 248, 0.5)';
-          ctx.shadowBlur = 10;
+          ctx.shadowColor = 'rgba(56, 189, 248, 0.4)';
+          ctx.shadowBlur = 8;
           ctx.stroke();
 
-          // Glowing Head Orb
+          // Small glowing cursor point
           ctx.beginPath();
-          ctx.arc(pts[0].x, pts[0].y, 4, 0, Math.PI * 2);
+          ctx.arc(pts[0].x, pts[0].y, 3, 0, Math.PI * 2);
           ctx.fillStyle = '#38BDF8';
           ctx.shadowColor = '#38BDF8';
-          ctx.shadowBlur = 14;
+          ctx.shadowBlur = 10;
           ctx.fill();
 
-          // Soft Ambient Aura around Head
+          // Subtle mini halo
           const headAura = ctx.createRadialGradient(
             pts[0].x, pts[0].y, 0,
-            pts[0].x, pts[0].y, 50
+            pts[0].x, pts[0].y, 22
           );
-          headAura.addColorStop(0, 'rgba(56, 189, 248, 0.18)');
+          headAura.addColorStop(0, 'rgba(56, 189, 248, 0.15)');
           headAura.addColorStop(1, 'rgba(56, 189, 248, 0)');
           ctx.beginPath();
-          ctx.arc(pts[0].x, pts[0].y, 50, 0, Math.PI * 2);
+          ctx.arc(pts[0].x, pts[0].y, 22, 0, Math.PI * 2);
           ctx.fillStyle = headAura;
           ctx.fill();
         }

@@ -85,10 +85,10 @@ const ClassNodeComponent = ({ data, selected }: CustomNodeProps) => {
       <div 
         className={`
           bg-slate-900/98 backdrop-blur-lg rounded-xl border shadow-2xl min-w-[240px] max-w-[340px] 
-          font-mono text-xs overflow-hidden transition-all duration-150 select-none
+          font-mono text-xs overflow-hidden card-hover-effect animate-fade-in-up select-none
           ${selected 
-            ? 'border-blue-400 ring-2 ring-blue-400/50 shadow-blue-500/20 scale-[1.02]' 
-            : 'border-slate-700/80 hover:border-slate-500 hover:shadow-slate-900/50'
+            ? 'border-blue-400 ring-2 ring-blue-400/50 shadow-blue-500/30 scale-[1.02]' 
+            : 'border-slate-700/80 hover:border-slate-500 hover:shadow-slate-900/60'
           }
         `}
       >
