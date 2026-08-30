@@ -2,49 +2,59 @@ import { memo } from 'react';
 import { Handle, Position, NodeProps, Node } from '@xyflow/react';
 import { ClassNodeData, ClassAttribute, ClassMethod } from '../../types/diagram';
 import { Box, Layers, Component } from 'lucide-react';
+import { useUiStore } from '../../stores/uiStore';
+import { useDiagramStore } from '../../stores/diagramStore';
 
 const getVisibilityBadge = (visibility: string) => {
   switch (visibility) {
     case 'public':
-      return <span className="text-emerald-400 font-bold w-3 inline-block select-none">+</span>;
+      return <span className="text-emerald-400 font-bold w-3.5 inline-block select-none">+</span>;
     case 'private':
-      return <span className="text-rose-400 font-bold w-3 inline-block select-none">-</span>;
+      return <span className="text-rose-400 font-bold w-3.5 inline-block select-none">-</span>;
     case 'protected':
-      return <span className="text-amber-400 font-bold w-3 inline-block select-none">#</span>;
+      return <span className="text-amber-400 font-bold w-3.5 inline-block select-none">#</span>;
     case 'package':
-      return <span className="text-sky-400 font-bold w-3 inline-block select-none">~</span>;
+      return <span className="text-sky-400 font-bold w-3.5 inline-block select-none">~</span>;
     default:
-      return <span className="text-emerald-400 font-bold w-3 inline-block select-none">+</span>;
+      return <span className="text-emerald-400 font-bold w-3.5 inline-block select-none">+</span>;
   }
 };
 
-const getStereotypeColor = (stereotype?: string) => {
+const getStereotypeHeaderStyle = (stereotype?: string, isAbstract?: boolean) => {
+  if (isAbstract) return 'from-amber-950/70 to-slate-900 border-amber-800/40 text-amber-300';
   switch (stereotype?.toLowerCase()) {
-    case 'entity':
-      return 'bg-blue-950/70 text-blue-300 border-blue-800/60';
     case 'interface':
-      return 'bg-indigo-950/70 text-indigo-300 border-indigo-800/60';
+      return 'from-indigo-950/70 to-slate-900 border-indigo-800/40 text-indigo-300';
     case 'service':
-      return 'bg-emerald-950/70 text-emerald-300 border-emerald-800/60';
+      return 'from-emerald-950/70 to-slate-900 border-emerald-800/40 text-emerald-300';
     case 'controller':
-      return 'bg-purple-950/70 text-purple-300 border-purple-800/60';
+      return 'from-purple-950/70 to-slate-900 border-purple-800/40 text-purple-300';
     case 'repository':
-      return 'bg-amber-950/70 text-amber-300 border-amber-800/60';
+      return 'from-cyan-950/70 to-slate-900 border-cyan-800/40 text-cyan-300';
+    case 'entity':
     default:
-      return 'bg-slate-900 text-slate-300 border-slate-700';
+      return 'from-blue-950/70 to-slate-900 border-blue-800/40 text-blue-300';
   }
 };
 
 type CustomNodeProps = NodeProps<Node<ClassNodeData>>;
 
 const ClassNodeComponent = ({ data, selected }: CustomNodeProps) => {
+  const { setSelectedNode } = useDiagramStore();
+  const { setPropertiesPanelOpen } = useUiStore();
+
   const isInterface = data.stereotype?.toLowerCase() === 'interface';
   const isAbstract = data.isAbstract || data.stereotype?.toLowerCase() === 'abstract';
   const attributes: ClassAttribute[] = data.attributes || [];
   const methods: ClassMethod[] = data.methods || [];
 
+  const handleDoubleClick = () => {
+    setSelectedNode({ id: data.id, position: { x: 0, y: 0 }, data } as any);
+    setPropertiesPanelOpen(true);
+  };
+
   return (
-    <div className="relative group">
+    <div className="relative group" onDoubleClick={handleDoubleClick}>
       {/* 4 Connection Magnetic Handles */}
       <Handle 
         type="target" 
@@ -74,19 +84,19 @@ const ClassNodeComponent = ({ data, selected }: CustomNodeProps) => {
       {/* UML Class Card Container */}
       <div 
         className={`
-          bg-slate-900/95 backdrop-blur-md rounded-xl border shadow-xl min-w-[230px] max-w-[320px] 
+          bg-slate-900/98 backdrop-blur-lg rounded-xl border shadow-2xl min-w-[240px] max-w-[340px] 
           font-mono text-xs overflow-hidden transition-all duration-150 select-none
           ${selected 
-            ? 'border-blue-500 ring-2 ring-blue-500/40 shadow-blue-500/10' 
-            : 'border-slate-700/80 hover:border-slate-600'
+            ? 'border-blue-400 ring-2 ring-blue-400/50 shadow-blue-500/20 scale-[1.02]' 
+            : 'border-slate-700/80 hover:border-slate-500 hover:shadow-slate-900/50'
           }
         `}
       >
-        {/* Compartment 1: UML Header (Stereotype + Class Name) */}
-        <div className="p-2.5 bg-gradient-to-b from-slate-800/90 to-slate-900/90 border-b border-slate-700/80 text-center">
+        {/* Compartment 1: UML Header */}
+        <div className={`p-2.5 bg-gradient-to-b ${getStereotypeHeaderStyle(data.stereotype, isAbstract)} border-b border-slate-700/80 text-center`}>
           {data.stereotype && (
             <div className="mb-1 flex justify-center">
-              <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-sans font-medium uppercase tracking-wider rounded border ${getStereotypeColor(data.stereotype)}`}>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-sans font-semibold uppercase tracking-wider rounded border border-current bg-slate-950/40">
                 {isInterface && <Component size={10} />}
                 {isAbstract && <Layers size={10} />}
                 {!isInterface && !isAbstract && <Box size={10} />}
@@ -95,58 +105,58 @@ const ClassNodeComponent = ({ data, selected }: CustomNodeProps) => {
             </div>
           )}
 
-          <h3 className={`font-bold text-slate-100 text-sm tracking-wide ${isAbstract ? 'italic text-indigo-300' : ''}`}>
+          <h3 className={`font-bold text-white text-sm tracking-wide ${isAbstract ? 'italic text-amber-200' : ''}`}>
             {data.name || 'ClaseSinNombre'}
           </h3>
         </div>
 
         {/* Compartment 2: UML Attributes */}
-        <div className="p-2.5 border-b border-slate-800/80 space-y-1 bg-slate-950/40 min-h-[36px]">
+        <div className="p-2.5 border-b border-slate-800/80 space-y-1 bg-slate-950/50 min-h-[36px]">
           {attributes.length === 0 ? (
             <div className="text-[11px] text-slate-400 italic">sin atributos</div>
           ) : (
             attributes.map((attr: ClassAttribute) => (
               <div 
                 key={attr.id} 
-                className={`flex items-center text-[11px] leading-relaxed text-slate-300 ${attr.isStatic ? 'underline decoration-slate-400' : ''}`}
+                className={`flex items-center text-[11px] leading-relaxed text-slate-200 ${attr.isStatic ? 'underline decoration-slate-400 font-semibold' : ''}`}
               >
                 {getVisibilityBadge(attr.visibility)}
-                <span className="font-semibold text-slate-200 ml-1">{attr.name}</span>
-                <span className="text-slate-400">:</span>
-                <span className="text-blue-400 font-medium ml-1.5">{attr.type}</span>
+                <span className="font-semibold text-slate-100 ml-1">{attr.name}</span>
+                <span className="text-slate-400 mx-1">:</span>
+                <span className="text-blue-300 font-medium">{attr.type}</span>
               </div>
             ))
           )}
         </div>
 
         {/* Compartment 3: UML Methods */}
-        <div className="p-2.5 space-y-1 bg-slate-950/60 min-h-[36px]">
+        <div className="p-2.5 space-y-1 bg-slate-950/80 min-h-[36px]">
           {methods.length === 0 ? (
             <div className="text-[11px] text-slate-400 italic">sin operaciones</div>
           ) : (
             methods.map((method: ClassMethod) => (
               <div 
                 key={method.id} 
-                className={`flex items-start text-[11px] leading-relaxed text-slate-300 ${
+                className={`flex items-start text-[11px] leading-relaxed text-slate-200 ${
                   method.isStatic ? 'underline decoration-slate-400' : ''
-                } ${method.isAbstract ? 'italic text-indigo-300' : ''}`}
+                } ${method.isAbstract ? 'italic text-amber-200' : ''}`}
               >
                 {getVisibilityBadge(method.visibility)}
                 <div className="ml-1 min-w-0 flex-1">
-                  <span className="font-semibold text-slate-100">{method.name}</span>
+                  <span className="font-semibold text-white">{method.name}</span>
                   <span className="text-slate-400">(</span>
-                  <span className="text-slate-400">
+                  <span className="text-slate-300">
                     {method.parameters?.map((p: { name: string; type: string }, i: number) => (
                       <span key={i}>
                         {i > 0 && ', '}
-                        <span className="text-slate-300">{p.name}</span>
+                        <span className="text-slate-200">{p.name}</span>
                         <span className="text-slate-400">:</span>
-                        <span className="text-blue-400">{p.type}</span>
+                        <span className="text-blue-300">{p.type}</span>
                       </span>
                     ))}
                   </span>
                   <span className="text-slate-400">):</span>
-                  <span className="text-emerald-400 font-medium ml-1">{method.returnType}</span>
+                  <span className="text-emerald-300 font-medium ml-1">{method.returnType}</span>
                 </div>
               </div>
             ))

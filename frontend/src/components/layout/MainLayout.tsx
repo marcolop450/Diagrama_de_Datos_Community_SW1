@@ -9,7 +9,7 @@ import { useUiStore } from '../../stores/uiStore';
 import { ReactFlowProvider } from '@xyflow/react';
 
 const MainLayout: React.FC = () => {
-  const { sidebarOpen, propertiesPanelOpen, activeModal } = useUiStore();
+  const { sidebarOpen, toggleSidebar, propertiesPanelOpen, activeModal } = useUiStore();
 
   return (
     <ReactFlowProvider>
@@ -21,7 +21,21 @@ const MainLayout: React.FC = () => {
         <Header />
         
         <div className="flex flex-1 overflow-hidden relative z-10">
-          {sidebarOpen && <Sidebar />}
+          {/* Mobile Backdrop for Sidebar */}
+          {sidebarOpen && (
+            <div 
+              className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-40 md:hidden"
+              onClick={toggleSidebar}
+            />
+          )}
+
+          {/* Responsive Sidebar Drawer */}
+          <div className={`
+            fixed md:relative inset-y-0 left-0 z-50 md:z-20 h-full flex transition-all duration-200 ease-in-out
+            ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:hidden'}
+          `}>
+            <Sidebar />
+          </div>
           
           <div className="flex flex-1 relative overflow-hidden">
             <Toolbar />
@@ -30,6 +44,7 @@ const MainLayout: React.FC = () => {
             </main>
           </div>
 
+          {/* Properties Panel */}
           {propertiesPanelOpen && <PropertiesPanel />}
         </div>
 

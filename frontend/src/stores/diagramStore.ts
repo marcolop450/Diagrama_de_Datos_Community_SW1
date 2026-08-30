@@ -160,7 +160,7 @@ interface DiagramState {
   onConnect: OnConnect;
   
   addClassNode: (node: Node<ClassNodeData>) => void;
-  createNewClass: (name?: string, stereotype?: string, isAbstract?: boolean) => void;
+  createNewClass: (name?: string, stereotype?: string, isAbstract?: boolean, position?: { x: number; y: number }) => void;
   updateClassNode: (id: string, data: Partial<ClassNodeData>) => void;
   deleteClassNode: (id: string) => void;
   
@@ -218,12 +218,11 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
 
   addClassNode: (node) => set((state) => ({ nodes: [...state.nodes, node] })),
   
-  createNewClass: (name = 'NuevaClase', stereotype = 'entity', isAbstract = false) => {
+  createNewClass: (name = 'NuevaClase', stereotype = 'entity', isAbstract = false, position?: { x: number; y: number }) => {
     const newId = `c-${Date.now()}`;
-    // Find free position offset
     const currentCount = get().nodes.length;
-    const posX = 100 + (currentCount % 3) * 260;
-    const posY = 120 + Math.floor(currentCount / 3) * 220;
+    const posX = position ? position.x : (100 + (currentCount % 3) * 260);
+    const posY = position ? position.y : (120 + Math.floor(currentCount / 3) * 220);
 
     const newNode: Node<ClassNodeData> = {
       id: newId,

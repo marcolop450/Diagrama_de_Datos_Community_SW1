@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { 
   ReactFlow, 
   Background, 
@@ -8,7 +8,8 @@ import {
   Node,
   Edge,
   NodeTypes,
-  EdgeTypes
+  EdgeTypes,
+  useReactFlow
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useDiagramStore } from '../../stores/diagramStore';
@@ -16,7 +17,8 @@ import { useUiStore } from '../../stores/uiStore';
 import ClassNodeComponent from './ClassNodeComponent';
 import RelationshipEdge from './RelationshipEdge';
 import { ClassNodeData, RelationshipData } from '../../types/diagram';
-import { Info } from 'lucide-react';
+import { Info, MousePointerClick, X } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const nodeTypes: NodeTypes = {
   classNode: ClassNodeComponent as any,
@@ -35,30 +37,73 @@ export default function DiagramCanvas() {
     onEdgesChange, 
     onConnect,
     setSelectedNode, 
-    setSelectedEdge 
+    setSelectedEdge,
+    createNewClass
   } = useDiagramStore();
   
-  const { setPropertiesPanelOpen } = useUiStore();
+  const { activeTool, setActiveTool, setPropertiesPanelOpen } = useUiStore();
+  const { screenToFlowPosition } = useReactFlow();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
 
-  const onPaneClick = useCallback(() => {
+  const isPlacementMode = activeTool === 'add-class' || activeTool === 'add-interface' || activeTool === 'add-abstract';
+
+  // Listen to Escape key to cancel placement mode
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isPlacementMode) {
+        setActiveTool('pointer');
+        toast('Colocación cancelada');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isPlacementMode, setActiveTool]);
+
+  // Click on Canvas Pane
+  const onPaneClick = useCallback((event: React.MouseEvent) => {
+    if (isPlacementMode) {
+      const position = screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
+
+      if (activeTool === 'add-class') {
+        createNewClass('NuevaEntidad', 'entity', false, position);
+        toast.success('Clase entidad colocada');
+      } else if (activeTool === 'add-interface') {
+        createNewClass('INuevoServicio', 'interface', false, position);
+        toast.success('Interfaz colocada');
+      } else if (activeTool === 'add-abstract') {
+        createNewClass('ClaseBase', 'abstract', true, position);
+        toast.success('Clase abstracta colocada');
+      }
+
+      setActiveTool('pointer');
+      return;
+    }
+
     setSelectedNode(null);
     setSelectedEdge(null);
     setPropertiesPanelOpen(false);
-  }, [setSelectedNode, setSelectedEdge, setPropertiesPanelOpen]);
+  }, [isPlacementMode, activeTool, screenToFlowPosition, createNewClass, setActiveTool, setSelectedNode, setSelectedEdge, setPropertiesPanelOpen]);
 
   const onNodeClick = useCallback((_: React.MouseEvent, node: Node<ClassNodeData>) => {
+    if (isPlacementMode) return;
     setSelectedNode(node);
     setPropertiesPanelOpen(true);
-  }, [setSelectedNode, setPropertiesPanelOpen]);
+  }, [isPlacementMode, setSelectedNode, setPropertiesPanelOpen]);
 
   const onEdgeClick = useCallback((_: React.MouseEvent, edge: Edge<RelationshipData>) => {
+    if (isPlacementMode) return;
     setSelectedEdge(edge);
     setPropertiesPanelOpen(true);
-  }, [setSelectedEdge, setPropertiesPanelOpen]);
+  }, [isPlacementMode, setSelectedEdge, setPropertiesPanelOpen]);
 
   return (
-    <div className="w-full h-full bg-[#0B0F19] relative select-none" ref={reactFlowWrapper}>
+    <div 
+      className={`w-full h-full bg-transparent relative select-none ${isPlacementMode ? 'cursor-crosshair' : ''}`} 
+      ref={reactFlowWrapper}
+    >
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -71,7 +116,7 @@ export default function DiagramCanvas() {
         onNodeClick={onNodeClick}
         onEdgeClick={onEdgeClick}
         fitView
-        minZoom={0.2}
+        minZoom={0.15}
         maxZoom={2.5}
         defaultEdgeOptions={{
           type: 'umlEdge',
@@ -79,30 +124,44 @@ export default function DiagramCanvas() {
         }}
       >
         <Background 
-          gap={24} 
-          size={1.5}
+          gap={26} 
+          size={1.6}
           color="#1E293B" 
           variant={BackgroundVariant.Dots} 
-          className="bg-[#0B0F19]"
         />
 
-        {/* Custom MiniMap Styled for Dark Theme */}
+        {/* Custom MiniMap: hidden on very small viewports */}
         <MiniMap 
           zoomable 
           pannable 
           nodeColor="#1E293B" 
           nodeStrokeColor="#3B82F6"
           nodeStrokeWidth={2}
-          maskColor="rgba(11, 15, 25, 0.75)"
-          className="!bg-slate-950 !border !border-slate-800 !rounded-xl !shadow-2xl overflow-hidden !m-4"
+          maskColor="rgba(11, 15, 25, 0.8)"
+          className="!bg-slate-950/90 !border !border-slate-800 !rounded-xl !shadow-2xl overflow-hidden !m-3 hidden md:block"
         />
 
-        {/* Top Hint Panel */}
-        <Panel position="top-right" className="!m-4">
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-900/90 border border-slate-800 text-slate-300 rounded-lg text-xs font-mono shadow-lg backdrop-blur-md">
-            <Info size={13} className="text-blue-400" />
-            <span>Haz clic en una clase o relación para editarla</span>
-          </div>
+        {/* Top Info Banner / Placement Banner */}
+        <Panel position="top-center" className="!m-3">
+          {isPlacementMode ? (
+            <div className="flex items-center gap-2.5 px-4 py-2 bg-gradient-to-r from-blue-900/90 to-indigo-900/90 border border-blue-400/50 text-blue-100 rounded-xl text-xs font-mono shadow-2xl backdrop-blur-md animate-bounce">
+              <MousePointerClick size={15} className="text-blue-300 animate-pulse" />
+              <span>Haz clic en el lienzo para colocar la {activeTool === 'add-interface' ? 'Interfaz' : activeTool === 'add-abstract' ? 'Clase Abstracta' : 'Clase'}</span>
+              <button 
+                onClick={() => setActiveTool('pointer')}
+                className="p-1 hover:bg-white/10 rounded ml-1 cursor-pointer"
+                title="Cancelar (Esc)"
+              >
+                <X size={13} />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-900/80 border border-slate-800/80 text-slate-300 rounded-lg text-xs font-mono shadow-lg backdrop-blur-md">
+              <Info size={13} className="text-blue-400" />
+              <span className="hidden sm:inline">Haz clic en una clase para editarla o selecciona una herramienta para colocar</span>
+              <span className="sm:hidden">Toca una clase para editar</span>
+            </div>
+          )}
         </Panel>
       </ReactFlow>
     </div>
