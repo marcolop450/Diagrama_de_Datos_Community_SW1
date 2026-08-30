@@ -5,6 +5,7 @@ import Toolbar from '../toolbar/Toolbar';
 import DiagramCanvas from '../canvas/DiagramCanvas';
 import PropertiesPanel from '../panels/PropertiesPanel';
 import CreateProjectModal from '../modals/CreateProjectModal';
+import { AuroraBackground } from '../common/AuroraBackground';
 import { useUiStore } from '../../stores/uiStore';
 import { ReactFlowProvider } from '@xyflow/react';
 
@@ -13,10 +14,9 @@ const MainLayout: React.FC = () => {
 
   return (
     <ReactFlowProvider>
-      <div className="flex flex-col h-screen overflow-hidden bg-[#0B0F19] text-slate-100 relative select-none">
-        {/* Animated ambient aurora lights in background */}
-        <div className="absolute top-10 left-1/4 w-[600px] h-[600px] rounded-full bg-blue-600/10 blur-[130px] animate-aurora-1 pointer-events-none z-0" />
-        <div className="absolute bottom-10 right-1/4 w-[500px] h-[500px] rounded-full bg-indigo-600/10 blur-[120px] animate-aurora-2 pointer-events-none z-0" />
+      <div className="flex flex-col h-screen overflow-hidden bg-[#070A12] text-slate-100 relative select-none">
+        {/* Dynamic Canvas Aurora Background */}
+        <AuroraBackground opacity={0.45} />
 
         <Header />
         
