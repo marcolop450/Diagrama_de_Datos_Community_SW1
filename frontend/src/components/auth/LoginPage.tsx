@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import { supabase } from '../../services/supabase';
+import { Logo } from '../common/Logo';
 import toast from 'react-hot-toast';
-import { KeyRound, Mail } from 'lucide-react';
+import { Lock, Mail, ArrowRight, UserCheck } from 'lucide-react';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -25,52 +26,84 @@ const LoginPage: React.FC = () => {
       if (error) throw error;
       
       await initialize();
+      toast.success('Sesión iniciada correctamente');
       navigate('/');
     } catch (error: any) {
-      toast.error(error.message || 'Error al iniciar sesión');
+      toast.error(error.message || 'Credenciales inválidas');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleQuickTestUser = () => {
+    setEmail('test@sw1.com');
+    setPassword('TestPassword123!');
+    toast.success('Credenciales de prueba cargadas');
+  };
+
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">CASE Tool SW1</h1>
-          <p className="text-gray-500">Inicia sesión para continuar</p>
+    <div className="min-h-screen bg-[#0B0F19] flex items-center justify-center p-4 relative overflow-hidden select-none">
+      {/* Background ambient lighting */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-1/4 left-1/3 w-80 h-80 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
+
+      <div className="max-w-md w-full bg-slate-900/90 border border-slate-800/80 rounded-2xl shadow-2xl p-8 backdrop-blur-xl relative z-10">
+        {/* Logo Header */}
+        <div className="flex flex-col items-center mb-8 text-center">
+          <Logo size="lg" showText={true} className="mb-3" />
+          <p className="text-xs text-slate-400 font-sans mt-1">
+            Herramienta CASE Colaborativa con Inteligencia Artificial
+          </p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-6">
+        {/* Quick Test User Card */}
+        <div className="mb-6 p-3 bg-blue-950/40 border border-blue-800/40 rounded-xl flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <UserCheck size={16} className="text-blue-400 shrink-0" />
+            <div>
+              <p className="text-xs font-semibold text-blue-200">Usuario de Prueba</p>
+              <p className="text-[10px] font-mono text-blue-400">test@sw1.com</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleQuickTestUser}
+            className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[11px] font-semibold transition-colors shadow-sm"
+          >
+            Autocompletar
+          </button>
+        </div>
+
+        <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+              Correo Electrónico
+            </label>
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Mail className="h-5 w-5 text-gray-400" />
-              </div>
+              <Mail className="h-4 w-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="pl-10 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                placeholder="tu@email.com"
+                className="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 rounded-xl pl-10 pr-3 py-2.5 text-xs text-slate-100 placeholder:text-slate-400 focus:outline-none transition-colors"
+                placeholder="estudiante@sw1.edu"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Contraseña</label>
+            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+              Contraseña
+            </label>
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <KeyRound className="h-5 w-5 text-gray-400" />
-              </div>
+              <Lock className="h-4 w-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="pl-10 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                className="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 rounded-xl pl-10 pr-3 py-2.5 text-xs text-slate-100 placeholder:text-slate-400 focus:outline-none transition-colors"
                 placeholder="••••••••"
               />
             </div>
@@ -79,18 +112,27 @@ const LoginPage: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-colors disabled:opacity-50 flex justify-center"
+            className="w-full mt-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold py-2.5 rounded-xl transition-all shadow-md shadow-blue-500/20 disabled:opacity-50 flex items-center justify-center gap-2 text-xs active:scale-98"
           >
-            {loading ? 'Cargando...' : 'Iniciar Sesión'}
+            {loading ? (
+              <span>Autenticando...</span>
+            ) : (
+              <>
+                <span>Ingresar al Sistema</span>
+                <ArrowRight size={14} />
+              </>
+            )}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-gray-600">
-          ¿No tienes una cuenta?{' '}
-          <Link to="/register" className="text-blue-600 hover:text-blue-700 font-medium">
-            Regístrate
-          </Link>
-        </p>
+        <div className="mt-6 pt-6 border-t border-slate-800/80 text-center">
+          <p className="text-xs text-slate-400">
+            ¿Nuevo en la plataforma?{' '}
+            <Link to="/register" className="text-blue-400 hover:text-blue-300 font-semibold transition-colors">
+              Crear cuenta
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

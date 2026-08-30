@@ -853,6 +853,12 @@
       "skillPath": "skills/framework-migration-legacy-modernize/SKILL.md",
       "computedHash": "adea31a71005989066a3552c43baa2e8b656088a46cf5f3359d7e381fd616741"
     },
+    "frontend-design": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/frontend-design/SKILL.md",
+      "computedHash": "93f53fd1c0352d3d7ec17b8f73d7351bf76f4821e55d123c9d2abc2c53ba48e4"
+    },
     "frontend-developer": {
       "source": "rmyndharis/antigravity-skills",
       "sourceType": "github",

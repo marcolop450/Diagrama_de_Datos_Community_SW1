@@ -2,32 +2,44 @@ import React, { useCallback, useRef } from 'react';
 import { 
   ReactFlow, 
   Background, 
-  Controls, 
+  BackgroundVariant,
   MiniMap,
   Panel,
-  ReactFlowProvider
+  ReactFlowProvider,
+  Node,
+  Edge,
+  NodeTypes,
+  EdgeTypes
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useDiagramStore } from '../../stores/diagramStore';
 import { useUiStore } from '../../stores/uiStore';
 import ClassNodeComponent from './ClassNodeComponent';
 import RelationshipEdge from './RelationshipEdge';
+import { ClassNodeData, RelationshipData } from '../../types/diagram';
+import { Info } from 'lucide-react';
 
-const nodeTypes = {
-  classNode: ClassNodeComponent,
+const nodeTypes: NodeTypes = {
+  classNode: ClassNodeComponent as any,
 };
 
-const edgeTypes = {
-  relationship: RelationshipEdge,
+const edgeTypes: EdgeTypes = {
+  umlEdge: RelationshipEdge as any,
+  relationship: RelationshipEdge as any,
 };
 
 const Flow = () => {
   const { 
-    nodes, edges, onNodesChange, onEdgesChange, onConnect,
-    setSelectedNode, setSelectedEdge 
+    nodes, 
+    edges, 
+    onNodesChange, 
+    onEdgesChange, 
+    onConnect,
+    setSelectedNode, 
+    setSelectedEdge 
   } = useDiagramStore();
   
-  const { activeTool, setActiveTool, setPropertiesPanelOpen } = useUiStore();
+  const { setPropertiesPanelOpen } = useUiStore();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
 
   const onPaneClick = useCallback(() => {
@@ -36,48 +48,18 @@ const Flow = () => {
     setPropertiesPanelOpen(false);
   }, [setSelectedNode, setSelectedEdge, setPropertiesPanelOpen]);
 
-  const onNodeClick = useCallback((_, node) => {
+  const onNodeClick = useCallback((_: React.MouseEvent, node: Node<ClassNodeData>) => {
     setSelectedNode(node);
     setPropertiesPanelOpen(true);
   }, [setSelectedNode, setPropertiesPanelOpen]);
 
-  const onEdgeClick = useCallback((_, edge) => {
+  const onEdgeClick = useCallback((_: React.MouseEvent, edge: Edge<RelationshipData>) => {
     setSelectedEdge(edge);
     setPropertiesPanelOpen(true);
   }, [setSelectedEdge, setPropertiesPanelOpen]);
 
-  const onPaneContextMenu = useCallback((event: React.MouseEvent) => {
-    event.preventDefault();
-    if (activeTool === 'class' || activeTool === 'interface') {
-      const bounds = reactFlowWrapper.current?.getBoundingClientRect();
-      if (!bounds) return;
-
-      const position = {
-        x: event.clientX - bounds.left,
-        y: event.clientY - bounds.top
-      };
-
-      const newNode = {
-        id: `node-${Date.now()}`,
-        type: 'classNode',
-        position,
-        data: {
-          id: `node-${Date.now()}`,
-          name: activeTool === 'interface' ? 'NewInterface' : 'NewClass',
-          stereotype: activeTool === 'interface' ? 'interface' : undefined,
-          isAbstract: false,
-          attributes: [],
-          methods: []
-        }
-      };
-
-      useDiagramStore.getState().addClassNode(newNode);
-      setActiveTool('pointer');
-    }
-  }, [activeTool, setActiveTool]);
-
   return (
-    <div className="w-full h-full" ref={reactFlowWrapper}>
+    <div className="w-full h-full bg-[#0B0F19] relative select-none" ref={reactFlowWrapper}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -89,15 +71,39 @@ const Flow = () => {
         onPaneClick={onPaneClick}
         onNodeClick={onNodeClick}
         onEdgeClick={onEdgeClick}
-        onPaneContextMenu={onPaneContextMenu}
         fitView
+        minZoom={0.2}
+        maxZoom={2.5}
+        defaultEdgeOptions={{
+          type: 'umlEdge',
+          animated: false,
+        }}
       >
-        <Background gap={20} color="#e5e7eb" variant="dots" />
-        <Controls />
-        <MiniMap zoomable pannable nodeColor="#fefce8" />
-        
-        <Panel position="top-right" className="bg-white/80 p-2 rounded shadow text-sm text-gray-500">
-          Click derecho para usar la herramienta activa
+        <Background 
+          gap={24} 
+          size={1.5}
+          color="#1E293B" 
+          variant={BackgroundVariant.Dots} 
+          className="bg-[#0B0F19]"
+        />
+
+        {/* Custom MiniMap Styled for Dark Theme */}
+        <MiniMap 
+          zoomable 
+          pannable 
+          nodeColor="#1E293B" 
+          nodeStrokeColor="#3B82F6"
+          nodeStrokeWidth={2}
+          maskColor="rgba(11, 15, 25, 0.75)"
+          className="!bg-slate-950 !border !border-slate-800 !rounded-xl !shadow-2xl overflow-hidden !m-4"
+        />
+
+        {/* Top Hint Panel */}
+        <Panel position="top-right" className="!m-4">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-900/90 border border-slate-800 text-slate-300 rounded-lg text-xs font-mono shadow-lg backdrop-blur-md">
+            <Info size={13} className="text-blue-400" />
+            <span>Haz clic en una clase o relación para editarla</span>
+          </div>
         </Panel>
       </ReactFlow>
     </div>

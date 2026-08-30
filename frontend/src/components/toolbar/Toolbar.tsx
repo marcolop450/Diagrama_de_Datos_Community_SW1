@@ -1,65 +1,154 @@
 import React from 'react';
 import { 
-  Square, GripHorizontal, ArrowRight, CornerDownRight, 
-  Share2, ArrowUpCircle, MousePointer2, ZoomIn, 
-  ZoomOut, Maximize, Undo, Redo, Mic, Image as ImageIcon
+  MousePointer2, 
+  Box, 
+  Layers, 
+  Component, 
+  Mic, 
+  Image as ImageIcon,
+  ZoomIn, 
+  ZoomOut, 
+  Maximize
 } from 'lucide-react';
 import { useUiStore } from '../../stores/uiStore';
+import { useDiagramStore } from '../../stores/diagramStore';
+import { useReactFlow } from '@xyflow/react';
+import toast from 'react-hot-toast';
 
-const Toolbar: React.FC = () => {
+export const Toolbar: React.FC = () => {
   const { activeTool, setActiveTool } = useUiStore();
+  const { createNewClass } = useDiagramStore();
+  const { zoomIn, zoomOut, fitView } = useReactFlow();
 
-  const tools = [
-    { id: 'pointer', icon: MousePointer2, title: 'Seleccionar' },
-    { divider: true },
-    { id: 'class', icon: Square, title: 'Añadir Clase' },
-    { id: 'interface', icon: Square, title: 'Añadir Interfaz' },
-    { divider: true },
-    { id: 'association', icon: ArrowRight, title: 'Asociación' },
-    { id: 'aggregation', icon: GripHorizontal, title: 'Agregación' },
-    { id: 'composition', icon: GripHorizontal, title: 'Composición' },
-    { id: 'inheritance', icon: ArrowUpCircle, title: 'Herencia' },
-    { id: 'implementation', icon: ArrowUpCircle, title: 'Implementación' },
-    { id: 'dependency', icon: CornerDownRight, title: 'Dependencia' },
-    { divider: true },
-    { id: 'voice', icon: Mic, title: 'Comando de Voz (AI)' },
-    { id: 'photo', icon: ImageIcon, title: 'Importar Foto (AI)' },
-  ];
+  const handleAddEntityClass = () => {
+    createNewClass('NuevaEntidad', 'entity', false);
+    toast.success('Clase entidad añadida');
+  };
+
+  const handleAddInterface = () => {
+    createNewClass('INuevoServicio', 'interface', false);
+    toast.success('Interfaz añadida');
+  };
+
+  const handleAddAbstractClass = () => {
+    createNewClass('ClaseBase', 'abstract', true);
+    toast.success('Clase abstracta añadida');
+  };
+
+  const handleVoiceCommand = () => {
+    toast('Asistente de voz disponible en Fase 3', { icon: '🎙️' });
+  };
+
+  const handlePhotoImport = () => {
+    toast('Importador de foto de pizarra disponible en Fase 3', { icon: '📷' });
+  };
 
   return (
-    <div className="w-14 bg-white border-r border-gray-200 flex flex-col items-center py-2 z-10 shadow-sm">
-      {tools.map((tool, idx) => {
-        if (tool.divider) {
-          return <div key={`div-${idx}`} className="w-8 h-px bg-gray-200 my-2" />;
-        }
-        const Icon = tool.icon!;
-        const isActive = activeTool === tool.id;
-        
-        return (
-          <button
-            key={tool.id}
-            onClick={() => setActiveTool(tool.id)}
-            className={`p-2 mb-1 rounded-lg transition-colors ${
-              isActive 
-                ? 'bg-blue-100 text-blue-600' 
-                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-            }`}
-            title={tool.title}
-          >
-            <Icon size={20} />
-          </button>
-        );
-      })}
-      
+    <aside className="w-14 bg-slate-950 border-r border-slate-800/80 flex flex-col items-center py-3 gap-1 z-20 shadow-md select-none">
+      {/* Selection pointer */}
+      <button
+        onClick={() => setActiveTool('pointer')}
+        className={`p-2.5 rounded-xl transition-all ${
+          activeTool === 'pointer'
+            ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/30'
+            : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+        }`}
+        title="Modo Selección (V)"
+      >
+        <MousePointer2 size={18} />
+      </button>
+
+      <div className="w-8 h-px bg-slate-800 my-1.5" />
+
+      {/* UML Class Creation Tools */}
+      <button
+        onClick={handleAddEntityClass}
+        className="p-2.5 rounded-xl text-slate-400 hover:text-blue-400 hover:bg-slate-900 transition-all group relative"
+        title="Añadir Clase Entidad"
+      >
+        <Box size={18} />
+        <span className="absolute left-full ml-2 px-2 py-1 bg-slate-900 text-slate-200 text-[11px] font-medium rounded-md shadow-lg border border-slate-800 whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
+          Añadir Clase Entidad
+        </span>
+      </button>
+
+      <button
+        onClick={handleAddInterface}
+        className="p-2.5 rounded-xl text-slate-400 hover:text-indigo-400 hover:bg-slate-900 transition-all group relative"
+        title="Añadir Interfaz"
+      >
+        <Component size={18} />
+        <span className="absolute left-full ml-2 px-2 py-1 bg-slate-900 text-slate-200 text-[11px] font-medium rounded-md shadow-lg border border-slate-800 whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
+          Añadir Interfaz &lt;&lt;interface&gt;&gt;
+        </span>
+      </button>
+
+      <button
+        onClick={handleAddAbstractClass}
+        className="p-2.5 rounded-xl text-slate-400 hover:text-amber-400 hover:bg-slate-900 transition-all group relative"
+        title="Añadir Clase Abstracta"
+      >
+        <Layers size={18} />
+        <span className="absolute left-full ml-2 px-2 py-1 bg-slate-900 text-slate-200 text-[11px] font-medium rounded-md shadow-lg border border-slate-800 whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
+          Añadir Clase Abstracta
+        </span>
+      </button>
+
+      <div className="w-8 h-px bg-slate-800 my-1.5" />
+
+      {/* AI Tools */}
+      <button
+        onClick={handleVoiceCommand}
+        className="p-2.5 rounded-xl text-slate-400 hover:text-purple-400 hover:bg-slate-900 transition-all group relative"
+        title="Dictado por Voz con IA"
+      >
+        <Mic size={18} />
+        <span className="absolute left-full ml-2 px-2 py-1 bg-slate-900 text-slate-200 text-[11px] font-medium rounded-md shadow-lg border border-slate-800 whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
+          Dictar Diagrama con Voz (IA)
+        </span>
+      </button>
+
+      <button
+        onClick={handlePhotoImport}
+        className="p-2.5 rounded-xl text-slate-400 hover:text-emerald-400 hover:bg-slate-900 transition-all group relative"
+        title="Reconocimiento de Foto de Pizarra con IA"
+      >
+        <ImageIcon size={18} />
+        <span className="absolute left-full ml-2 px-2 py-1 bg-slate-900 text-slate-200 text-[11px] font-medium rounded-md shadow-lg border border-slate-800 whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
+          Foto de Pizarra a Diagrama (IA)
+        </span>
+      </button>
+
+      {/* Spacer */}
       <div className="flex-1" />
-      
-      <div className="w-8 h-px bg-gray-200 my-2" />
-      <button className="p-2 mb-1 rounded-lg text-gray-600 hover:bg-gray-100" title="Deshacer"><Undo size={20} /></button>
-      <button className="p-2 mb-1 rounded-lg text-gray-600 hover:bg-gray-100" title="Rehacer"><Redo size={20} /></button>
-      <button className="p-2 mb-1 rounded-lg text-gray-600 hover:bg-gray-100" title="Zoom In"><ZoomIn size={20} /></button>
-      <button className="p-2 mb-1 rounded-lg text-gray-600 hover:bg-gray-100" title="Zoom Out"><ZoomOut size={20} /></button>
-      <button className="p-2 mb-1 rounded-lg text-gray-600 hover:bg-gray-100" title="Ajustar"><Maximize size={20} /></button>
-    </div>
+
+      <div className="w-8 h-px bg-slate-800 my-1.5" />
+
+      {/* Canvas Viewport Controls */}
+      <button
+        onClick={() => zoomIn()}
+        className="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-900 rounded-lg transition-colors"
+        title="Acercar (Zoom +)"
+      >
+        <ZoomIn size={16} />
+      </button>
+
+      <button
+        onClick={() => zoomOut()}
+        className="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-900 rounded-lg transition-colors"
+        title="Alejar (Zoom -)"
+      >
+        <ZoomOut size={16} />
+      </button>
+
+      <button
+        onClick={() => fitView({ padding: 0.2 })}
+        className="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-900 rounded-lg transition-colors"
+        title="Ajustar Vista (Fit)"
+      >
+        <Maximize size={16} />
+      </button>
+    </aside>
   );
 };
 

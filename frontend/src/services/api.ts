@@ -1,20 +1,67 @@
 import axios from 'axios';
-import { DiagramProject } from '../types/diagram';
+import { DiagramProject, ClassNodeData, RelationshipData } from '../types/diagram';
 
-const API_URL = import.meta.env.VITE_API_URL + '/api';
+const API_BASE_URL = (import.meta.env?.VITE_API_URL || 'http://localhost:8080') + '/api';
 
-export const api = axios.create({
-  baseURL: API_URL,
+export const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
-export const projectService = {
-  getProjects: async (): Promise<DiagramProject[]> => {
-    const response = await api.get('/projects');
-    return response.data;
+export const api = {
+  // Projects
+  getProjects: async (ownerId?: string) => {
+    const res = await apiClient.get('/projects', { params: { ownerId } });
+    return res.data;
   },
-  createProject: async (data: Partial<DiagramProject>): Promise<DiagramProject> => {
-    const response = await api.post('/projects', data);
-    return response.data;
+  getProjectById: async (id: string) => {
+    const res = await apiClient.get(`/projects/${id}`);
+    return res.data;
   },
-  // Add more methods as needed
+  createProject: async (data: Partial<DiagramProject>) => {
+    const res = await apiClient.post('/projects', data);
+    return res.data;
+  },
+  updateProject: async (id: string, data: Partial<DiagramProject>) => {
+    const res = await apiClient.put(`/projects/${id}`, data);
+    return res.data;
+  },
+  deleteProject: async (id: string) => {
+    const res = await apiClient.delete(`/projects/${id}`);
+    return res.data;
+  },
+  getFullDiagram: async (projectId: string) => {
+    const res = await apiClient.get(`/projects/${projectId}/full-diagram`);
+    return res.data;
+  },
+
+  // Class Nodes
+  addClassNode: async (projectId: string, node: Partial<ClassNodeData>) => {
+    const res = await apiClient.post(`/projects/${projectId}/classes`, node);
+    return res.data;
+  },
+  updateClassNode: async (projectId: string, classId: string, node: Partial<ClassNodeData>) => {
+    const res = await apiClient.put(`/projects/${projectId}/classes/${classId}`, node);
+    return res.data;
+  },
+  deleteClassNode: async (projectId: string, classId: string) => {
+    const res = await apiClient.delete(`/projects/${projectId}/classes/${classId}`);
+    return res.data;
+  },
+
+  // Relationships
+  addRelationship: async (projectId: string, rel: Partial<RelationshipData>) => {
+    const res = await apiClient.post(`/projects/${projectId}/relationships`, rel);
+    return res.data;
+  },
+  updateRelationship: async (projectId: string, relId: string, rel: Partial<RelationshipData>) => {
+    const res = await apiClient.put(`/projects/${projectId}/relationships/${relId}`, rel);
+    return res.data;
+  },
+  deleteRelationship: async (projectId: string, relId: string) => {
+    const res = await apiClient.delete(`/projects/${projectId}/relationships/${relId}`);
+    return res.data;
+  },
 };

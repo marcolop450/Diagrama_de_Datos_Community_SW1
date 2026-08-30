@@ -17,7 +17,7 @@ export interface ClassMethod {
   parameters: { name: string; type: string }[];
 }
 
-export interface ClassNodeData {
+export interface ClassNodeData extends Record<string, unknown> {
   id: string;
   name: string;
   stereotype?: string;
@@ -26,7 +26,7 @@ export interface ClassNodeData {
   methods: ClassMethod[];
 }
 
-export interface RelationshipData {
+export interface RelationshipData extends Record<string, unknown> {
   id: string;
   type: 'association' | 'aggregation' | 'composition' | 'inheritance' | 'implementation' | 'dependency';
   sourceCardinality: string;
@@ -40,7 +40,8 @@ export interface DiagramProject {
   id: string;
   name: string;
   description?: string;
-  ownerId: string;
-  createdAt: string;
-  updatedAt: string;
+  ownerId?: string;
+  metadata?: Record<string, unknown>;
+  createdAt?: string;
+  updatedAt?: string;
 }
