@@ -4,11 +4,12 @@ import { useAuthStore } from '../../stores/authStore';
 import { supabase } from '../../services/supabase';
 import { Logo } from '../common/Logo';
 import toast from 'react-hot-toast';
-import { Lock, Mail, ArrowRight, UserCheck } from 'lucide-react';
+import { Lock, Mail, ArrowRight, UserCheck, Eye, EyeOff } from 'lucide-react';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { initialize } = useAuthStore();
@@ -36,7 +37,7 @@ const LoginPage: React.FC = () => {
   };
 
   const handleQuickTestUser = () => {
-    setEmail('test@sw1.com');
+    setEmail('sw1.casetool.demo@gmail.com');
     setPassword('TestPassword123!');
     toast.success('Credenciales de prueba cargadas');
   };
@@ -58,17 +59,17 @@ const LoginPage: React.FC = () => {
 
         {/* Quick Test User Card */}
         <div className="mb-6 p-3 bg-blue-950/40 border border-blue-800/40 rounded-xl flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <UserCheck size={16} className="text-blue-400 shrink-0" />
             <div>
-              <p className="text-xs font-semibold text-blue-200">Usuario de Prueba</p>
-              <p className="text-[10px] font-mono text-blue-400">test@sw1.com</p>
+              <p className="text-xs font-semibold text-blue-200">Usuario de Prueba Activo</p>
+              <p className="text-[10px] font-mono text-blue-400">sw1.casetool.demo@gmail.com</p>
             </div>
           </div>
           <button
             type="button"
             onClick={handleQuickTestUser}
-            className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[11px] font-semibold transition-colors shadow-sm"
+            className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[11px] font-semibold transition-colors shadow-sm cursor-pointer"
           >
             Autocompletar
           </button>
@@ -87,7 +88,7 @@ const LoginPage: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 rounded-xl pl-10 pr-3 py-2.5 text-xs text-slate-100 placeholder:text-slate-400 focus:outline-none transition-colors"
-                placeholder="estudiante@sw1.edu"
+                placeholder="sw1.casetool.demo@gmail.com"
               />
             </div>
           </div>
@@ -99,20 +100,29 @@ const LoginPage: React.FC = () => {
             <div className="relative">
               <Lock className="h-4 w-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 rounded-xl pl-10 pr-3 py-2.5 text-xs text-slate-100 placeholder:text-slate-400 focus:outline-none transition-colors"
+                className="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 rounded-xl pl-10 pr-10 py-2.5 text-xs text-slate-100 placeholder:text-slate-400 focus:outline-none transition-colors font-mono"
                 placeholder="••••••••"
               />
+              {/* Show / Hide Password Button */}
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors p-1"
+                title={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
             </div>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold py-2.5 rounded-xl transition-all shadow-md shadow-blue-500/20 disabled:opacity-50 flex items-center justify-center gap-2 text-xs active:scale-98"
+            className="w-full mt-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold py-2.5 rounded-xl transition-all shadow-md shadow-blue-500/20 disabled:opacity-50 flex items-center justify-center gap-2 text-xs active:scale-98 cursor-pointer"
           >
             {loading ? (
               <span>Autenticando...</span>

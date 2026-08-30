@@ -1933,6 +1933,18 @@
       "skillPath": "skills/stripe-integration/SKILL.md",
       "computedHash": "1b1d2825d0f6f565e5404227e73462d7870e3314e8ec217c5335871de0862aa5"
     },
+    "supabase": {
+      "source": "supabase/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/supabase/SKILL.md",
+      "computedHash": "a6260582f48df8ba53380bb9b9e870ed2ae5fe147799e90ed783b8aa25167d50"
+    },
+    "supabase-postgres-best-practices": {
+      "source": "supabase/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/supabase-postgres-best-practices/SKILL.md",
+      "computedHash": "128fac78002d916c8ca908245d398e634f540d8bcf20915b2b2359aeb18eba59"
+    },
     "systems-programming-rust-project": {
       "source": "rmyndharis/antigravity-skills",
       "sourceType": "github",
@@ -2160,6 +2172,12 @@
       "sourceType": "github",
       "skillPath": "skills/vector-index-tuning/SKILL.md",
       "computedHash": "63ef5e9ff7e64fcd61b22f2a6fa0cc9107344b45d15ba793afa86df71a151497"
+    },
+    "vercel-react-best-practices": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/react-best-practices/SKILL.md",
+      "computedHash": "ca7b0c0c6e5f2750043f7f0cd72d16ac4e2abc48f9b5500d047a4b77a2506212"
     },
     "wait-what": {
       "source": "mattpocock/skills",
