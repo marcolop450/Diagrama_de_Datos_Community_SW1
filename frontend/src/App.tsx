@@ -1,31 +1,13 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import MainLayout from './components/layout/MainLayout';
-import LoginPage from './components/auth/LoginPage';
+import { LandingPage } from './pages/LandingPage';
+import { LoginPage } from './components/auth/LoginPage';
 import RegisterPage from './components/auth/RegisterPage';
+import MainLayout from './components/layout/MainLayout';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { useAuthStore } from './stores/authStore';
-import { Loader2 } from 'lucide-react';
 import { CursorSpotlight } from './components/common/CursorSpotlight';
-
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { session, isLoading } = useAuthStore();
-  
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[#0B0F19] flex flex-col items-center justify-center text-slate-300 gap-3">
-        <Loader2 className="animate-spin text-blue-500" size={32} />
-        <span className="text-xs font-mono text-slate-400">Iniciando entorno CASE...</span>
-      </div>
-    );
-  }
-  
-  if (!session) {
-    return <Navigate to="/login" replace />;
-  }
-  
-  return <>{children}</>;
-};
 
 function App() {
   const { initialize } = useAuthStore();
@@ -63,16 +45,33 @@ function App() {
         }}
       />
       <Routes>
+        {/* Public Landing Page for Guests */}
+        <Route path="/" element={<LandingPage />} />
+
+        {/* Authentication Routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+
+        {/* Protected Dashboard & CASE Editor Routes */}
         <Route 
-          path="/" 
+          path="/dashboard" 
           element={
             <ProtectedRoute>
               <MainLayout />
             </ProtectedRoute>
           } 
         />
+        <Route 
+          path="/editor/:id" 
+          element={
+            <ProtectedRoute>
+              <MainLayout />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );

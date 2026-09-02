@@ -19,7 +19,7 @@ import {
 import toast from 'react-hot-toast';
 
 const Header: React.FC = () => {
-  const { user, signOut } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const { project, saveDiagram } = useDiagramStore();
   const { toggleSidebar, sidebarOpen } = useUiStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -184,7 +184,7 @@ const Header: React.FC = () => {
           </div>
 
           <button 
-            onClick={() => signOut()}
+            onClick={() => logout()}
             className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 rounded-lg transition-colors border border-transparent hover:border-rose-900/50 cursor-pointer"
             title="Cerrar sesión"
           >

@@ -115,7 +115,7 @@ const PropertiesPanel: React.FC = () => {
   };
 
   return (
-    <aside className="w-80 bg-slate-950 text-slate-200 border-l border-slate-800/80 flex flex-col h-full shadow-2xl z-20 select-none">
+    <aside className="w-80 bg-slate-950 text-slate-200 border-l border-slate-800/80 flex flex-col h-full shadow-2xl z-20 select-none animate-fade-in-up">
       {/* Header */}
       <div className="p-3.5 border-b border-slate-800/80 flex justify-between items-center bg-slate-900/60">
         <div className="flex items-center gap-2">

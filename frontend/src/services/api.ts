@@ -10,7 +10,46 @@ export const apiClient = axios.create({
   },
 });
 
+// Attach JWT token from sessionStorage strictly
+apiClient.interceptors.request.use((config) => {
+  const token = sessionStorage.getItem('sw1_volatile_session_jwt');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Auto-handle 401 Unauthorized
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      sessionStorage.removeItem('sw1_volatile_session_jwt');
+      sessionStorage.removeItem('sw1_volatile_user');
+      // If unauthorized, redirect to login if on protected route
+      if (!window.location.pathname.startsWith('/login') && window.location.pathname !== '/') {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const api = {
+  // Auth
+  login: async (credentials: { email: string; password: string }) => {
+    const res = await apiClient.post('/auth/login', credentials);
+    return res.data;
+  },
+  getCurrentUser: async () => {
+    const res = await apiClient.get('/auth/me');
+    return res.data;
+  },
+  logout: async () => {
+    const res = await apiClient.post('/auth/logout');
+    return res.data;
+  },
+
   // Projects
   getProjects: async (ownerId?: string) => {
     const res = await apiClient.get('/projects', { params: { ownerId } });

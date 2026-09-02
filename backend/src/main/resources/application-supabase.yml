@@ -5,9 +5,10 @@ spring:
     password: ${SUPABASE_DB_PASSWORD:Omegakakis54}
     driver-class-name: org.postgresql.Driver
   jpa:
+    open-in-view: false
     hibernate:
       ddl-auto: validate
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false

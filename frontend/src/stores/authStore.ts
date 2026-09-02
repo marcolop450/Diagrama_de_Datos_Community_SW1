@@ -1,34 +1,118 @@
 import { create } from 'zustand';
-import { Session, User } from '@supabase/supabase-js';
-import { supabase } from '../services/supabase';
+import { api } from '../services/api';
 
-interface AuthState {
-  user: User | null;
-  session: Session | null;
-  isLoading: boolean;
-  initialize: () => Promise<void>;
-  signOut: () => Promise<void>;
+export interface UserSession {
+  userId: string;
+  email: string;
+  fullName: string;
+  username?: string;
+  role: 'SUPER_ADMIN' | 'ARQUITECTO' | 'COLABORADOR' | string;
+  subscriptionPlan: 'COMMUNITY' | 'PRO_ARCHITECT' | 'ENTERPRISE' | string;
+  subscriptionExpiresAt?: string | null;
+  avatarUrl?: string;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
-  session: null,
-  isLoading: true,
-  initialize: async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      set({ session, user: session?.user ?? null, isLoading: false });
+interface AuthState {
+  user: UserSession | null;
+  token: string | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  initialize: () => void;
+  login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
+  logout: () => void;
+  updateUserProfile: (updated: Partial<UserSession>) => void;
+}
 
-      supabase.auth.onAuthStateChange((_event, session) => {
-        set({ session, user: session?.user ?? null });
-      });
+const TOKEN_KEY = 'sw1_volatile_session_jwt';
+const USER_KEY = 'sw1_volatile_user';
+
+export const useAuthStore = create<AuthState>((set, get) => ({
+  user: null,
+  token: null,
+  isAuthenticated: false,
+  isLoading: true,
+
+  initialize: () => {
+    try {
+      const storedToken = sessionStorage.getItem(TOKEN_KEY);
+      const storedUser = sessionStorage.getItem(USER_KEY);
+
+      if (storedToken && storedUser) {
+        const parsedUser: UserSession = JSON.parse(storedUser);
+        set({
+          token: storedToken,
+          user: parsedUser,
+          isAuthenticated: true,
+          isLoading: false,
+        });
+      } else {
+        set({ token: null, user: null, isAuthenticated: false, isLoading: false });
+      }
     } catch (error) {
-      console.error('Auth initialization error:', error);
-      set({ isLoading: false });
+      console.error('Error initializing volatile session:', error);
+      sessionStorage.removeItem(TOKEN_KEY);
+      sessionStorage.removeItem(USER_KEY);
+      set({ token: null, user: null, isAuthenticated: false, isLoading: false });
     }
   },
-  signOut: async () => {
-    await supabase.auth.signOut();
-    set({ session: null, user: null });
+
+  login: async (email: string, password: string) => {
+    try {
+      set({ isLoading: true });
+      const response = await api.login({ email, password });
+
+      if (response.success && response.data) {
+        const { token, userId, fullName, username, role, subscriptionPlan, subscriptionExpiresAt, avatarUrl } = response.data;
+
+        const userSession: UserSession = {
+          userId,
+          email: response.data.email || email,
+          fullName,
+          username,
+          role,
+          subscriptionPlan,
+          subscriptionExpiresAt,
+          avatarUrl,
+        };
+
+        // Store in sessionStorage: persists on page refresh within same tab, automatically destroyed on tab/window close
+        sessionStorage.setItem(TOKEN_KEY, token);
+        sessionStorage.setItem(USER_KEY, JSON.stringify(userSession));
+
+        set({
+          token,
+          user: userSession,
+          isAuthenticated: true,
+          isLoading: false,
+        });
+
+        return { success: true };
+      } else {
+        set({ isLoading: false });
+        return { success: false, message: response.message || 'Error al iniciar sesión' };
+      }
+    } catch (error: any) {
+      set({ isLoading: false });
+      const msg = error.response?.data?.message || 'Credenciales inválidas o error de conexión con el servidor';
+      return { success: false, message: msg };
+    }
+  },
+
+  logout: () => {
+    try {
+      api.logout().catch(() => {});
+    } finally {
+      sessionStorage.removeItem(TOKEN_KEY);
+      sessionStorage.removeItem(USER_KEY);
+      set({ token: null, user: null, isAuthenticated: false, isLoading: false });
+    }
+  },
+
+  updateUserProfile: (updated: Partial<UserSession>) => {
+    const currentUser = get().user;
+    if (!currentUser) return;
+    const newUser = { ...currentUser, ...updated };
+    sessionStorage.setItem(USER_KEY, JSON.stringify(newUser));
+    set({ user: newUser });
   }
 }));

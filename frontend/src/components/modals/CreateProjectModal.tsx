@@ -23,7 +23,7 @@ const CreateProjectModal: React.FC = () => {
       const payload = {
         name: name.trim(),
         description: description.trim() || undefined,
-        ownerId: user?.id,
+        ownerId: user?.userId,
         metadata: { grid: true, zoom: 1 }
       };
 
