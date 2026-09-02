@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { api } from '../services/api';
 
 export interface UserPreferences {
-  theme: 'dark' | 'light';
+  theme: 'dark';
   grid: boolean;
   snapToGrid: boolean;
   autoSaveInterval: number;
@@ -27,29 +27,22 @@ interface AuthState {
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  theme: 'dark' | 'light';
+  theme: 'dark';
   initialize: () => void;
-  login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
-  register: (data: { fullName: string; email: string; username?: string; password: string }) => Promise<{ success: boolean; message?: string }>;
+  login: (identifier: string, password: string) => Promise<{ success: boolean; message?: string }>;
+  register: (data: { fullName: string; username: string; email: string; password: string }) => Promise<{ success: boolean; message?: string }>;
   logout: () => void;
   updateUserProfile: (updated: Partial<UserSession>) => void;
-  setTheme: (theme: 'dark' | 'light') => void;
 }
 
 const TOKEN_KEY = 'sw1_volatile_session_jwt';
 const USER_KEY = 'sw1_volatile_user';
-const THEME_KEY = 'sw1_theme_preference';
 
-const applyThemeToDom = (theme: 'dark' | 'light') => {
+const enforceDarkMode = () => {
   if (typeof document !== 'undefined') {
     const root = document.documentElement;
-    if (theme === 'light') {
-      root.classList.remove('dark');
-      root.classList.add('light');
-    } else {
-      root.classList.remove('light');
-      root.classList.add('dark');
-    }
+    root.classList.remove('light');
+    root.classList.add('dark');
   }
 };
 
@@ -62,26 +55,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   initialize: () => {
     try {
+      enforceDarkMode();
       const storedToken = sessionStorage.getItem(TOKEN_KEY);
       const storedUser = sessionStorage.getItem(USER_KEY);
-      const storedTheme = (localStorage.getItem(THEME_KEY) || 'dark') as 'dark' | 'light';
-
-      applyThemeToDom(storedTheme);
 
       if (storedToken && storedUser) {
         const parsedUser: UserSession = JSON.parse(storedUser);
-        const userTheme = parsedUser.preferences?.theme || storedTheme;
-        applyThemeToDom(userTheme);
-
         set({
           token: storedToken,
           user: parsedUser,
-          theme: userTheme,
+          theme: 'dark',
           isAuthenticated: true,
           isLoading: false,
         });
       } else {
-        set({ token: null, user: null, theme: storedTheme, isAuthenticated: false, isLoading: false });
+        set({ token: null, user: null, theme: 'dark', isAuthenticated: false, isLoading: false });
       }
     } catch (error) {
       console.error('Error initializing volatile session:', error);
@@ -91,44 +79,42 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  login: async (email: string, password: string) => {
+  login: async (identifier: string, password: string) => {
     try {
       set({ isLoading: true });
-      const response = await api.login({ email, password });
+      const response = await api.login({ email: identifier, password });
 
       if (response.success && response.data) {
         const { token, userId, fullName, username, role, subscriptionPlan, subscriptionExpiresAt, avatarUrl, preferences } = response.data;
 
-        const userTheme = (preferences?.theme as 'dark' | 'light') || 'dark';
-        applyThemeToDom(userTheme);
-        localStorage.setItem(THEME_KEY, userTheme);
+        enforceDarkMode();
 
         const userSession: UserSession = {
           userId,
-          email: response.data.email || email,
+          email: response.data.email || identifier,
           fullName,
           username,
           role,
           subscriptionPlan,
           subscriptionExpiresAt,
           avatarUrl,
-          preferences: preferences || {
+          preferences: {
             theme: 'dark',
-            grid: true,
-            snapToGrid: true,
-            autoSaveInterval: 30,
-            defaultZoom: 1.0,
+            grid: preferences?.grid ?? true,
+            snapToGrid: preferences?.snapToGrid ?? true,
+            autoSaveInterval: preferences?.autoSaveInterval ?? 30,
+            defaultZoom: preferences?.defaultZoom ?? 1.0,
           },
         };
 
-        // Store in sessionStorage (volatile)
+        // Store in volatile sessionStorage
         sessionStorage.setItem(TOKEN_KEY, token);
         sessionStorage.setItem(USER_KEY, JSON.stringify(userSession));
 
         set({
           token,
           user: userSession,
-          theme: userTheme,
+          theme: 'dark',
           isAuthenticated: true,
           isLoading: false,
         });
@@ -145,7 +131,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  register: async (data: { fullName: string; email: string; username?: string; password: string }) => {
+  register: async (data: { fullName: string; username: string; email: string; password: string }) => {
     try {
       set({ isLoading: true });
       const response = await api.register(data);
@@ -153,9 +139,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (response.success && response.data) {
         const { token, userId, fullName, username, role, subscriptionPlan, subscriptionExpiresAt, avatarUrl, preferences } = response.data;
 
-        const userTheme = (preferences?.theme as 'dark' | 'light') || 'dark';
-        applyThemeToDom(userTheme);
-        localStorage.setItem(THEME_KEY, userTheme);
+        enforceDarkMode();
 
         const userSession: UserSession = {
           userId,
@@ -166,12 +150,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           subscriptionPlan,
           subscriptionExpiresAt,
           avatarUrl,
-          preferences: preferences || {
+          preferences: {
             theme: 'dark',
-            grid: true,
-            snapToGrid: true,
-            autoSaveInterval: 30,
-            defaultZoom: 1.0,
+            grid: preferences?.grid ?? true,
+            snapToGrid: preferences?.snapToGrid ?? true,
+            autoSaveInterval: preferences?.autoSaveInterval ?? 30,
+            defaultZoom: preferences?.defaultZoom ?? 1.0,
           },
         };
 
@@ -181,7 +165,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({
           token,
           user: userSession,
-          theme: userTheme,
+          theme: 'dark',
           isAuthenticated: true,
           isLoading: false,
         });
@@ -215,25 +199,4 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     sessionStorage.setItem(USER_KEY, JSON.stringify(newUser));
     set({ user: newUser });
   },
-
-  setTheme: (theme: 'dark' | 'light') => {
-    applyThemeToDom(theme);
-    localStorage.setItem(THEME_KEY, theme);
-    const currentUser = get().user;
-    if (currentUser) {
-      const currentPrefs = currentUser.preferences || {
-        theme: 'dark',
-        grid: true,
-        snapToGrid: true,
-        autoSaveInterval: 30,
-        defaultZoom: 1.0,
-      };
-      const newPrefs = { ...currentPrefs, theme };
-      const updatedUser = { ...currentUser, preferences: newPrefs };
-      sessionStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
-      set({ theme, user: updatedUser });
-    } else {
-      set({ theme });
-    }
-  }
 }));

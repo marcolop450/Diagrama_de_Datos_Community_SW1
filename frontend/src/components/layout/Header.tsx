@@ -42,10 +42,10 @@ const Header: React.FC = () => {
         {/* Toggle Sidebar Button */}
         <button
           onClick={toggleSidebar}
-          className={`p-2 rounded-lg transition-colors cursor-pointer ${
+          className={`p-2 rounded-lg transition-colors cursor-pointer border ${
             sidebarOpen 
-              ? 'bg-blue-600/15 text-blue-400 border border-blue-500/30' 
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900 border border-slate-800'
+              ? 'bg-blue-600/15 text-blue-400 border-blue-500/30' 
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900 border-slate-800'
           }`}
           title={sidebarOpen ? 'Cerrar panel de proyectos' : 'Abrir panel de proyectos'}
         >
@@ -65,7 +65,7 @@ const Header: React.FC = () => {
           <FolderKanban size={15} className="text-blue-400 shrink-0 hidden md:block" />
           {project ? (
             <div className="flex items-center gap-2 min-w-0">
-              <span className="text-xs md:text-sm font-medium text-slate-200 truncate max-w-[140px] sm:max-w-[200px] md:max-w-[260px]">
+              <span className="text-xs md:text-sm font-semibold text-slate-200 truncate max-w-[140px] sm:max-w-[200px] md:max-w-[260px]">
                 {project.name}
               </span>
               <span className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono text-emerald-400 bg-emerald-950/60 border border-emerald-800/50 rounded-md shrink-0">
@@ -74,7 +74,7 @@ const Header: React.FC = () => {
               </span>
             </div>
           ) : (
-            <span className="text-xs text-slate-400 italic truncate">
+            <span className="text-xs text-slate-500 italic truncate">
               Sin proyecto
             </span>
           )}
@@ -83,10 +83,11 @@ const Header: React.FC = () => {
 
       {/* Right side: Actions & User Controls (Responsive) */}
       <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
-        {/* Save Button (Always visible) */}
+        
+        {/* Save Button */}
         <button 
           onClick={handleSave}
-          className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 rounded-lg text-xs font-semibold text-slate-200 transition-all active:scale-95 cursor-pointer shadow-sm"
+          className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg text-xs font-semibold text-slate-200 transition-all active:scale-95 cursor-pointer shadow-sm"
           title="Guardar cambios"
         >
           <Save size={14} className="text-blue-400" />
@@ -136,7 +137,7 @@ const Header: React.FC = () => {
         <div className="relative lg:hidden">
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-900 rounded-lg border border-slate-800 transition-colors cursor-pointer"
+            className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-900 border border-slate-800 rounded-lg transition-colors cursor-pointer"
             title="Más opciones"
           >
             <MoreVertical size={16} />
@@ -171,7 +172,7 @@ const Header: React.FC = () => {
 
         <div className="h-5 w-px bg-slate-800 shrink-0" />
 
-        {/* User Profile & Settings & Logout (Always visible) */}
+        {/* User Profile & Settings & Logout */}
         <div className="flex items-center gap-1.5 sm:gap-2 pl-0.5">
           <Link 
             to="/settings"
@@ -193,7 +194,7 @@ const Header: React.FC = () => {
           <Link
             to="/settings"
             className="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-slate-800 rounded-lg transition-colors border border-transparent hover:border-slate-700 cursor-pointer"
-            title="Configuración y Tema"
+            title="Configuración de Usuario"
           >
             <Settings size={16} />
           </Link>

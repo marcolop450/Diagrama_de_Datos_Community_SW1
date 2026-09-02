@@ -41,7 +41,7 @@ export const api = {
     const res = await apiClient.post('/auth/login', credentials);
     return res.data;
   },
-  register: async (data: { fullName: string; email: string; username?: string; password: string }) => {
+  register: async (data: { fullName: string; username: string; email: string; password: string }) => {
     const res = await apiClient.post('/auth/register', data);
     return res.data;
   },

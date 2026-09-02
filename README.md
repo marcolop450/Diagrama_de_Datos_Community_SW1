@@ -13,7 +13,7 @@ Desarrollada bajo la metodologia PUDS (Proceso Unificado de Desarrollo de Softwa
 | Caso de Uso | Denominacion Tecnica | Estado | Especificacion Funcional |
 | :--- | :--- | :---: | :--- |
 | **CU00** | Autenticacion con Sesion Volatil | Completado | Autenticacion con JWT Bearer (HMAC-SHA256), almacenamiento exclusivo en memoria `sessionStorage`, proteccion de rutas con Spring Security 6, hashing de contraseñas con BCrypt (factor 12) y Landing Page publica. |
-| **CU01** | Registrarse, Perfil y Configuracion de Usuario | Completado | Registro de nuevos arquitectos con plan Community, pagina dedicada de perfil y ajustes (`/settings`), conmutador de tema Modo Oscuro / Modo Claro, gestion de avatar, preferencias de canvas (grid, snap, auto-save) con persistencia JSONB y cambio seguro de contraseña. |
+| **CU01** | Registrarse, Perfil y Configuracion de Usuario | Completado | Registro de nuevos arquitectos con nombre de usuario obligatorio y plan Community, login dual por correo o usuario sin restricciones de formato, pagina dedicada de perfil y ajustes (`/settings`), interfaz profesional en modo oscuro de alto contraste, gestion de avatar, preferencias de canvas (grid, snap, auto-save, zoom) con persistencia JSONB en PostgreSQL y cambio seguro de contraseña con hash BCrypt. |
 | **CU02** | Gestion de Usuarios y Roles (RBAC) | Planificado | Administracion centralizada de roles (SUPER_ADMIN, ARQUITECTO, COLABORADOR). |
 | **CU03** | Adquisicion de Suscripcion SaaS (30 Dias) | Planificado | Pasarela de pago con PayPal Sandbox y facturacion automatica de 30 dias. |
 | **CU04** | Auditoria de Bitacora Global y Transacciones | Planificado | Registro inmutable de eventos administrativos y mutaciones. |
@@ -87,7 +87,8 @@ El sistema implementa una separacion rigurosa en 4 capas de software:
   * Canvas Grafico: React Flow v12
   * Iconografia: Lucide React (vectorial estricta, sin emojis)
   * Gestion de Estado: Zustand 4.5
-  * Estilos: Tailwind CSS v4 con conmutador dinamico Modo Oscuro / Modo Claro
+  * Estilos: Tailwind CSS v4 con interfaz profesional en Modo Oscuro de alto contraste
+  * Iconografia: Lucide React (sin emojis)
   * Almacenamiento Cliente: `sessionStorage` (sesion volatil de alta seguridad)
 
 * **Backend:**

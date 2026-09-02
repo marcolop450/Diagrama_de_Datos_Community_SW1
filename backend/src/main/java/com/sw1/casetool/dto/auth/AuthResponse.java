@@ -3,6 +3,7 @@ package com.sw1.casetool.dto.auth;
 import lombok.*;
 
 import java.time.Instant;
+import java.util.Map;
 import java.util.UUID;
 
 @Getter
@@ -22,4 +23,5 @@ public class AuthResponse {
     private String subscriptionPlan;
     private Instant subscriptionExpiresAt;
     private String avatarUrl;
+    private Map<String, Object> preferences;
 }

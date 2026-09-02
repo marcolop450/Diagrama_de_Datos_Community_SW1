@@ -22,26 +22,29 @@ public class UserService {
     private final UserProfileRepository userProfileRepository;
     private final PasswordEncoder passwordEncoder;
 
+    private UserProfile findUser(String identifier) {
+        return userProfileRepository.findByEmailIgnoreCase(identifier)
+                .orElseGet(() -> userProfileRepository.findByUsernameIgnoreCase(identifier)
+                        .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado con identificador: " + identifier)));
+    }
+
     @Transactional(readOnly = true)
     public UserProfileDto getProfileByEmail(String email) {
-        UserProfile user = userProfileRepository.findByEmail(email.toLowerCase())
-                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado con correo: " + email));
-
+        UserProfile user = findUser(email);
         return mapToDto(user);
     }
 
     @Transactional
     public UserProfileDto updateProfile(String email, UpdateProfileRequest request) {
-        UserProfile user = userProfileRepository.findByEmail(email.toLowerCase())
-                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+        UserProfile user = findUser(email);
 
         if (request.getFullName() != null && !request.getFullName().trim().isEmpty()) {
             user.setFullName(request.getFullName().trim());
         }
 
         if (request.getUsername() != null && !request.getUsername().trim().isEmpty()) {
-            String newUsername = request.getUsername().trim().toLowerCase();
-            if (!newUsername.equalsIgnoreCase(user.getUsername()) && userProfileRepository.existsByUsername(newUsername)) {
+            String newUsername = request.getUsername().trim();
+            if (!newUsername.equalsIgnoreCase(user.getUsername()) && userProfileRepository.existsByUsernameIgnoreCase(newUsername)) {
                 throw new IllegalArgumentException("El nombre de usuario ya se encuentra en uso");
             }
             user.setUsername(newUsername);
@@ -51,14 +54,13 @@ public class UserService {
             user.setAvatarUrl(request.getAvatarUrl().trim());
         }
 
-        UserProfile saved = userProfileRepository.save(user);
+        UserProfile saved = userProfileRepository.saveAndFlush(user);
         return mapToDto(saved);
     }
 
     @Transactional
     public UserProfileDto updatePreferences(String email, UpdatePreferencesRequest request) {
-        UserProfile user = userProfileRepository.findByEmail(email.toLowerCase())
-                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+        UserProfile user = findUser(email);
 
         Map<String, Object> currentPrefs = user.getPreferences() != null
                 ? new HashMap<>(user.getPreferences())
@@ -84,21 +86,20 @@ public class UserService {
         }
 
         user.setPreferences(currentPrefs);
-        UserProfile saved = userProfileRepository.save(user);
+        UserProfile saved = userProfileRepository.saveAndFlush(user);
         return mapToDto(saved);
     }
 
     @Transactional
     public void changePassword(String email, ChangePasswordRequest request) {
-        UserProfile user = userProfileRepository.findByEmail(email.toLowerCase())
-                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+        UserProfile user = findUser(email);
 
         if (user.getPasswordHash() != null && !passwordEncoder.matches(request.getCurrentPassword(), user.getPasswordHash())) {
-            throw new BadCredentialsException("La contraseña actual no es correcta");
+            throw new BadCredentialsException("La contrasena actual no es correcta");
         }
 
         user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
-        userProfileRepository.save(user);
+        userProfileRepository.saveAndFlush(user);
     }
 
     private UserProfileDto mapToDto(UserProfile user) {

@@ -1,6 +1,5 @@
 package com.sw1.casetool.dto.auth;
 
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
@@ -11,8 +10,7 @@ import lombok.*;
 @Builder
 public class LoginRequest {
 
-    @NotBlank(message = "El correo electrónico es obligatorio")
-    @Email(message = "Formato de correo inválido")
+    @NotBlank(message = "El correo o nombre de usuario es obligatorio")
     private String email;
 
     @NotBlank(message = "La contraseña es obligatoria")

@@ -18,8 +18,8 @@ import {
 
 export const RegisterPage: React.FC = () => {
   const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -30,8 +30,13 @@ export const RegisterPage: React.FC = () => {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!fullName.trim() || !email.trim() || !password) {
+    if (!fullName.trim() || !username.trim() || !email.trim() || !password) {
       toast.error('Por favor completa todos los campos requeridos');
+      return;
+    }
+
+    if (username.trim().length < 3) {
+      toast.error('El nombre de usuario debe tener al menos 3 caracteres');
       return;
     }
 
@@ -49,8 +54,8 @@ export const RegisterPage: React.FC = () => {
     try {
       const result = await register({
         fullName: fullName.trim(),
+        username: username.trim(),
         email: email.trim().toLowerCase(),
-        username: username.trim() || undefined,
         password
       });
 
@@ -68,7 +73,7 @@ export const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden select-none font-sans">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4 relative overflow-hidden select-none font-sans">
       {/* Aurora Ambient Background */}
       <AuroraBackground opacity={0.75} />
 
@@ -84,6 +89,7 @@ export const RegisterPage: React.FC = () => {
             <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
             <span>Volver al Inicio</span>
           </Link>
+
           <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[10px] font-mono">
             <ShieldCheck className="w-3 h-3" />
             <span>Plan Community Gratis</span>
@@ -93,13 +99,16 @@ export const RegisterPage: React.FC = () => {
         {/* Logo Header */}
         <div className="flex flex-col items-center mb-6 text-center">
           <Logo size="md" showText={true} className="mb-2" />
-          <h2 className="text-xl font-bold text-white tracking-tight">Crear Cuenta de Arquitecto</h2>
+          <h2 className="text-xl font-bold text-white tracking-tight">
+            Crear Cuenta de Arquitecto
+          </h2>
           <p className="text-xs text-slate-400 mt-1">
             Comienza a modelar diagramas UML y generar código en 4 capas
           </p>
         </div>
 
         <form onSubmit={handleRegister} className="space-y-3.5" autoComplete="off">
+          {/* Full Name */}
           <div>
             <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
               Nombre Completo *
@@ -108,18 +117,43 @@ export const RegisterPage: React.FC = () => {
               <User className="h-4 w-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
+                name="name"
+                id="register-name"
                 required
-                autoComplete="off"
+                autoComplete="name"
                 spellCheck="false"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 className="w-full bg-slate-950/90 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl pl-10 pr-3 py-2.5 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none transition-all"
-                placeholder="Ing. Juan Pérez"
+                placeholder="Ing. Marco Lopez"
               />
             </div>
           </div>
 
+          {/* Username & Email Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
+                Nombre de Usuario *
+              </label>
+              <div className="relative">
+                <AtSign className="h-4 w-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  name="username"
+                  id="register-username"
+                  required
+                  autoComplete="nickname"
+                  autoCapitalize="none"
+                  spellCheck="false"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="w-full bg-slate-950/90 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl pl-10 pr-3 py-2.5 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none transition-all"
+                  placeholder="m_ale"
+                />
+              </div>
+            </div>
+
             <div>
               <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
                 Correo Electrónico *
@@ -128,36 +162,21 @@ export const RegisterPage: React.FC = () => {
                 <Mail className="h-4 w-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="email"
+                  name="email"
+                  id="register-email"
                   required
-                  autoComplete="off"
+                  autoComplete="email"
                   spellCheck="false"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-slate-950/90 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl pl-10 pr-3 py-2.5 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none transition-all"
-                  placeholder="juan@correo.com"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                Usuario (Opcional)
-              </label>
-              <div className="relative">
-                <AtSign className="h-4 w-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  autoComplete="off"
-                  spellCheck="false"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full bg-slate-950/90 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl pl-10 pr-3 py-2.5 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none transition-all"
-                  placeholder="jperez"
+                  placeholder="marco@correo.com"
                 />
               </div>
             </div>
           </div>
 
+          {/* Passwords */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
@@ -167,6 +186,8 @@ export const RegisterPage: React.FC = () => {
                 <Lock className="h-4 w-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type={showPassword ? 'text' : 'password'}
+                  name="password"
+                  id="register-password"
                   required
                   autoComplete="new-password"
                   value={password}
@@ -177,7 +198,7 @@ export const RegisterPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors p-1"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors p-1 cursor-pointer"
                 >
                   {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                 </button>
@@ -192,6 +213,8 @@ export const RegisterPage: React.FC = () => {
                 <Lock className="h-4 w-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type={showPassword ? 'text' : 'password'}
+                  name="confirmPassword"
+                  id="register-confirmPassword"
                   required
                   autoComplete="new-password"
                   value={confirmPassword}

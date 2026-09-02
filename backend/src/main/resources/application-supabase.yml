@@ -1,9 +1,13 @@
 spring:
   datasource:
-    url: jdbc:postgresql://${SUPABASE_DB_HOST:aws-0-us-east-2.pooler.supabase.com}:${SUPABASE_DB_PORT:6543}/postgres?sslmode=require
+    url: jdbc:postgresql://${SUPABASE_DB_HOST:aws-0-us-east-2.pooler.supabase.com}:${SUPABASE_DB_PORT:6543}/postgres?sslmode=require&prepareThreshold=0
     username: ${SUPABASE_DB_USER:postgres.ttopqwgoilgqkphwptjf}
     password: ${SUPABASE_DB_PASSWORD:Omegakakis54}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
+      connection-timeout: 20000
   jpa:
     open-in-view: false
     hibernate:
@@ -12,3 +16,5 @@ spring:
     properties:
       hibernate:
         format_sql: false
+        jdbc:
+          batch_size: 10
