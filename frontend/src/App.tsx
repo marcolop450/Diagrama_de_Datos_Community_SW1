@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast';
 import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './components/auth/LoginPage';
 import RegisterPage from './components/auth/RegisterPage';
+import SettingsPage from './pages/SettingsPage';
 import MainLayout from './components/layout/MainLayout';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { useAuthStore } from './stores/authStore';
@@ -51,6 +52,16 @@ function App() {
         {/* Authentication Routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+
+        {/* Protected Settings & Profile Page (CU01) */}
+        <Route 
+          path="/settings" 
+          element={
+            <ProtectedRoute>
+              <SettingsPage />
+            </ProtectedRoute>
+          } 
+        />
 
         {/* Protected Dashboard & CASE Editor Routes */}
         <Route 

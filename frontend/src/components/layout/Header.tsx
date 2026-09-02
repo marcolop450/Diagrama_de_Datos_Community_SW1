@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import { useDiagramStore } from '../../stores/diagramStore';
 import { useUiStore } from '../../stores/uiStore';
@@ -14,7 +15,8 @@ import {
   CheckCircle2,
   User,
   PanelLeft,
-  MoreVertical
+  MoreVertical,
+  Settings
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -169,19 +171,32 @@ const Header: React.FC = () => {
 
         <div className="h-5 w-px bg-slate-800 shrink-0" />
 
-        {/* User Profile & Logout (Always visible) */}
+        {/* User Profile & Settings & Logout (Always visible) */}
         <div className="flex items-center gap-1.5 sm:gap-2 pl-0.5">
-          <div 
-            className="flex items-center gap-1.5 p-1 rounded-lg bg-slate-900 border border-slate-800"
-            title={user?.email || 'Usuario'}
+          <Link 
+            to="/settings"
+            className="flex items-center gap-1.5 p-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 transition-colors cursor-pointer group"
+            title="Mi Perfil y Configuración"
           >
-            <div className="w-6 h-6 rounded-md bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-300">
-              <User size={13} />
+            <div className="w-6 h-6 rounded-md bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-300 group-hover:scale-105 transition-transform overflow-hidden">
+              {user?.avatarUrl ? (
+                <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                <User size={13} />
+              )}
             </div>
-            <span className="text-[11px] font-mono text-slate-300 max-w-[80px] sm:max-w-[120px] truncate hidden sm:inline">
-              {user?.email?.split('@')[0] || 'dev'}
+            <span className="text-[11px] font-mono text-slate-300 max-w-[80px] sm:max-w-[120px] truncate hidden sm:inline group-hover:text-white">
+              {user?.username || user?.fullName?.split(' ')[0] || user?.email?.split('@')[0] || 'dev'}
             </span>
-          </div>
+          </Link>
+
+          <Link
+            to="/settings"
+            className="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-slate-800 rounded-lg transition-colors border border-transparent hover:border-slate-700 cursor-pointer"
+            title="Configuración y Tema"
+          >
+            <Settings size={16} />
+          </Link>
 
           <button 
             onClick={() => logout()}

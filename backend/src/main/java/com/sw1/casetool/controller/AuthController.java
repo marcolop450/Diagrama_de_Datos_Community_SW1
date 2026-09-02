@@ -3,9 +3,11 @@ package com.sw1.casetool.controller;
 import com.sw1.casetool.dto.ApiResponse;
 import com.sw1.casetool.dto.auth.AuthResponse;
 import com.sw1.casetool.dto.auth.LoginRequest;
+import com.sw1.casetool.dto.auth.RegisterRequest;
 import com.sw1.casetool.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +23,13 @@ public class AuthController {
     public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request) {
         AuthResponse response = authService.login(request);
         return ResponseEntity.ok(ApiResponse.success("Inicio de sesión exitoso", response));
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<ApiResponse<AuthResponse>> register(@Valid @RequestBody RegisterRequest request) {
+        AuthResponse response = authService.register(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Usuario registrado con éxito", response));
     }
 
     @GetMapping("/me")

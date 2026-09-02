@@ -27,7 +27,7 @@ apiClient.interceptors.response.use(
       sessionStorage.removeItem('sw1_volatile_session_jwt');
       sessionStorage.removeItem('sw1_volatile_user');
       // If unauthorized, redirect to login if on protected route
-      if (!window.location.pathname.startsWith('/login') && window.location.pathname !== '/') {
+      if (!window.location.pathname.startsWith('/login') && window.location.pathname !== '/' && window.location.pathname !== '/register') {
         window.location.href = '/login';
       }
     }
@@ -41,12 +41,41 @@ export const api = {
     const res = await apiClient.post('/auth/login', credentials);
     return res.data;
   },
+  register: async (data: { fullName: string; email: string; username?: string; password: string }) => {
+    const res = await apiClient.post('/auth/register', data);
+    return res.data;
+  },
   getCurrentUser: async () => {
     const res = await apiClient.get('/auth/me');
     return res.data;
   },
   logout: async () => {
     const res = await apiClient.post('/auth/logout');
+    return res.data;
+  },
+
+  // User Profile & Preferences (CU01)
+  getUserProfile: async () => {
+    const res = await apiClient.get('/users/profile');
+    return res.data;
+  },
+  updateProfile: async (data: { fullName: string; username?: string; avatarUrl?: string }) => {
+    const res = await apiClient.put('/users/profile', data);
+    return res.data;
+  },
+  updatePreferences: async (data: {
+    theme?: 'dark' | 'light';
+    grid?: boolean;
+    snapToGrid?: boolean;
+    autoSaveInterval?: number;
+    defaultZoom?: number;
+    customSettings?: Record<string, any>;
+  }) => {
+    const res = await apiClient.put('/users/preferences', data);
+    return res.data;
+  },
+  changePassword: async (data: { currentPassword: string; newPassword: string }) => {
+    const res = await apiClient.put('/users/change-password', data);
     return res.data;
   },
 

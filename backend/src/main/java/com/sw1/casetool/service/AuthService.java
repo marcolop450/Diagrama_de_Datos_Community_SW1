@@ -2,6 +2,7 @@ package com.sw1.casetool.service;
 
 import com.sw1.casetool.dto.auth.AuthResponse;
 import com.sw1.casetool.dto.auth.LoginRequest;
+import com.sw1.casetool.dto.auth.RegisterRequest;
 import com.sw1.casetool.model.UserProfile;
 import com.sw1.casetool.repository.UserProfileRepository;
 import com.sw1.casetool.security.JwtTokenProvider;
@@ -13,6 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -76,6 +79,68 @@ public class AuthService {
                 .build();
     }
 
+    @Transactional
+    public AuthResponse register(RegisterRequest request) {
+        String email = request.getEmail().trim().toLowerCase();
+        if (userProfileRepository.existsByEmail(email)) {
+            throw new IllegalArgumentException("El correo electrónico ya se encuentra registrado");
+        }
+
+        String username = request.getUsername() != null && !request.getUsername().trim().isEmpty()
+                ? request.getUsername().trim().toLowerCase()
+                : email.split("@")[0];
+
+        if (userProfileRepository.existsByUsername(username)) {
+            username = username + "_" + (int)(Math.random() * 1000);
+        }
+
+        UUID newUserId = UUID.randomUUID();
+
+        // Default preferences for CASE Editor
+        Map<String, Object> defaultPreferences = new HashMap<>();
+        defaultPreferences.put("theme", "dark");
+        defaultPreferences.put("grid", true);
+        defaultPreferences.put("snapToGrid", true);
+        defaultPreferences.put("autoSaveInterval", 30);
+        defaultPreferences.put("defaultZoom", 1.0);
+
+        UserProfile newUser = UserProfile.builder()
+                .userId(newUserId)
+                .fullName(request.getFullName().trim())
+                .username(username)
+                .email(email)
+                .passwordHash(passwordEncoder.encode(request.getPassword()))
+                .role("ARQUITECTO")
+                .subscriptionPlan("COMMUNITY")
+                .subscriptionExpiresAt(null)
+                .preferences(defaultPreferences)
+                .build();
+
+        UserProfile saved = userProfileRepository.save(newUser);
+
+        UUID effectiveUserId = saved.getUserId() != null ? saved.getUserId() : saved.getId();
+        String token = jwtTokenProvider.generateToken(
+                effectiveUserId,
+                saved.getEmail(),
+                saved.getFullName(),
+                saved.getRole(),
+                saved.getSubscriptionPlan()
+        );
+
+        return AuthResponse.builder()
+                .token(token)
+                .tokenType("Bearer")
+                .userId(effectiveUserId)
+                .email(saved.getEmail())
+                .fullName(saved.getFullName())
+                .username(saved.getUsername())
+                .role(saved.getRole())
+                .subscriptionPlan(saved.getSubscriptionPlan())
+                .subscriptionExpiresAt(saved.getSubscriptionExpiresAt())
+                .avatarUrl(saved.getAvatarUrl())
+                .build();
+    }
+
     @Transactional(readOnly = true)
     public AuthResponse getCurrentUserProfile(String email) {
         UserProfile user = userProfileRepository.findByEmail(email.toLowerCase())
@@ -113,6 +178,13 @@ public class AuthService {
             expiry = null;
         }
 
+        Map<String, Object> defaultPreferences = new HashMap<>();
+        defaultPreferences.put("theme", "dark");
+        defaultPreferences.put("grid", true);
+        defaultPreferences.put("snapToGrid", true);
+        defaultPreferences.put("autoSaveInterval", 30);
+        defaultPreferences.put("defaultZoom", 1.0);
+
         UserProfile newUser = UserProfile.builder()
                 .userId(newUserId)
                 .fullName(fullName)
@@ -122,6 +194,7 @@ public class AuthService {
                 .role(role)
                 .subscriptionPlan(plan)
                 .subscriptionExpiresAt(expiry)
+                .preferences(defaultPreferences)
                 .build();
 
         return userProfileRepository.save(newUser);
