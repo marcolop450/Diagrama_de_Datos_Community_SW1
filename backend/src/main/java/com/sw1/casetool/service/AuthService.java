@@ -94,7 +94,7 @@ public class AuthService {
             username = username + "_" + (int)(Math.random() * 1000);
         }
 
-        UUID newUserId = UUID.randomUUID();
+        UUID generatedId = UUID.randomUUID();
 
         // Default preferences for CASE Editor
         Map<String, Object> defaultPreferences = new HashMap<>();
@@ -105,7 +105,8 @@ public class AuthService {
         defaultPreferences.put("defaultZoom", 1.0);
 
         UserProfile newUser = UserProfile.builder()
-                .userId(newUserId)
+                .id(generatedId)
+                .userId(generatedId)
                 .fullName(request.getFullName().trim())
                 .username(username)
                 .email(email)
@@ -160,7 +161,7 @@ public class AuthService {
     }
 
     private UserProfile createDefaultUserIfApplicable(String email, String rawPassword) {
-        UUID newUserId = UUID.randomUUID();
+        UUID generatedId = UUID.randomUUID();
         String role = "ARQUITECTO";
         String fullName = "Arquitecto de Software";
         String plan = "PRO_ARCHITECT";
@@ -186,7 +187,8 @@ public class AuthService {
         defaultPreferences.put("defaultZoom", 1.0);
 
         UserProfile newUser = UserProfile.builder()
-                .userId(newUserId)
+                .id(generatedId)
+                .userId(generatedId)
                 .fullName(fullName)
                 .username(email.split("@")[0])
                 .email(email)

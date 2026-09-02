@@ -6,6 +6,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.time.Instant;
 import java.util.Map;
@@ -13,15 +14,15 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "user_profiles")
-@Getter
-@Setter
+@Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class UserProfile {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
     @Column(name = "user_id")
@@ -44,11 +45,11 @@ public class UserProfile {
 
     @Column(name = "role", nullable = false)
     @Builder.Default
-    private String role = "ARQUITECTO"; // SUPER_ADMIN, ARQUITECTO, COLABORADOR
+    private String role = "ARQUITECTO";
 
     @Column(name = "subscription_plan", nullable = false)
     @Builder.Default
-    private String subscriptionPlan = "COMMUNITY"; // COMMUNITY, PRO_ARCHITECT, ENTERPRISE
+    private String subscriptionPlan = "COMMUNITY";
 
     @Column(name = "subscription_expires_at")
     private Instant subscriptionExpiresAt;
