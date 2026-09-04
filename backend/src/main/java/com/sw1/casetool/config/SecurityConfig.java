@@ -59,6 +59,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Public auth endpoints
                 .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/subscription/plans").permitAll()
                 // WebSockets handshake
                 .requestMatchers("/ws/**", "/ws-case/**").permitAll()
                 // Swagger & OpenAPI

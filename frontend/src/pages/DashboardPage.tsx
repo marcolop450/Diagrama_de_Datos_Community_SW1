@@ -14,7 +14,8 @@ import {
   Crown, 
   Clock, 
   CheckCircle2,
-  FolderGit2
+  FolderGit2,
+  Sparkles
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -124,9 +125,14 @@ export const DashboardPage: React.FC = () => {
                   Espacio: {role}
                 </span>
 
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-mono font-medium bg-slate-800 text-slate-300 border border-slate-700">
-                  Plan: {user?.subscriptionPlan || 'COMMUNITY'}
-                </span>
+                <Link
+                  to="/settings?tab=subscription"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-mono font-medium bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white border border-slate-700 hover:border-indigo-500/50 transition-all cursor-pointer group"
+                  title="Gestionar suscripción y facturación"
+                >
+                  <Sparkles size={11} className="text-indigo-400 group-hover:rotate-12 transition-transform" />
+                  <span>Plan: {user?.subscriptionPlan || 'COMMUNITY'}</span>
+                </Link>
               </div>
 
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white mt-1">

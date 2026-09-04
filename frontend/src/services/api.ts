@@ -154,4 +154,30 @@ export const api = {
     const res = await apiClient.put(`/admin/users/${userId}/status`, { isActive });
     return res.data;
   },
+
+  // Subscription & Billing (CU03)
+  getSubscriptionPlans: async () => {
+    const res = await apiClient.get('/subscription/plans');
+    return res.data;
+  },
+  getSubscriptionStatus: async () => {
+    const res = await apiClient.get('/subscription/status');
+    return res.data;
+  },
+  createPayPalOrder: async (planId: string) => {
+    const res = await apiClient.post('/subscription/paypal/create-order', { planId });
+    return res.data;
+  },
+  capturePayPalOrder: async (orderId: string, planId: string, payerId?: string) => {
+    const res = await apiClient.post('/subscription/paypal/capture-order', { orderId, planId, payerId });
+    return res.data;
+  },
+  cancelSubscription: async () => {
+    const res = await apiClient.post('/subscription/cancel');
+    return res.data;
+  },
+  getPaymentHistory: async () => {
+    const res = await apiClient.get('/subscription/history');
+    return res.data;
+  },
 };
