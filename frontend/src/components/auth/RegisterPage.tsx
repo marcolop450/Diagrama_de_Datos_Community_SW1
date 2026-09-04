@@ -78,7 +78,7 @@ export const RegisterPage: React.FC = () => {
       <AuroraBackground opacity={0.75} />
 
       {/* Register Card */}
-      <div className="max-w-md w-full bg-slate-900/90 border border-slate-800/90 rounded-3xl shadow-2xl p-6 sm:p-8 backdrop-blur-2xl relative z-10 transition-all">
+      <div className="max-w-md w-full bg-slate-900/90 border border-slate-800/90 rounded-3xl shadow-2xl p-6 sm:p-8 backdrop-blur-2xl relative z-10 transition-all animate-page-enter">
         
         {/* Top Header */}
         <div className="flex items-center justify-between mb-6">

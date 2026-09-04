@@ -182,20 +182,11 @@ export const DashboardPage: React.FC = () => {
           <>
             {/* Global Metrics Cards */}
             <section className="flex flex-col gap-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <ShieldAlert size={18} className="text-purple-400" />
-                  <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
-                    Métricas de Gobernanza y Usuarios
-                  </h2>
-                </div>
-                <Link
-                  to="/admin/users"
-                  className="text-xs font-semibold text-purple-400 hover:text-purple-300 flex items-center gap-1"
-                >
-                  <span>Ir a Gestión de Usuarios</span>
-                  <ArrowRight size={13} />
-                </Link>
+              <div className="flex items-center gap-2">
+                <ShieldAlert size={18} className="text-purple-400" />
+                <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
+                  Métricas de Gobernanza y Usuarios
+                </h2>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
@@ -260,10 +251,10 @@ export const DashboardPage: React.FC = () => {
                 </div>
                 <Link
                   to="/admin/users"
-                  className="text-xs text-purple-400 hover:text-purple-300 font-semibold flex items-center gap-1"
+                  className="text-xs text-purple-400 hover:text-purple-300 font-semibold flex items-center gap-1 group transition-colors"
                 >
-                  <span>Gestionar todos</span>
-                  <ArrowRight size={13} />
+                  <span>Ver directorio completo</span>
+                  <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
                 </Link>
               </div>
 

@@ -151,7 +151,24 @@ input:-webkit-autofill:active {
   animation: fade-in-up 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* 6. Card Hover Transition */
+/* 6. Page Enter Animation (Smooth Mounting) */
+@keyframes page-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.998);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-page-enter {
+  animation: page-enter 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: opacity, transform;
+}
+
+/* 7. Card Hover Transition */
 .card-hover-effect {
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
 }
@@ -159,3 +176,4 @@ input:-webkit-autofill:active {
   transform: translateY(-2px);
   box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.6);
 }
+

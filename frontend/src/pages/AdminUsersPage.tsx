@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import AppLayout from '../components/layout/AppLayout';
 import { useAuthStore } from '../stores/authStore';
 import { api } from '../services/api';
@@ -18,7 +17,6 @@ import {
   Check, 
   X, 
   Crown, 
-  ArrowLeft,
   Layers
 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -48,7 +46,6 @@ interface AdminMetrics {
 }
 
 export const AdminUsersPage: React.FC = () => {
-  const navigate = useNavigate();
   const { user: currentUser } = useAuthStore();
   const [users, setUsers] = useState<AdminUserItem[]>([]);
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
@@ -174,13 +171,6 @@ export const AdminUsersPage: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
           <div>
             <div className="flex items-center gap-2.5">
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer mr-1"
-                title="Volver al Dashboard"
-              >
-                <ArrowLeft size={16} />
-              </button>
               <div className="w-8 h-8 rounded-lg bg-purple-600/20 border border-purple-500/40 flex items-center justify-center text-purple-400 shadow-sm">
                 <ShieldAlert size={18} />
               </div>
@@ -194,14 +184,6 @@ export const AdminUsersPage: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="flex items-center gap-1.5 px-3 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-semibold transition-all active:scale-95 cursor-pointer"
-            >
-              <ArrowLeft size={14} className="text-slate-400" />
-              <span>Volver</span>
-            </button>
-
             <button
               onClick={handleRefresh}
               disabled={refreshing}

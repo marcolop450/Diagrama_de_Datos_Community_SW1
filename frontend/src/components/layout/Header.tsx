@@ -169,36 +169,29 @@ const Header: React.FC = () => {
           {user?.role || 'ARQUITECTO'}
         </span>
 
-        {/* User Profile & Settings & Logout */}
-        <div className="flex items-center gap-1.5 sm:gap-2 pl-0.5">
+        {/* Unified Profile & Settings & Logout */}
+        <div className="flex items-center gap-2 pl-0.5">
           <Link 
             to="/settings"
-            className="flex items-center gap-1.5 p-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 transition-colors cursor-pointer group"
+            className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-slate-900/90 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 transition-all cursor-pointer group shadow-xs hover:shadow-md active:scale-98"
             title="Mi Perfil y Configuración"
           >
-            <div className="w-6 h-6 rounded-md bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-300 group-hover:scale-105 transition-transform overflow-hidden">
+            <div className="w-6 h-6 rounded-lg bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-300 group-hover:scale-105 transition-transform overflow-hidden shrink-0">
               {user?.avatarUrl ? (
                 <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
               ) : (
                 <User size={13} />
               )}
             </div>
-            <span className="text-[11px] font-mono text-slate-300 max-w-[80px] sm:max-w-[120px] truncate hidden sm:inline group-hover:text-white">
+            <span className="text-xs font-medium text-slate-300 max-w-[100px] sm:max-w-[130px] truncate group-hover:text-white transition-colors">
               {user?.username || user?.fullName?.split(' ')[0] || user?.email?.split('@')[0] || 'dev'}
             </span>
-          </Link>
-
-          <Link
-            to="/settings"
-            className="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-slate-800 rounded-lg transition-colors border border-transparent hover:border-slate-700 cursor-pointer"
-            title="Configuración de Usuario"
-          >
-            <Settings size={16} />
+            <Settings size={14} className="text-slate-500 group-hover:text-blue-400 group-hover:rotate-45 transition-all shrink-0 ml-0.5" />
           </Link>
 
           <button 
             onClick={() => logout()}
-            className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 rounded-lg transition-colors border border-transparent hover:border-rose-900/50 cursor-pointer"
+            className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 rounded-xl transition-colors border border-transparent hover:border-rose-900/50 cursor-pointer"
             title="Cerrar sesión"
           >
             <LogOut size={16} />

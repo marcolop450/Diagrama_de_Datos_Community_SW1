@@ -160,8 +160,10 @@ export const LandingPage: React.FC = () => {
         </div>
       </header>
 
-      {/* Main Hero Section */}
-      <section className="relative z-10 pt-16 pb-24 lg:pt-24 lg:pb-32 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
+      {/* Page Content with Smooth Page-Enter Animation */}
+      <div className="animate-page-enter">
+        {/* Main Hero Section */}
+        <section className="relative z-10 pt-16 pb-24 lg:pt-24 lg:pb-32 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
         {/* Project Tag / Badge */}
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-semibold uppercase tracking-wider mb-6 animate-fade-in font-mono">
           <ShieldCheck className="w-3.5 h-3.5" />
@@ -417,6 +419,8 @@ export const LandingPage: React.FC = () => {
           </div>
         </div>
       </section>
+
+      </div>
 
       {/* Footer */}
       <footer className="relative z-10 border-t border-slate-800/80 bg-slate-950 py-12 text-center text-xs text-slate-500 font-mono">

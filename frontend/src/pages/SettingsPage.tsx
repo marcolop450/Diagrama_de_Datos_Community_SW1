@@ -7,7 +7,6 @@ import toast from 'react-hot-toast';
 import { 
   User, 
   Shield, 
-  ArrowLeft, 
   Save, 
   Grid, 
   Lock, 
@@ -198,23 +197,13 @@ export const SettingsPage: React.FC = () => {
     <AppLayout>
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
         {/* Page Header */}
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-              Perfil y Configuración
-            </h1>
-            <p className="text-xs sm:text-sm mt-1 text-slate-400">
-              Personaliza tu identidad de arquitecto, preferencias del lienzo y credenciales.
-            </p>
-          </div>
-
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="flex items-center gap-1.5 px-3 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-semibold transition-all cursor-pointer"
-          >
-            <ArrowLeft size={14} className="text-slate-400" />
-            <span>Volver</span>
-          </button>
+        <div className="mb-8">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+            Perfil y Configuración
+          </h1>
+          <p className="text-xs sm:text-sm mt-1 text-slate-400">
+            Personaliza tu identidad de arquitecto, preferencias del lienzo y credenciales.
+          </p>
         </div>
 
         {/* Tab Navigation */}
