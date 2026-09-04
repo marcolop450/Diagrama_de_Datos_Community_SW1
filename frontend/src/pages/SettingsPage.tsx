@@ -979,31 +979,51 @@ export const SettingsPage: React.FC = () => {
                   </div>
 
                   <div className="mt-8 pt-4 border-t border-indigo-900/40">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const p = subPlans.find(x => x.id === 'PLAN_PRO_ARCHITECT') || {
-                          id: 'PLAN_PRO_ARCHITECT',
-                          name: 'Pro Architect',
-                          priceMonthly: 9.99,
-                          maxProjects: 50,
-                          maxClassesPerProject: 100,
-                          allowSpringBootGeneration: true,
-                          allowDdlGeneration: true,
-                          allowPostmanGeneration: true,
-                          allowXmiExport: true,
-                          allowVoiceCommands: true,
-                          allowPhotoOcr: true,
-                          allowRealtimeCollaboration: false
-                        };
-                        setSelectedPlanForCheckout(p);
-                        setShowCheckoutModal(true);
-                      }}
-                      className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-indigo-600/20 transition-all active:scale-95 cursor-pointer"
-                    >
-                      <CreditCard size={14} />
-                      <span>{user?.subscriptionPlan === 'PRO_ARCHITECT' ? 'Renovar 30 Días ($9.99 USD)' : 'Adquirir Pro ($9.99 USD)'}</span>
-                    </button>
+                    {user?.subscriptionPlan === 'ENTERPRISE' ? (
+                      <button
+                        type="button"
+                        disabled
+                        className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-semibold bg-slate-800/60 text-slate-400 border border-slate-700 cursor-default"
+                      >
+                        <CheckCircle2 size={14} className="text-emerald-400" />
+                        <span>Incluido en tu Plan Enterprise</span>
+                      </button>
+                    ) : user?.subscriptionPlan === 'PRO_ARCHITECT' ? (
+                      <button
+                        type="button"
+                        disabled
+                        className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-semibold bg-indigo-950/40 text-indigo-400 border border-indigo-800/50 cursor-default"
+                      >
+                        <CheckCircle2 size={14} />
+                        <span>Tu Plan Actual (Activo)</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const p = subPlans.find(x => x.id === 'PLAN_PRO_ARCHITECT') || {
+                            id: 'PLAN_PRO_ARCHITECT',
+                            name: 'Pro Architect',
+                            priceMonthly: 9.99,
+                            maxProjects: 50,
+                            maxClassesPerProject: 100,
+                            allowSpringBootGeneration: true,
+                            allowDdlGeneration: true,
+                            allowPostmanGeneration: true,
+                            allowXmiExport: true,
+                            allowVoiceCommands: true,
+                            allowPhotoOcr: true,
+                            allowRealtimeCollaboration: false
+                          };
+                          setSelectedPlanForCheckout(p);
+                          setShowCheckoutModal(true);
+                        }}
+                        className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-indigo-600/20 transition-all active:scale-95 cursor-pointer"
+                      >
+                        <CreditCard size={14} />
+                        <span>Adquirir Pro ($9.99 USD)</span>
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -1051,31 +1071,42 @@ export const SettingsPage: React.FC = () => {
                   </div>
 
                   <div className="mt-8 pt-4 border-t border-slate-800/80">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const p = subPlans.find(x => x.id === 'PLAN_ENTERPRISE_TEAM') || {
-                          id: 'PLAN_ENTERPRISE_TEAM',
-                          name: 'Enterprise Team',
-                          priceMonthly: 29.99,
-                          maxProjects: 9999,
-                          maxClassesPerProject: 9999,
-                          allowSpringBootGeneration: true,
-                          allowDdlGeneration: true,
-                          allowPostmanGeneration: true,
-                          allowXmiExport: true,
-                          allowVoiceCommands: true,
-                          allowPhotoOcr: true,
-                          allowRealtimeCollaboration: true
-                        };
-                        setSelectedPlanForCheckout(p);
-                        setShowCheckoutModal(true);
-                      }}
-                      className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/20 transition-all active:scale-95 cursor-pointer"
-                    >
-                      <CreditCard size={14} />
-                      <span>{user?.subscriptionPlan === 'ENTERPRISE' ? 'Renovar 30 Días ($29.99 USD)' : 'Adquirir Enterprise ($29.99 USD)'}</span>
-                    </button>
+                    {user?.subscriptionPlan === 'ENTERPRISE' ? (
+                      <button
+                        type="button"
+                        disabled
+                        className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-semibold bg-emerald-950/40 text-emerald-400 border border-emerald-800/50 cursor-default"
+                      >
+                        <CheckCircle2 size={14} />
+                        <span>Tu Plan Actual (Activo)</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const p = subPlans.find(x => x.id === 'PLAN_ENTERPRISE_TEAM') || {
+                            id: 'PLAN_ENTERPRISE_TEAM',
+                            name: 'Enterprise Team',
+                            priceMonthly: 29.99,
+                            maxProjects: 9999,
+                            maxClassesPerProject: 9999,
+                            allowSpringBootGeneration: true,
+                            allowDdlGeneration: true,
+                            allowPostmanGeneration: true,
+                            allowXmiExport: true,
+                            allowVoiceCommands: true,
+                            allowPhotoOcr: true,
+                            allowRealtimeCollaboration: true
+                          };
+                          setSelectedPlanForCheckout(p);
+                          setShowCheckoutModal(true);
+                        }}
+                        className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/20 transition-all active:scale-95 cursor-pointer"
+                      >
+                        <CreditCard size={14} />
+                        <span>{user?.subscriptionPlan === 'PRO_ARCHITECT' ? 'Mejorar a Enterprise ($29.99 USD)' : 'Adquirir Enterprise ($29.99 USD)'}</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1216,6 +1247,9 @@ export const SettingsPage: React.FC = () => {
                 <div><span className="text-slate-500">Comprador:</span> <strong className="text-indigo-300">Zuigo54@example.com</strong></div>
                 <div><span className="text-slate-500">Entorno:</span> <span className="text-emerald-400">Sandbox Testnet Oficial</span></div>
               </div>
+              <p className="text-[11px] text-amber-300/90 bg-amber-950/30 border border-amber-800/40 rounded-xl p-2.5 leading-relaxed">
+                Recomendación Sandbox: Si tienes abierta la sesión de desarrollador (developer.paypal.com) en este navegador, abre la plataforma en una ventana de incógnito o usa el botón de Aprobación Rápida abajo para evitar que PayPal bloquee la ventana emergente por colisión de sesiones.
+              </p>
             </div>
 
             {/* PayPal Button Container */}
