@@ -7,10 +7,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 
 @RestController
@@ -28,32 +30,38 @@ public class SubscriptionController {
 
     @GetMapping("/status")
     public ResponseEntity<ApiResponse<SubscriptionStatusResponse>> getStatus(
-            @AuthenticationPrincipal UserDetails userDetails
+            @AuthenticationPrincipal String userEmail,
+            Principal principal
     ) {
-        SubscriptionStatusResponse status = subscriptionService.getStatus(userDetails.getUsername());
+        String userIdentifier = resolveUser(userEmail, principal);
+        SubscriptionStatusResponse status = subscriptionService.getStatus(userIdentifier);
         return ResponseEntity.ok(ApiResponse.success("Estado de suscripción obtenido", status));
     }
 
     @PostMapping("/paypal/create-order")
     public ResponseEntity<ApiResponse<CreatePayPalOrderResponse>> createOrder(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal String userEmail,
+            Principal principal,
             @Valid @RequestBody CreatePayPalOrderRequest request
     ) {
-        CreatePayPalOrderResponse res = subscriptionService.createPayPalOrder(userDetails.getUsername(), request);
+        String userIdentifier = resolveUser(userEmail, principal);
+        CreatePayPalOrderResponse res = subscriptionService.createPayPalOrder(userIdentifier, request);
         return ResponseEntity.ok(ApiResponse.success("Orden de PayPal Sandbox inicializada", res));
     }
 
     @PostMapping("/paypal/capture-order")
     public ResponseEntity<ApiResponse<PaymentReceiptResponse>> captureOrder(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal String userEmail,
+            Principal principal,
             @Valid @RequestBody CapturePayPalOrderRequest request,
             HttpServletRequest httpRequest
     ) {
+        String userIdentifier = resolveUser(userEmail, principal);
         String ip = extractClientIp(httpRequest);
         String userAgent = httpRequest.getHeader("User-Agent");
 
         PaymentReceiptResponse receipt = subscriptionService.capturePayPalOrder(
-                userDetails.getUsername(),
+                userIdentifier,
                 request,
                 ip,
                 userAgent
@@ -63,14 +71,16 @@ public class SubscriptionController {
 
     @PostMapping("/cancel")
     public ResponseEntity<ApiResponse<SubscriptionStatusResponse>> cancelSubscription(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal String userEmail,
+            Principal principal,
             HttpServletRequest httpRequest
     ) {
+        String userIdentifier = resolveUser(userEmail, principal);
         String ip = extractClientIp(httpRequest);
         String userAgent = httpRequest.getHeader("User-Agent");
 
         SubscriptionStatusResponse status = subscriptionService.cancelSubscription(
-                userDetails.getUsername(),
+                userIdentifier,
                 ip,
                 userAgent
         );
@@ -79,10 +89,26 @@ public class SubscriptionController {
 
     @GetMapping("/history")
     public ResponseEntity<ApiResponse<List<PaymentReceiptResponse>>> getHistory(
-            @AuthenticationPrincipal UserDetails userDetails
+            @AuthenticationPrincipal String userEmail,
+            Principal principal
     ) {
-        List<PaymentReceiptResponse> history = subscriptionService.getUserPaymentHistory(userDetails.getUsername());
+        String userIdentifier = resolveUser(userEmail, principal);
+        List<PaymentReceiptResponse> history = subscriptionService.getUserPaymentHistory(userIdentifier);
         return ResponseEntity.ok(ApiResponse.success("Historial de pagos obtenido", history));
+    }
+
+    private String resolveUser(String userEmail, Principal principal) {
+        if (userEmail != null && !userEmail.isBlank()) {
+            return userEmail;
+        }
+        if (principal != null && principal.getName() != null && !principal.getName().isBlank()) {
+            return principal.getName();
+        }
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getName() != null && !auth.getName().isBlank() && !auth.getName().equals("anonymousUser")) {
+            return auth.getName();
+        }
+        throw new IllegalArgumentException("Usuario no autenticado o sesión expirada.");
     }
 
     private String extractClientIp(HttpServletRequest request) {
