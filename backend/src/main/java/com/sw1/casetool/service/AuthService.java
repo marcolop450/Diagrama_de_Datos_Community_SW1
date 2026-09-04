@@ -98,6 +98,10 @@ public class AuthService {
             }
         }
 
+        if (Boolean.FALSE.equals(user.getIsActive())) {
+            throw new BadCredentialsException("Tu cuenta ha sido suspendida o desactivada por un Administrador.");
+        }
+
         return toAuthResponse(user, generateToken(user));
     }
 

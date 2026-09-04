@@ -78,6 +78,10 @@ export const api = {
     const res = await apiClient.put('/users/change-password', data);
     return res.data;
   },
+  deleteAccount: async () => {
+    const res = await apiClient.delete('/users/account');
+    return res.data;
+  },
 
   // Projects
   getProjects: async (ownerId?: string) => {
@@ -130,6 +134,24 @@ export const api = {
   },
   deleteRelationship: async (projectId: string, relId: string) => {
     const res = await apiClient.delete(`/projects/${projectId}/relationships/${relId}`);
+    return res.data;
+  },
+
+  // Admin & RBAC (CU02)
+  getAdminUsers: async (params?: { search?: string; role?: string; status?: string }) => {
+    const res = await apiClient.get('/admin/users', { params });
+    return res.data;
+  },
+  getAdminMetrics: async () => {
+    const res = await apiClient.get('/admin/users/metrics');
+    return res.data;
+  },
+  updateUserRole: async (userId: string, role: string) => {
+    const res = await apiClient.put(`/admin/users/${userId}/role`, { role });
+    return res.data;
+  },
+  updateUserStatus: async (userId: string, isActive: boolean) => {
+    const res = await apiClient.put(`/admin/users/${userId}/status`, { isActive });
     return res.data;
   },
 };

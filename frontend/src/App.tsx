@@ -5,6 +5,8 @@ import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './components/auth/LoginPage';
 import RegisterPage from './components/auth/RegisterPage';
 import SettingsPage from './pages/SettingsPage';
+import DashboardPage from './pages/DashboardPage';
+import AdminUsersPage from './pages/AdminUsersPage';
 import MainLayout from './components/layout/MainLayout';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { useAuthStore } from './stores/authStore';
@@ -53,7 +55,7 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
 
-        {/* Protected Settings & Profile Page (CU01) */}
+        {/* Protected Settings & Profile Page */}
         <Route 
           path="/settings" 
           element={
@@ -63,9 +65,29 @@ function App() {
           } 
         />
 
-        {/* Protected Dashboard & CASE Editor Routes */}
+        {/* Protected Role-Adaptive Dashboard */}
         <Route 
           path="/dashboard" 
+          element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* Protected Admin Users RBAC Management Page (SUPER_ADMIN only) */}
+        <Route 
+          path="/admin/users" 
+          element={
+            <ProtectedRoute requiredRole="SUPER_ADMIN">
+              <AdminUsersPage />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* Protected CASE Editor Routes */}
+        <Route 
+          path="/editor" 
           element={
             <ProtectedRoute>
               <MainLayout />

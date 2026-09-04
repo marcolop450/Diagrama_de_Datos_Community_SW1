@@ -1,4 +1,5 @@
 import React from 'react';
+import { Navigate } from 'react-router-dom';
 import Header from './Header';
 import Sidebar from './Sidebar';
 import Toolbar from '../toolbar/Toolbar';
@@ -7,10 +8,17 @@ import PropertiesPanel from '../panels/PropertiesPanel';
 import CreateProjectModal from '../modals/CreateProjectModal';
 import { AuroraBackground } from '../common/AuroraBackground';
 import { useUiStore } from '../../stores/uiStore';
+import { useAuthStore } from '../../stores/authStore';
 import { ReactFlowProvider } from '@xyflow/react';
 
 const MainLayout: React.FC = () => {
   const { sidebarOpen, toggleSidebar, propertiesPanelOpen, activeModal } = useUiStore();
+  const { user } = useAuthStore();
+
+  // Defense-in-depth: SUPER_ADMIN is a governance role and must never see or use the drawing canvas
+  if (user?.role === 'SUPER_ADMIN') {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   return (
     <ReactFlowProvider>

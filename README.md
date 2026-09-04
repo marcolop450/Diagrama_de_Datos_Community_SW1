@@ -14,7 +14,7 @@ Desarrollada bajo la metodologia PUDS (Proceso Unificado de Desarrollo de Softwa
 | :--- | :--- | :---: | :--- |
 | **CU00** | Autenticacion con Sesion Volatil | Completado | Autenticacion con JWT Bearer (HMAC-SHA256), almacenamiento exclusivo en memoria `sessionStorage`, proteccion de rutas con Spring Security 6, hashing de contraseñas con BCrypt (factor 12) y Landing Page publica. |
 | **CU01** | Registrarse, Perfil y Configuracion de Usuario | Completado | Registro de nuevos arquitectos con nombre de usuario obligatorio y plan Community, login dual por correo o usuario sin restricciones de formato, pagina dedicada de perfil y ajustes (`/settings`), interfaz profesional en modo oscuro de alto contraste, gestion de avatar, preferencias de canvas (grid, snap, auto-save, zoom) con persistencia JSONB en PostgreSQL y cambio seguro de contraseña con hash BCrypt. |
-| **CU02** | Gestion de Usuarios y Roles (RBAC) | Planificado | Administracion centralizada de roles (SUPER_ADMIN, ARQUITECTO, COLABORADOR). |
+| **CU02** | Gestion de Usuarios y Roles (RBAC) | Completado | Control de acceso basado en roles con consola administrativa para SUPER_ADMIN (`/admin/users`), endpoints protegidos en `/api/admin/**`, asignacion de roles (SUPER_ADMIN, ARQUITECTO, COLABORADOR), suspension y reactivacion de cuentas (`is_active`), regla anti auto-degradacion y anti auto-bloqueo, bitacora inmutable en `audit_logs` con IP y JSONB, Dashboard adaptativo por rol (`/dashboard`) y Sidebar segmentado segun privilegios. |
 | **CU03** | Adquisicion de Suscripcion SaaS (30 Dias) | Planificado | Pasarela de pago con PayPal Sandbox y facturacion automatica de 30 dias. |
 | **CU04** | Auditoria de Bitacora Global y Transacciones | Planificado | Registro inmutable de eventos administrativos y mutaciones. |
 | **CU05** | Trazabilidad de Proyecto y Papelera | Planificado | Historial cronologico de cambios por autor y restauracion de proyectos. |
@@ -39,25 +39,25 @@ El sistema implementa una separacion rigurosa en 4 capas de software:
                                     v
 +-------------------------------------------------------------------------+
 |                  CAPA DE CONTROLADORES (Spring Boot 4.1.0)              |
-|  AuthController | UserController | DiagramController | GeneratorController|
+|  AuthController | UserController | AdminUserController | DiagramController|
 +-------------------------------------------------------------------------+
                                     |
                                     v
 +-------------------------------------------------------------------------+
 |                  CAPA DE SERVICIOS (Logica de Negocio)                  |
-|  AuthService | UserService | DiagramService | SpringBootGeneratorService |
+|  AuthService | UserService | AdminUserService | AuditLogService         |
 +-------------------------------------------------------------------------+
                                     |
                                     v
 +-------------------------------------------------------------------------+
 |                 CAPA DE REPOSITORIOS (Spring Data JPA)                  |
-|  UserProfileRepository | DiagramProjectRepository | ClassNodeRepository |
+|  UserProfileRepository | AuditLogRepository | DiagramProjectRepository  |
 +-------------------------------------------------------------------------+
                                     |  (JDBC Connection Pool HikariCP)
                                     v
 +-------------------------------------------------------------------------+
 |                   BASE DE DATOS (Supabase PostgreSQL 17)                |
-|  user_profiles (JSONB) | diagram_projects | class_nodes | relationships  |
+|  user_profiles | audit_logs | diagram_projects | class_nodes            |
 +-------------------------------------------------------------------------+
 ```
 
@@ -76,6 +76,13 @@ El sistema implementa una separacion rigurosa en 4 capas de software:
 * `PUT /api/users/profile`: Actualiza nombre completo, username y avatar URL.
 * `PUT /api/users/preferences`: Persiste configuraciones del lienzo (theme, grid, snapToGrid, autoSaveInterval, defaultZoom) en formato JSONB.
 * `PUT /api/users/change-password`: Modifica la contraseña tras validar la clave actual con BCrypt.
+* `DELETE /api/users/account`: Desactiva la cuenta propia (`is_active = false`), registra auditoria inmutable y cierra la sesion del usuario.
+
+### Administracion y Control de Acceso RBAC (`/api/admin/users`)
+* `GET /api/admin/users`: Listado de usuarios con filtros por texto, rol y estado de activacion.
+* `GET /api/admin/users/metrics`: Metricas consolidadas de gobernanza (total usuarios, desglose por rol, activos y suspendidos).
+* `PUT /api/admin/users/{userId}/role`: Actualiza el rol del usuario impidiendo la auto-degradacion del administrador en sesion.
+* `PUT /api/admin/users/{userId}/status`: Suspende o reactiva el acceso de una cuenta con prevencion de auto-bloqueo.
 
 ---
 

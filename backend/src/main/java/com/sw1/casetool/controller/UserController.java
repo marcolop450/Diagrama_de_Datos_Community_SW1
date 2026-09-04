@@ -63,4 +63,18 @@ public class UserController {
         userService.changePassword(email, request);
         return ResponseEntity.ok(ApiResponse.success("Contraseña actualizada con éxito", "OK"));
     }
+
+    @DeleteMapping("/account")
+    public ResponseEntity<ApiResponse<String>> deleteAccount(
+            @AuthenticationPrincipal String email,
+            jakarta.servlet.http.HttpServletRequest servletRequest
+    ) {
+        if (email == null) {
+            return ResponseEntity.status(401).body(ApiResponse.error(401, "No autenticado"));
+        }
+        String ip = servletRequest.getRemoteAddr();
+        String userAgent = servletRequest.getHeader("User-Agent");
+        userService.deleteAccount(email, ip, userAgent);
+        return ResponseEntity.ok(ApiResponse.success("Tu cuenta ha sido eliminada y deshabilitada correctamente.", "DELETED"));
+    }
 }

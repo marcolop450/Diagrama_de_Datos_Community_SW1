@@ -21,6 +21,7 @@ public class UserService {
 
     private final UserProfileRepository userProfileRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AuditLogService auditLogService;
 
     private UserProfile findUser(String identifier) {
         return userProfileRepository.findByEmailIgnoreCase(identifier)
@@ -100,6 +101,28 @@ public class UserService {
 
         user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
         userProfileRepository.saveAndFlush(user);
+    }
+
+    @Transactional
+    public void deleteAccount(String email, String ip, String userAgent) {
+        UserProfile user = findUser(email);
+        user.setIsActive(false);
+        userProfileRepository.saveAndFlush(user);
+
+        Map<String, Object> details = new HashMap<>();
+        details.put("action", "SELF_ACCOUNT_DEACTIVATION");
+        details.put("email", user.getEmail());
+        details.put("username", user.getUsername());
+
+        auditLogService.recordAction(
+                user.getId(),
+                "USER_SELF_DELETED",
+                "user_profiles",
+                user.getId(),
+                ip,
+                userAgent,
+                details
+        );
     }
 
     private UserProfileDto mapToDto(UserProfile user) {

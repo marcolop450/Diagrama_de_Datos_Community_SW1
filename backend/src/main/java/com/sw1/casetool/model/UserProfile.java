@@ -53,6 +53,10 @@ public class UserProfile {
     @Column(name = "subscription_expires_at")
     private Instant subscriptionExpiresAt;
 
+    @Column(name = "is_active", nullable = false)
+    @Builder.Default
+    private Boolean isActive = true;
+
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "preferences", columnDefinition = "jsonb")
     private Map<String, Object> preferences;
