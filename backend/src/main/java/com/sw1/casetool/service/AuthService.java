@@ -7,6 +7,7 @@ import com.sw1.casetool.model.UserProfile;
 import com.sw1.casetool.repository.UserProfileRepository;
 import com.sw1.casetool.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -26,6 +28,7 @@ public class AuthService {
     private final UserProfileRepository userProfileRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
+    private final AuditLogService auditLogService;
 
     private static Map<String, Object> buildDefaultPreferences() {
         Map<String, Object> prefs = new HashMap<>();
@@ -66,8 +69,11 @@ public class AuthService {
         );
     }
 
-    @Transactional
     public AuthResponse login(LoginRequest request) {
+        return login(request, "127.0.0.1", "Browser");
+    }
+
+    public AuthResponse login(LoginRequest request, String ip, String userAgent) {
         String identifier = request.getEmail().trim();
         
         // Find user by either email OR username (case-insensitive)
@@ -81,6 +87,7 @@ public class AuthService {
             // Seed default users if logging in for the first time with standard emails
             user = createDefaultUserIfApplicable(identifier, request.getPassword());
             if (user == null) {
+                recordAuthFailure(identifier, "USER_NOT_FOUND", ip, userAgent, null);
                 throw new BadCredentialsException("Credenciales invalidas. Correo/Usuario o contrasena incorrectos.");
             }
         } else {
@@ -92,6 +99,7 @@ public class AuthService {
                         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
                         user = userProfileRepository.saveAndFlush(user);
                     } else {
+                        recordAuthFailure(identifier, "INVALID_PASSWORD", ip, userAgent, user.getId());
                         throw new BadCredentialsException("Credenciales invalidas. Correo/Usuario o contrasena incorrectos.");
                     }
                 }
@@ -99,14 +107,40 @@ public class AuthService {
         }
 
         if (Boolean.FALSE.equals(user.getIsActive())) {
+            recordAuthFailure(identifier, "ACCOUNT_SUSPENDED", ip, userAgent, user.getId());
             throw new BadCredentialsException("Tu cuenta ha sido suspendida o desactivada por un Administrador.");
         }
 
+        // Successful logins are NOT logged to prevent flooding the database with recurrent telemetry
         return toAuthResponse(user, generateToken(user));
+    }
+
+    private void recordAuthFailure(String attemptedIdentifier, String reason, String ip, String userAgent, UUID userId) {
+        try {
+            Map<String, Object> details = new HashMap<>();
+            details.put("attemptedIdentifier", attemptedIdentifier);
+            details.put("reason", reason);
+            auditLogService.recordAction(
+                    userId,
+                    "AUTH_LOGIN_FAILED",
+                    "security",
+                    userId,
+                    ip,
+                    userAgent,
+                    details
+            );
+        } catch (Exception e) {
+            log.error("Error al registrar intento fallido de autenticación en audit_logs: {}", e.getMessage(), e);
+        }
     }
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
+        return register(request, "127.0.0.1", "Browser");
+    }
+
+    @Transactional
+    public AuthResponse register(RegisterRequest request, String ip, String userAgent) {
         String email = request.getEmail().trim().toLowerCase();
 
         if (userProfileRepository.existsByEmailIgnoreCase(email)) {
@@ -135,6 +169,24 @@ public class AuthService {
                 .build();
 
         UserProfile saved = userProfileRepository.saveAndFlush(newUser);
+
+        // Audit new user registration
+        try {
+            Map<String, Object> details = new HashMap<>();
+            details.put("email", saved.getEmail());
+            details.put("username", saved.getUsername());
+            details.put("assignedRole", saved.getRole());
+            auditLogService.recordAction(
+                    saved.getId(),
+                    "USER_REGISTERED",
+                    "user_profiles",
+                    saved.getId(),
+                    ip,
+                    userAgent,
+                    details
+            );
+        } catch (Exception ignored) {}
+
         return toAuthResponse(saved, generateToken(saved));
     }
 

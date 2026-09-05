@@ -7,6 +7,7 @@ import RegisterPage from './components/auth/RegisterPage';
 import SettingsPage from './pages/SettingsPage';
 import DashboardPage from './pages/DashboardPage';
 import AdminUsersPage from './pages/AdminUsersPage';
+import { AdminAuditPage } from './pages/AdminAuditPage';
 import MainLayout from './components/layout/MainLayout';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { useAuthStore } from './stores/authStore';
@@ -81,6 +82,16 @@ function App() {
           element={
             <ProtectedRoute requiredRole="SUPER_ADMIN">
               <AdminUsersPage />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* Protected Admin Global Audit Log Page (SUPER_ADMIN only) - CU04 */}
+        <Route 
+          path="/admin/audit" 
+          element={
+            <ProtectedRoute requiredRole="SUPER_ADMIN">
+              <AdminAuditPage />
             </ProtectedRoute>
           } 
         />

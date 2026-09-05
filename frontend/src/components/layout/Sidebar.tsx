@@ -137,13 +137,17 @@ const Sidebar: React.FC = () => {
               <span>Gestión de Usuarios (RBAC)</span>
             </Link>
 
-            <button
-              onClick={() => toast('Módulo de Auditoría Global activo en CU04')}
-              className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition-colors text-left cursor-pointer border border-transparent"
+            <Link
+              to="/admin/audit"
+              className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+                location.pathname === '/admin/audit'
+                  ? 'bg-purple-600/20 text-purple-300 border border-purple-500/40'
+                  : 'text-slate-400 hover:text-purple-300 hover:bg-slate-900 border border-transparent'
+              }`}
             >
-              <History size={15} className="shrink-0 text-slate-500" />
+              <History size={15} className="shrink-0 text-purple-400" />
               <span>Bitácora de Auditoría</span>
-            </button>
+            </Link>
           </>
         ) : (
           /* 2. ARQUITECTO & COLABORADOR NAV */

@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { DiagramProject, ClassNodeData, RelationshipData } from '../types/diagram';
+import { AuditQueryParams } from '../types/audit';
 
 const API_BASE_URL = (import.meta.env?.VITE_API_URL || 'http://localhost:8080') + '/api';
 
@@ -158,6 +159,23 @@ export const api = {
   // Gestión de Proyectos y Espacios de Trabajo (CU03)
   cloneProject: async (id: string, newName?: string) => {
     const res = await apiClient.post(`/projects/${id}/clone`, { newName });
+    return res.data;
+  },
+
+  // Auditar Bitácora Global y Eventos de Seguridad (CU04)
+  getAuditLogs: async (params?: AuditQueryParams) => {
+    const res = await apiClient.get('/admin/audit', { params });
+    return res.data;
+  },
+  getAuditMetrics: async () => {
+    const res = await apiClient.get('/admin/audit/metrics');
+    return res.data;
+  },
+  exportAuditLogs: async (format: 'csv' | 'json' | 'xlsx' | 'excel', params?: AuditQueryParams) => {
+    const res = await apiClient.get('/admin/audit/export', {
+      params: { ...params, format },
+      responseType: 'blob',
+    });
     return res.data;
   },
 };
