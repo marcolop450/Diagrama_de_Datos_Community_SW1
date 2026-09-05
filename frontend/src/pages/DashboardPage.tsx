@@ -25,7 +25,9 @@ import {
   AlertTriangle,
   FolderKanban,
   FileCode2,
-  Share2
+  Share2,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -145,6 +147,22 @@ export const DashboardPage: React.FC = () => {
       return matchSearch && matchTag;
     });
   }, [projects, searchTerm, selectedTag]);
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const PROJECTS_PER_PAGE = 6;
+
+  // Reset to page 1 whenever searchTerm or selectedTag changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedTag]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredProjects.length / PROJECTS_PER_PAGE));
+
+  const paginatedProjects = useMemo(() => {
+    const startIndex = (currentPage - 1) * PROJECTS_PER_PAGE;
+    return filteredProjects.slice(startIndex, startIndex + PROJECTS_PER_PAGE);
+  }, [filteredProjects, currentPage]);
 
   const handleOpenProject = (id: string, name: string) => {
     loadDiagram(id);
@@ -447,10 +465,12 @@ export const DashboardPage: React.FC = () => {
               </div>
               <div>
                 <h2 className="text-lg font-bold text-white tracking-tight">
-                  {isSuperAdmin ? 'Todos los Proyectos de la Plataforma' : 'Proyectos y Espacios de Trabajo'}
+                  {isSuperAdmin ? 'Proyectos en la Plataforma (Supervisión Global)' : 'Proyectos y Espacios de Trabajo'}
                 </h2>
                 <p className="text-xs text-slate-400">
-                  Gestión integral del ciclo de vida, clonación profunda y metadatos de diagramas UML.
+                  {isSuperAdmin
+                    ? 'Supervisión y auditoría de todos los modelos UML diseñados en la plataforma.'
+                    : 'Gestión integral del ciclo de vida, clonación profunda y metadatos de diagramas UML.'}
                 </p>
               </div>
             </div>
@@ -526,7 +546,9 @@ export const DashboardPage: React.FC = () => {
                 <p className="text-xs max-w-sm">
                   {searchTerm || selectedTag !== 'ALL'
                     ? 'No se encontraron proyectos coincidentes con los filtros aplicados.'
-                    : 'No tienes proyectos aún. Comienza creando un nuevo proyecto UML o clonando una arquitectura base.'}
+                    : isSuperAdmin
+                      ? 'No hay proyectos registrados en la plataforma actualmente.'
+                      : 'No tienes proyectos aún. Comienza creando un nuevo proyecto UML o clonando una arquitectura base.'}
                 </p>
                 {!isSuperAdmin && !searchTerm && selectedTag === 'ALL' && (
                   <button
@@ -539,57 +561,67 @@ export const DashboardPage: React.FC = () => {
                 )}
               </div>
             ) : (
-              filteredProjects.map((proj) => (
+              paginatedProjects.map((proj) => (
                 <div
                   key={proj.id}
                   onClick={() => handleOpenProject(proj.id, proj.name)}
-                  className="group bg-slate-900/50 hover:bg-slate-900/90 border border-slate-800/80 hover:border-blue-500/50 rounded-2xl p-5 flex flex-col justify-between gap-4 transition-all shadow-md hover:shadow-xl hover:-translate-y-0.5 cursor-pointer relative"
+                  className="group bg-slate-900/50 hover:bg-slate-900/90 border border-slate-800/80 hover:border-blue-500/50 rounded-2xl p-4 sm:p-5 flex flex-col justify-between gap-4 transition-all shadow-md hover:shadow-xl hover:-translate-y-0.5 cursor-pointer relative overflow-hidden"
                 >
-                  {/* Top: Icon + Version + Fork Badge */}
+                  {/* Top: Icon + Version + Fork Badge + Owner / Actions */}
                   <div className="flex flex-col gap-2.5">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-blue-600/15 border border-blue-500/30 flex items-center justify-center text-blue-400 group-hover:scale-105 transition-transform">
-                          <Layers size={16} />
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+                        <div className="w-7 h-7 rounded-lg bg-blue-600/15 border border-blue-500/30 flex items-center justify-center text-blue-400 shrink-0">
+                          <Layers size={14} />
                         </div>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-blue-950/60 text-blue-300 border border-blue-800/50">
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-blue-950/60 text-blue-300 border border-blue-800/50 shrink-0">
                           {proj.version || 'v1.0.0'}
                         </span>
                         {proj.clonedFromId && (
-                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-purple-950/60 text-purple-300 border border-purple-800/50" title="Proyecto bifurcado mediante clonación profunda">
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-purple-950/60 text-purple-300 border border-purple-800/50 shrink-0" title="Proyecto bifurcado mediante clonación profunda">
                             <GitFork size={10} />
                             Clon
                           </span>
                         )}
                       </div>
 
-                      {/* Action buttons (Clone, Edit, Delete) */}
-                      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                        <button
-                          type="button"
-                          onClick={(e) => handleOpenCloneModal(e, proj)}
-                          title="Clonar proyecto íntegro (CU03)"
-                          className="p-1.5 text-slate-400 hover:text-purple-300 hover:bg-purple-950/40 rounded-lg transition-colors cursor-pointer border border-transparent hover:border-purple-800/50"
+                      {/* Action buttons (Clone, Edit, Delete) ONLY for non-superadmin */}
+                      {!isSuperAdmin ? (
+                        <div className="flex items-center gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            type="button"
+                            onClick={(e) => handleOpenCloneModal(e, proj)}
+                            title="Clonar proyecto"
+                            className="p-1.5 text-slate-400 hover:text-purple-300 hover:bg-purple-950/60 rounded-lg transition-colors cursor-pointer border border-transparent hover:border-purple-800/50"
+                          >
+                            <Copy size={13} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => handleOpenEditModal(e, proj)}
+                            title="Editar metadatos y tags"
+                            className="p-1.5 text-slate-400 hover:text-blue-300 hover:bg-blue-950/60 rounded-lg transition-colors cursor-pointer border border-transparent hover:border-blue-800/50"
+                          >
+                            <Edit3 size={13} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => handleOpenDeleteModal(e, proj)}
+                            title="Eliminar proyecto"
+                            className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-950/60 rounded-lg transition-colors cursor-pointer border border-transparent hover:border-rose-800/50"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      ) : (
+                        <div
+                          className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-medium bg-slate-800/80 text-slate-300 border border-slate-700/60 shrink-0 max-w-[130px]"
+                          title={`Propietario: ${proj.ownerName || 'Arquitecto'}`}
                         >
-                          <Copy size={13} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => handleOpenEditModal(e, proj)}
-                          title="Editar metadatos y tags"
-                          className="p-1.5 text-slate-400 hover:text-blue-300 hover:bg-blue-950/40 rounded-lg transition-colors cursor-pointer border border-transparent hover:border-blue-800/50"
-                        >
-                          <Edit3 size={13} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => handleOpenDeleteModal(e, proj)}
-                          title="Eliminar proyecto"
-                          className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 rounded-lg transition-colors cursor-pointer border border-transparent hover:border-rose-800/50"
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      </div>
+                          <Users size={11} className="text-purple-400 shrink-0" />
+                          <span className="truncate">{proj.ownerName || 'Arquitecto'}</span>
+                        </div>
+                      )}
                     </div>
 
                     <h3 className="font-semibold text-sm text-white group-hover:text-blue-200 transition-colors line-clamp-1">
@@ -634,66 +666,69 @@ export const DashboardPage: React.FC = () => {
                     </div>
 
                     <span className="group-hover:text-blue-400 transition-colors flex items-center gap-1 text-[11px]">
-                      Abrir <ArrowRight size={12} />
+                      {isSuperAdmin ? 'Inspeccionar' : 'Abrir'} <ArrowRight size={12} />
                     </span>
                   </div>
                 </div>
               ))
             )}
           </div>
-        </section>
 
-        {/* 3. CAPABILITIES & PRIVILEGES SUMMARY TABLE */}
-        <section className="bg-slate-900/30 border border-slate-800/80 rounded-2xl p-5 sm:p-6 flex flex-col gap-4">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-            <div className="flex items-center gap-2">
-              <ShieldCheck size={16} className="text-purple-400" />
-              <h3 className="text-sm font-semibold text-white">
-                Matriz de Permisos RBAC de la Cuenta
-              </h3>
-            </div>
-            <span className="text-xs font-mono text-slate-400">
-              Rol asignado: <strong className="text-white">{role}</strong>
-            </span>
-          </div>
+          {/* Pagination Controls */}
+          {filteredProjects.length > PROJECTS_PER_PAGE && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 text-xs text-slate-400 font-mono">
+              <span>
+                Mostrando{' '}
+                <strong className="text-white">
+                  {(currentPage - 1) * PROJECTS_PER_PAGE + 1}
+                </strong>{' '}
+                -{' '}
+                <strong className="text-white">
+                  {Math.min(currentPage * PROJECTS_PER_PAGE, filteredProjects.length)}
+                </strong>{' '}
+                de <strong className="text-white">{filteredProjects.length}</strong> proyectos
+              </span>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-            <div className={`p-4 rounded-xl border ${
-              isSuperAdmin ? 'bg-purple-950/20 border-purple-800/50 text-purple-200' : 'bg-slate-950/40 border-slate-800 text-slate-400'
-            }`}>
-              <div className="flex items-center gap-2 font-bold mb-1">
-                <Crown size={14} className={isSuperAdmin ? 'text-purple-400' : 'text-slate-600'} />
-                <span>SUPER_ADMIN</span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 disabled:opacity-40 disabled:hover:bg-slate-900 text-slate-300 border border-slate-800 transition-colors cursor-pointer disabled:cursor-not-allowed flex items-center gap-1"
+                >
+                  <ChevronLeft size={14} />
+                  <span>Anterior</span>
+                </button>
+
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                    <button
+                      key={pageNum}
+                      type="button"
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`w-8 h-8 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                        currentPage === pageNum
+                          ? 'bg-blue-600 text-white shadow-sm'
+                          : 'bg-slate-900/60 hover:bg-slate-800 text-slate-400 border border-slate-800'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 disabled:opacity-40 disabled:hover:bg-slate-900 text-slate-300 border border-slate-800 transition-colors cursor-pointer disabled:cursor-not-allowed flex items-center gap-1"
+                >
+                  <span>Siguiente</span>
+                  <ChevronRight size={14} />
+                </button>
               </div>
-              <p className="text-[11px] leading-relaxed">
-                Gobernanza de la plataforma, control de usuarios, asignación de roles RBAC, suspensión de accesos y auditoría de eventos.
-              </p>
             </div>
-
-            <div className={`p-4 rounded-xl border ${
-              !isSuperAdmin && !isColaborador ? 'bg-blue-950/20 border-blue-800/50 text-blue-200' : 'bg-slate-950/40 border-slate-800 text-slate-400'
-            }`}>
-              <div className="flex items-center gap-2 font-bold mb-1">
-                <Layers size={14} className={!isSuperAdmin && !isColaborador ? 'text-blue-400' : 'text-slate-600'} />
-                <span>ARQUITECTO</span>
-              </div>
-              <p className="text-[11px] leading-relaxed">
-                Diseño de diagramas de clases UML, validación de normalización 1NF a 3NF, gestión y clonación profunda de proyectos, y generación de código.
-              </p>
-            </div>
-
-            <div className={`p-4 rounded-xl border ${
-              isColaborador ? 'bg-emerald-950/20 border-emerald-800/50 text-emerald-200' : 'bg-slate-950/40 border-slate-800 text-slate-400'
-            }`}>
-              <div className="flex items-center gap-2 font-bold mb-1">
-                <Users size={14} className={isColaborador ? 'text-emerald-400' : 'text-slate-600'} />
-                <span>COLABORADOR</span>
-              </div>
-              <p className="text-[11px] leading-relaxed">
-                Participación en diagramas compartidos, edición colaborativa en tiempo real mediante WebSockets y co-diseño de arquitectura.
-              </p>
-            </div>
-          </div>
+          )}
         </section>
       </div>
 
