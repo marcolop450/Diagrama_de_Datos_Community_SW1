@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import { useDiagramStore } from '../../stores/diagramStore';
@@ -16,14 +16,17 @@ import {
   User,
   PanelLeft,
   Settings,
-  ArrowLeft
+  ArrowLeft,
+  History
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { ProjectHistoryModal } from '../history/ProjectHistoryModal';
 
 const Header: React.FC = () => {
   const { user, logout } = useAuthStore();
   const { project, saveDiagram } = useDiagramStore();
   const { toggleSidebar, sidebarOpen } = useUiStore();
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const location = useLocation();
 
   const isEditor = location.pathname.startsWith('/editor');
@@ -116,6 +119,17 @@ const Header: React.FC = () => {
               <span className="hidden sm:inline">Guardar</span>
             </button>
 
+            {project && (
+              <button 
+                onClick={() => setIsHistoryOpen(true)}
+                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 rounded-lg text-xs font-semibold text-slate-200 transition-all active:scale-95 cursor-pointer shadow-sm"
+                title="Consultar historial y trazabilidad del proyecto (CU05)"
+              >
+                <History size={14} className="text-purple-400" />
+                <span className="hidden sm:inline">Historial</span>
+              </button>
+            )}
+
             <button 
               onClick={() => toast('Generador de código Spring Boot activo en Fase 4')}
               className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-lg text-xs font-semibold shadow-sm shadow-blue-500/20 transition-all active:scale-95 cursor-pointer"
@@ -198,6 +212,16 @@ const Header: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* CU05 Project History Modal */}
+      {project && (
+        <ProjectHistoryModal
+          isOpen={isHistoryOpen}
+          projectId={project.id}
+          projectName={project.name}
+          onClose={() => setIsHistoryOpen(false)}
+        />
+      )}
     </header>
   );
 };

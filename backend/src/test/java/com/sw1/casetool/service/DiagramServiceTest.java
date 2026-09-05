@@ -9,6 +9,7 @@ import com.sw1.casetool.model.DiagramProject;
 import com.sw1.casetool.model.Relationship;
 import com.sw1.casetool.model.UserProfile;
 import com.sw1.casetool.repository.ClassNodeRepository;
+import com.sw1.casetool.repository.DiagramHistoryRepository;
 import com.sw1.casetool.repository.DiagramProjectRepository;
 import com.sw1.casetool.repository.RelationshipRepository;
 import com.sw1.casetool.repository.UserProfileRepository;
@@ -43,6 +44,12 @@ public class DiagramServiceTest {
 
     @Mock
     private AuditLogService auditLogService;
+
+    @Mock
+    private DiagramHistoryService diagramHistoryService;
+
+    @Mock
+    private DiagramHistoryRepository diagramHistoryRepository;
 
     @InjectMocks
     private DiagramService diagramService;
@@ -235,5 +242,69 @@ public class DiagramServiceTest {
         );
 
         verify(projectRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("CU05-T1: Debe restaurar proyecto de papelera marcando isDeleted=false y registrando historial y auditoría")
+    void testRestoreProject_Success() {
+        mockProject.setIsDeleted(true);
+        when(userProfileRepository.findByEmailIgnoreCase("architect@casetool.com"))
+                .thenReturn(Optional.of(mockUser));
+        when(projectRepository.findByIdAndIsDeletedTrue(projectId))
+                .thenReturn(Optional.of(mockProject));
+        when(projectRepository.save(any(DiagramProject.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        ProjectResponse response = diagramService.restoreProject(projectId, "architect@casetool.com", "127.0.0.1", "JUnit");
+
+        assertNotNull(response);
+        assertFalse(mockProject.getIsDeleted());
+        verify(projectRepository, times(1)).save(mockProject);
+        verify(auditLogService, times(1)).recordAction(
+                eq(userId), eq("PROJECT_RESTORED"), eq("diagram_projects"), eq(projectId), anyString(), anyString(), anyMap()
+        );
+        verify(diagramHistoryService, times(1)).recordHistory(
+                eq(mockProject), eq(userId), eq("PROJECT_RESTORED"), eq("PROJECT"), eq(projectId), anyMap(), anyMap()
+        );
+    }
+
+    @Test
+    @DisplayName("CU05-T2: Debe listar proyectos en la papelera de reciclaje")
+    void testGetTrashProjects_Success() {
+        mockProject.setIsDeleted(true);
+        when(userProfileRepository.findByEmailIgnoreCase("architect@casetool.com"))
+                .thenReturn(Optional.of(mockUser));
+        when(projectRepository.findByOwnerIdAndIsDeletedTrueOrderByUpdatedAtDesc(userId))
+                .thenReturn(List.of(mockProject));
+
+        List<ProjectResponse> trash = diagramService.getTrashProjects("architect@casetool.com");
+
+        assertNotNull(trash);
+        assertEquals(1, trash.size());
+        assertEquals("Sistema Clinico", trash.get(0).getName());
+        assertTrue(trash.get(0).getIsDeleted());
+    }
+
+    @Test
+    @DisplayName("CU05-T3: Purga definitiva debe eliminar en cascada relaciones, nodos, historial y proyecto")
+    void testPurgeProject_Success() {
+        mockProject.setIsDeleted(true);
+        when(userProfileRepository.findByEmailIgnoreCase("architect@casetool.com"))
+                .thenReturn(Optional.of(mockUser));
+        when(projectRepository.findByIdAndIsDeletedTrue(projectId))
+                .thenReturn(Optional.of(mockProject));
+
+        diagramService.purgeProject(projectId, "architect@casetool.com", "127.0.0.1", "JUnit");
+
+        // Cascada estricta
+        verify(relationshipRepository, times(1)).deleteByProjectId(projectId);
+        verify(classNodeRepository, times(1)).deleteByProjectId(projectId);
+        verify(diagramHistoryRepository, times(1)).deleteByProjectId(projectId);
+        verify(projectRepository, times(1)).delete(mockProject);
+
+        // Registro inmutable forense
+        verify(auditLogService, times(1)).recordAction(
+                eq(userId), eq("PROJECT_PURGED"), eq("diagram_projects"), eq(projectId), anyString(), anyString(), anyMap()
+        );
     }
 }

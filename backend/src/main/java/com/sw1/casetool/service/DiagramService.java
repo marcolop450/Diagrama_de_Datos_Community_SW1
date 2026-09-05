@@ -7,10 +7,12 @@ import com.sw1.casetool.model.DiagramProject;
 import com.sw1.casetool.model.Relationship;
 import com.sw1.casetool.model.UserProfile;
 import com.sw1.casetool.repository.ClassNodeRepository;
+import com.sw1.casetool.repository.DiagramHistoryRepository;
 import com.sw1.casetool.repository.DiagramProjectRepository;
 import com.sw1.casetool.repository.RelationshipRepository;
 import com.sw1.casetool.repository.UserProfileRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +28,8 @@ public class DiagramService {
     private final RelationshipRepository relationshipRepository;
     private final UserProfileRepository userProfileRepository;
     private final AuditLogService auditLogService;
+    private final DiagramHistoryService diagramHistoryService;
+    private final DiagramHistoryRepository diagramHistoryRepository;
 
     @Transactional
     public ProjectResponse createProject(CreateProjectRequest request, String userEmail, String ip, String userAgent) {
@@ -63,6 +67,22 @@ public class DiagramService {
                 ip,
                 userAgent,
                 details
+        );
+
+        // Diagram history tracking (CU05)
+        Map<String, Object> historyAfterState = new HashMap<>();
+        historyAfterState.put("name", saved.getName());
+        historyAfterState.put("version", saved.getVersion());
+        historyAfterState.put("tags", saved.getTags());
+
+        diagramHistoryService.recordHistory(
+                saved,
+                user.getId(),
+                "PROJECT_CREATED",
+                "PROJECT",
+                saved.getId(),
+                null,
+                historyAfterState
         );
 
         return toProjectResponse(saved, 0, 0, user.getFullName());
@@ -132,6 +152,12 @@ public class DiagramService {
         // Ownership validation (IDOR check)
         checkProjectOwnership(project, user);
 
+        Map<String, Object> beforeState = new HashMap<>();
+        beforeState.put("name", project.getName());
+        beforeState.put("description", project.getDescription());
+        beforeState.put("version", project.getVersion());
+        beforeState.put("tags", project.getTags());
+
         project.setName(request.getName().trim());
         if (request.getDescription() != null) {
             project.setDescription(request.getDescription());
@@ -167,6 +193,23 @@ public class DiagramService {
                 details
         );
 
+        // Diagram history tracking (CU05)
+        Map<String, Object> afterState = new HashMap<>();
+        afterState.put("name", saved.getName());
+        afterState.put("description", saved.getDescription());
+        afterState.put("version", saved.getVersion());
+        afterState.put("tags", saved.getTags());
+
+        diagramHistoryService.recordHistory(
+                saved,
+                user.getId(),
+                "PROJECT_UPDATED",
+                "PROJECT",
+                saved.getId(),
+                beforeState,
+                afterState
+        );
+
         return toProjectResponse(saved, nodeCount, relCount, user.getFullName());
     }
 
@@ -194,6 +237,17 @@ public class DiagramService {
                 ip,
                 userAgent,
                 details
+        );
+
+        // Diagram history tracking (CU05)
+        diagramHistoryService.recordHistory(
+                project,
+                user.getId(),
+                "PROJECT_DELETED",
+                "PROJECT",
+                project.getId(),
+                Map.of("isDeleted", false),
+                Map.of("isDeleted", true)
         );
     }
 
@@ -291,7 +345,134 @@ public class DiagramService {
                 details
         );
 
+        // Diagram history tracking (CU05)
+        Map<String, Object> historyBeforeState = new HashMap<>();
+        historyBeforeState.put("sourceProjectId", sourceProject.getId());
+        historyBeforeState.put("sourceProjectName", sourceProject.getName());
+
+        Map<String, Object> historyAfterState = new HashMap<>();
+        historyAfterState.put("name", savedProject.getName());
+        historyAfterState.put("nodesCloned", sourceNodes.size());
+        historyAfterState.put("relationshipsCloned", clonedRelCount);
+
+        diagramHistoryService.recordHistory(
+                savedProject,
+                user.getId(),
+                "PROJECT_CLONED",
+                "PROJECT",
+                savedProject.getId(),
+                historyBeforeState,
+                historyAfterState
+        );
+
         return toProjectResponse(savedProject, sourceNodes.size(), clonedRelCount, user.getFullName());
+    }
+
+    // --- Gestión de Papelera y Trazabilidad (CU05) ---
+
+    @Transactional
+    public ProjectResponse restoreProject(UUID id, String userEmail, String ip, String userAgent) {
+        UserProfile user = resolveUser(userEmail);
+        DiagramProject project = projectRepository.findByIdAndIsDeletedTrue(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Proyecto no encontrado en la papelera: " + id));
+
+        // Ownership validation (IDOR check)
+        checkProjectOwnership(project, user);
+
+        project.setIsDeleted(false);
+        DiagramProject restored = projectRepository.save(project);
+
+        long nodeCount = classNodeRepository.countByProjectId(restored.getId());
+        long relCount = relationshipRepository.countByProjectId(restored.getId());
+
+        // Inmutable audit log
+        Map<String, Object> details = new HashMap<>();
+        details.put("restoredProjectName", restored.getName());
+
+        auditLogService.recordAction(
+                user.getId(),
+                "PROJECT_RESTORED",
+                "diagram_projects",
+                restored.getId(),
+                ip,
+                userAgent,
+                details
+        );
+
+        // Diagram history tracking (CU05)
+        diagramHistoryService.recordHistory(
+                restored,
+                user.getId(),
+                "PROJECT_RESTORED",
+                "PROJECT",
+                restored.getId(),
+                Map.of("isDeleted", true),
+                Map.of("isDeleted", false)
+        );
+
+        return toProjectResponse(restored, nodeCount, relCount, user.getFullName());
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProjectResponse> getTrashProjects(String userEmail) {
+        UserProfile user = resolveUser(userEmail);
+        boolean isSuperAdmin = "SUPER_ADMIN".equalsIgnoreCase(user.getRole());
+
+        List<DiagramProject> projects = isSuperAdmin
+                ? projectRepository.findAllByIsDeletedTrueOrderByUpdatedAtDesc()
+                : projectRepository.findByOwnerIdAndIsDeletedTrueOrderByUpdatedAtDesc(user.getId());
+
+        Map<UUID, String> userNames = new HashMap<>();
+        userNames.put(user.getId(), user.getFullName());
+
+        return projects.stream().map(p -> {
+            long nodeCount = classNodeRepository.countByProjectId(p.getId());
+            long relCount = relationshipRepository.countByProjectId(p.getId());
+            String ownerName = userNames.computeIfAbsent(p.getOwnerId(), id ->
+                    userProfileRepository.findById(id).map(UserProfile::getFullName).orElse("Desconocido")
+            );
+            return toProjectResponse(p, nodeCount, relCount, ownerName);
+        }).collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void purgeProject(UUID id, String userEmail, String ip, String userAgent) {
+        UserProfile user = resolveUser(userEmail);
+        DiagramProject project = projectRepository.findByIdAndIsDeletedTrue(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Proyecto no encontrado en la papelera para purga: " + id));
+
+        // Ownership validation (IDOR check)
+        checkProjectOwnership(project, user);
+
+        String projectName = project.getName();
+        UUID projectId = project.getId();
+
+        // 1. Eliminar relaciones dependientes
+        relationshipRepository.deleteByProjectId(projectId);
+
+        // 2. Eliminar nodos dependientes
+        classNodeRepository.deleteByProjectId(projectId);
+
+        // 3. Eliminar registros de historial del diagrama
+        diagramHistoryRepository.deleteByProjectId(projectId);
+
+        // 4. Eliminar físicamente el proyecto
+        projectRepository.delete(project);
+
+        // 5. Inmutable audit log (registro forense en audit_logs, inmutable)
+        Map<String, Object> details = new HashMap<>();
+        details.put("purgedProjectName", projectName);
+        details.put("purgedProjectId", projectId);
+
+        auditLogService.recordAction(
+                user.getId(),
+                "PROJECT_PURGED",
+                "diagram_projects",
+                projectId,
+                ip,
+                userAgent,
+                details
+        );
     }
 
     // --- Métodos de modelado (compatibilidad con lienzo CASE) ---
@@ -311,7 +492,26 @@ public class DiagramService {
                 .attributes(request.getAttributes())
                 .methods(request.getMethods())
                 .build();
-        return classNodeRepository.save(node);
+        ClassNode saved = classNodeRepository.save(node);
+
+        Map<String, Object> afterState = new HashMap<>();
+        afterState.put("name", saved.getName());
+        afterState.put("stereotype", saved.getStereotype());
+        afterState.put("abstractClass", saved.isAbstractClass());
+        afterState.put("attributesCount", saved.getAttributes() != null ? saved.getAttributes().size() : 0);
+        afterState.put("methodsCount", saved.getMethods() != null ? saved.getMethods().size() : 0);
+
+        diagramHistoryService.recordHistory(
+                project,
+                project.getOwnerId(),
+                "NODE_CREATED",
+                "CLASS_NODE",
+                saved.getId(),
+                null,
+                afterState
+        );
+
+        return saved;
     }
 
     @Transactional
@@ -319,6 +519,13 @@ public class DiagramService {
         ClassNode node = classNodeRepository.findById(classId)
                 .filter(c -> c.getProject().getId().equals(projectId))
                 .orElseThrow(() -> new ResourceNotFoundException("Class node not found in project"));
+
+        Map<String, Object> beforeState = new HashMap<>();
+        beforeState.put("name", node.getName());
+        beforeState.put("stereotype", node.getStereotype());
+        beforeState.put("abstractClass", node.isAbstractClass());
+        beforeState.put("attributesCount", node.getAttributes() != null ? node.getAttributes().size() : 0);
+        beforeState.put("methodsCount", node.getMethods() != null ? node.getMethods().size() : 0);
 
         node.setName(request.getName());
         node.setStereotype(request.getStereotype());
@@ -330,7 +537,26 @@ public class DiagramService {
         node.setAttributes(request.getAttributes());
         node.setMethods(request.getMethods());
 
-        return classNodeRepository.save(node);
+        ClassNode saved = classNodeRepository.save(node);
+
+        Map<String, Object> afterState = new HashMap<>();
+        afterState.put("name", saved.getName());
+        afterState.put("stereotype", saved.getStereotype());
+        afterState.put("abstractClass", saved.isAbstractClass());
+        afterState.put("attributesCount", saved.getAttributes() != null ? saved.getAttributes().size() : 0);
+        afterState.put("methodsCount", saved.getMethods() != null ? saved.getMethods().size() : 0);
+
+        diagramHistoryService.recordHistory(
+                node.getProject(),
+                node.getProject().getOwnerId(),
+                "NODE_UPDATED",
+                "CLASS_NODE",
+                saved.getId(),
+                beforeState,
+                afterState
+        );
+
+        return saved;
     }
 
     @Transactional
@@ -338,6 +564,21 @@ public class DiagramService {
         ClassNode node = classNodeRepository.findById(classId)
                 .filter(c -> c.getProject().getId().equals(projectId))
                 .orElseThrow(() -> new ResourceNotFoundException("Class node not found in project"));
+
+        Map<String, Object> beforeState = new HashMap<>();
+        beforeState.put("name", node.getName());
+        beforeState.put("stereotype", node.getStereotype());
+
+        diagramHistoryService.recordHistory(
+                node.getProject(),
+                node.getProject().getOwnerId(),
+                "NODE_DELETED",
+                "CLASS_NODE",
+                node.getId(),
+                beforeState,
+                null
+        );
+
         classNodeRepository.delete(node);
     }
 
@@ -365,7 +606,26 @@ public class DiagramService {
                 .targetRole(request.getTargetRole())
                 .build();
 
-        return relationshipRepository.save(rel);
+        Relationship saved = relationshipRepository.save(rel);
+
+        Map<String, Object> afterState = new HashMap<>();
+        afterState.put("type", saved.getType().name());
+        afterState.put("sourceClass", source.getName());
+        afterState.put("targetClass", target.getName());
+        afterState.put("sourceCardinality", saved.getSourceCardinality());
+        afterState.put("targetCardinality", saved.getTargetCardinality());
+
+        diagramHistoryService.recordHistory(
+                project,
+                project.getOwnerId(),
+                "RELATIONSHIP_CREATED",
+                "RELATIONSHIP",
+                saved.getId(),
+                null,
+                afterState
+        );
+
+        return saved;
     }
 
     @Transactional
@@ -379,6 +639,13 @@ public class DiagramService {
         ClassNode target = classNodeRepository.findById(request.getTargetClassId())
                 .orElseThrow(() -> new ResourceNotFoundException("Target class not found"));
 
+        Map<String, Object> beforeState = new HashMap<>();
+        beforeState.put("type", rel.getType().name());
+        beforeState.put("sourceClass", rel.getSourceClass().getName());
+        beforeState.put("targetClass", rel.getTargetClass().getName());
+        beforeState.put("sourceCardinality", rel.getSourceCardinality());
+        beforeState.put("targetCardinality", rel.getTargetCardinality());
+
         rel.setSourceClass(source);
         rel.setTargetClass(target);
         rel.setType(request.getType());
@@ -388,7 +655,26 @@ public class DiagramService {
         rel.setSourceRole(request.getSourceRole());
         rel.setTargetRole(request.getTargetRole());
 
-        return relationshipRepository.save(rel);
+        Relationship saved = relationshipRepository.save(rel);
+
+        Map<String, Object> afterState = new HashMap<>();
+        afterState.put("type", saved.getType().name());
+        afterState.put("sourceClass", source.getName());
+        afterState.put("targetClass", target.getName());
+        afterState.put("sourceCardinality", saved.getSourceCardinality());
+        afterState.put("targetCardinality", saved.getTargetCardinality());
+
+        diagramHistoryService.recordHistory(
+                rel.getProject(),
+                rel.getProject().getOwnerId(),
+                "RELATIONSHIP_UPDATED",
+                "RELATIONSHIP",
+                saved.getId(),
+                beforeState,
+                afterState
+        );
+
+        return saved;
     }
 
     @Transactional
@@ -396,6 +682,22 @@ public class DiagramService {
         Relationship rel = relationshipRepository.findById(relId)
                 .filter(r -> r.getProject().getId().equals(projectId))
                 .orElseThrow(() -> new ResourceNotFoundException("Relationship not found in project"));
+
+        Map<String, Object> beforeState = new HashMap<>();
+        beforeState.put("type", rel.getType().name());
+        beforeState.put("sourceClass", rel.getSourceClass().getName());
+        beforeState.put("targetClass", rel.getTargetClass().getName());
+
+        diagramHistoryService.recordHistory(
+                rel.getProject(),
+                rel.getProject().getOwnerId(),
+                "RELATIONSHIP_DELETED",
+                "RELATIONSHIP",
+                rel.getId(),
+                beforeState,
+                null
+        );
+
         relationshipRepository.delete(rel);
     }
 

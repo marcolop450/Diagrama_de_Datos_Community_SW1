@@ -27,9 +27,12 @@ import {
   FileCode2,
   Share2,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  RotateCcw,
+  History
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { ProjectHistoryModal } from '../components/history/ProjectHistoryModal';
 
 interface AdminMetrics {
   totalUsers: number;
@@ -76,6 +79,13 @@ export const DashboardPage: React.FC = () => {
   const [deleteModalProject, setDeleteModalProject] = useState<DiagramProject | null>(null);
   const [submittingAction, setSubmittingAction] = useState(false);
 
+  // Trash & History State (CU05)
+  const [trashProjects, setTrashProjects] = useState<DiagramProject[]>([]);
+  const [activeTab, setActiveTab] = useState<'active' | 'trash'>('active');
+  const [historyModalProject, setHistoryModalProject] = useState<DiagramProject | null>(null);
+  const [purgeModalProject, setPurgeModalProject] = useState<DiagramProject | null>(null);
+  const [restoringId, setRestoringId] = useState<string | null>(null);
+
   const role = user?.role || 'ARQUITECTO';
   const isSuperAdmin = role === 'SUPER_ADMIN';
   const isColaborador = role === 'COLABORADOR';
@@ -88,22 +98,22 @@ export const DashboardPage: React.FC = () => {
     try {
       setLoading(true);
 
-      if (isSuperAdmin) {
-        const [metricsRes, projRes] = await Promise.all([
-          api.getAdminMetrics(),
-          api.getProjects()
-        ]);
-        if (metricsRes?.data) setMetrics(metricsRes.data);
-        if (projRes?.data && Array.isArray(projRes.data)) {
-          setProjects(projRes.data);
-        }
+      const [metricsRes, projRes, trashRes] = await Promise.all([
+        isSuperAdmin ? api.getAdminMetrics() : Promise.resolve(null),
+        api.getProjects(),
+        api.getTrashProjects()
+      ]);
+
+      if (metricsRes?.data) setMetrics(metricsRes.data);
+      if (projRes?.data && Array.isArray(projRes.data)) {
+        setProjects(projRes.data);
       } else {
-        const projRes = await api.getProjects();
-        if (projRes?.data && Array.isArray(projRes.data)) {
-          setProjects(projRes.data);
-        } else {
-          setProjects([]);
-        }
+        setProjects([]);
+      }
+      if (trashRes?.data && Array.isArray(trashRes.data)) {
+        setTrashProjects(trashRes.data);
+      } else {
+        setTrashProjects([]);
       }
     } catch {
       toast.error('Error al cargar datos del Dashboard');
@@ -308,7 +318,7 @@ export const DashboardPage: React.FC = () => {
     try {
       setSubmittingAction(true);
       const res = await api.deleteProject(deleteModalProject.id);
-      toast.success(res.message || 'Proyecto eliminado exitosamente');
+      toast.success(res.message || 'Proyecto enviado a la papelera');
       setDeleteModalProject(null);
       await loadDashboardData();
     } catch (err: any) {
@@ -317,6 +327,59 @@ export const DashboardPage: React.FC = () => {
       setSubmittingAction(false);
     }
   };
+
+  // 5. CU05 Handlers (Trazabilidad y Papelera de Reciclaje)
+  const handleOpenHistoryModal = (e: React.MouseEvent, p: DiagramProject) => {
+    e.stopPropagation();
+    setHistoryModalProject(p);
+  };
+
+  const handleRestoreProject = async (e: React.MouseEvent, p: DiagramProject) => {
+    e.stopPropagation();
+    try {
+      setRestoringId(p.id);
+      const res = await api.restoreProject(p.id);
+      toast.success(res.message || `Proyecto "${p.name}" restaurado exitosamente`);
+      await loadDashboardData();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Error al restaurar el proyecto');
+    } finally {
+      setRestoringId(null);
+    }
+  };
+
+  const handleOpenPurgeModal = (e: React.MouseEvent, p: DiagramProject) => {
+    e.stopPropagation();
+    setPurgeModalProject(p);
+  };
+
+  const handleConfirmPurge = async () => {
+    if (!purgeModalProject) return;
+    try {
+      setSubmittingAction(true);
+      const res = await api.purgeProject(purgeModalProject.id);
+      toast.success(res.message || `Proyecto "${purgeModalProject.name}" eliminado definitivamente`);
+      setPurgeModalProject(null);
+      await loadDashboardData();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Error al purgar el proyecto');
+    } finally {
+      setSubmittingAction(false);
+    }
+  };
+
+  // Filtered trash projects (CU05)
+  const filteredTrashProjects = useMemo(() => {
+    return trashProjects.filter((p) => {
+      const q = searchTerm.toLowerCase().trim();
+      if (!q) return true;
+      return (
+        (p.name && p.name.toLowerCase().includes(q)) ||
+        (p.description && p.description.toLowerCase().includes(q)) ||
+        (p.tags && p.tags.some((t) => t.toLowerCase().includes(q)))
+      );
+    });
+  }, [trashProjects, searchTerm]);
 
   return (
     <AppLayout>
@@ -486,6 +549,43 @@ export const DashboardPage: React.FC = () => {
             )}
           </div>
 
+          {/* CU05: Tabs for Active Projects vs Trash Bin */}
+          <div className="flex items-center gap-2 border-b border-slate-800/80 pb-2">
+            <button
+              onClick={() => setActiveTab('active')}
+              className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
+                activeTab === 'active'
+                  ? 'bg-blue-600/20 text-blue-300 border border-blue-500/40 shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900 border border-transparent'
+              }`}
+            >
+              <FolderKanban size={15} className={activeTab === 'active' ? 'text-blue-400' : 'text-slate-500'} />
+              <span>Proyectos Activos</span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono ${
+                activeTab === 'active' ? 'bg-blue-500/20 text-blue-300' : 'bg-slate-800 text-slate-400'
+              }`}>
+                {projects.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('trash')}
+              className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
+                activeTab === 'trash'
+                  ? 'bg-rose-600/20 text-rose-300 border border-rose-500/40 shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900 border border-transparent'
+              }`}
+            >
+              <Trash2 size={15} className={activeTab === 'trash' ? 'text-rose-400' : 'text-slate-500'} />
+              <span>Papelera de Reciclaje</span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono ${
+                activeTab === 'trash' ? 'bg-rose-500/20 text-rose-300' : 'bg-slate-800 text-slate-400'
+              }`}>
+                {trashProjects.length}
+              </span>
+            </button>
+          </div>
+
           {/* Search Bar & Tag Chips Filter */}
           <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-3 sm:p-4 flex flex-col gap-3">
             <div className="relative">
@@ -533,8 +633,119 @@ export const DashboardPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Projects Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Projects Grid: Active vs Trash */}
+          {activeTab === 'trash' ? (
+            /* TRASH BIN VIEW (CU05) */
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredTrashProjects.length === 0 ? (
+                <div className="col-span-full py-16 text-center text-slate-500 border border-dashed border-slate-800 rounded-3xl flex flex-col items-center gap-3">
+                  <div className="p-3 bg-slate-900 rounded-2xl border border-slate-800">
+                    <Trash2 size={32} className="text-slate-600" />
+                  </div>
+                  <p className="text-xs max-w-sm text-slate-400">
+                    {searchTerm
+                      ? 'No se encontraron proyectos en la papelera que coincidan con la búsqueda.'
+                      : 'La papelera de reciclaje está vacía. Los proyectos eliminados se conservarán aquí hasta que decidas restaurarlos o eliminarlos definitivamente.'}
+                  </p>
+                </div>
+              ) : (
+                filteredTrashProjects.map((proj) => (
+                  <div
+                    key={proj.id}
+                    className="bg-slate-900/40 border border-rose-950/60 hover:border-rose-800/50 rounded-2xl p-4 sm:p-5 flex flex-col justify-between gap-4 transition-all shadow-md relative overflow-hidden"
+                  >
+                    <div className="flex flex-col gap-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+                          <div className="w-7 h-7 rounded-lg bg-rose-600/15 border border-rose-500/30 flex items-center justify-center text-rose-400 shrink-0">
+                            <Trash2 size={14} />
+                          </div>
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-rose-950/60 text-rose-300 border border-rose-800/50 shrink-0">
+                            {proj.version || 'v1.0.0'}
+                          </span>
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800/80 text-slate-400 border border-slate-700/60">
+                            En Papelera
+                          </span>
+                        </div>
+
+                        {/* Action buttons: Restore, History, Purge */}
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            type="button"
+                            onClick={(e) => handleRestoreProject(e, proj)}
+                            disabled={restoringId === proj.id}
+                            title="Restaurar proyecto al espacio de trabajo activo"
+                            className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-emerald-300 bg-emerald-950/50 hover:bg-emerald-900/60 border border-emerald-800/50 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                          >
+                            <RotateCcw size={12} className={restoringId === proj.id ? 'animate-spin' : ''} />
+                            <span>Restaurar</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={(e) => handleOpenHistoryModal(e, proj)}
+                            title="Consultar historial y trazabilidad (CU05)"
+                            className="p-1.5 text-slate-400 hover:text-purple-300 hover:bg-purple-950/60 rounded-lg transition-colors cursor-pointer border border-transparent hover:border-purple-800/50"
+                          >
+                            <History size={13} />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={(e) => handleOpenPurgeModal(e, proj)}
+                            title="Eliminar definitivamente (Purga física en PostgreSQL)"
+                            className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-950/60 rounded-lg transition-colors cursor-pointer border border-transparent hover:border-rose-800/50"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </div>
+
+                      <h3 className="font-semibold text-sm text-slate-200 line-clamp-1">
+                        {proj.name}
+                      </h3>
+
+                      <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                        {proj.description || 'Espacio de trabajo UML sin descripción detallada.'}
+                      </p>
+
+                      {Array.isArray(proj.tags) && proj.tags.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-1 mt-1">
+                          {proj.tags.slice(0, 4).map((tag) => (
+                            <span
+                              key={tag}
+                              className="px-2 py-0.5 rounded-md text-[10px] font-mono text-slate-400 bg-slate-950 border border-slate-800"
+                            >
+                              #{tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between pt-3 border-t border-slate-800/60 text-[11px] text-slate-500 font-mono">
+                      <div className="flex items-center gap-3">
+                        <span className="flex items-center gap-1" title="Nodos de clases UML">
+                          <FileCode2 size={12} className="text-slate-400" />
+                          {proj.nodeCount !== undefined ? proj.nodeCount : 0} clases
+                        </span>
+                        <span className="flex items-center gap-1" title="Relaciones y cardinalidades">
+                          <Share2 size={12} className="text-slate-400" />
+                          {proj.relationshipCount !== undefined ? proj.relationshipCount : 0} rels
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-slate-500">
+                        {proj.ownerName ? `Por: ${proj.ownerName}` : ''}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          ) : (
+            <>
+              {/* Projects Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {loading ? (
               <div className="col-span-full py-16 text-center text-slate-500 animate-pulse font-mono text-xs flex flex-col items-center gap-2">
                 <RefreshCw size={20} className="animate-spin text-blue-400" />
@@ -589,43 +800,53 @@ export const DashboardPage: React.FC = () => {
                         )}
                       </div>
 
-                      {/* Action buttons (Clone, Edit, Delete) ONLY for non-superadmin */}
-                      {!isSuperAdmin ? (
-                        <div className="flex items-center gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
-                          <button
-                            type="button"
-                            onClick={(e) => handleOpenCloneModal(e, proj)}
-                            title="Clonar proyecto"
-                            className="p-1.5 text-slate-400 hover:text-purple-300 hover:bg-purple-950/60 rounded-lg transition-colors cursor-pointer border border-transparent hover:border-purple-800/50"
-                          >
-                            <Copy size={13} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => handleOpenEditModal(e, proj)}
-                            title="Editar metadatos y tags"
-                            className="p-1.5 text-slate-400 hover:text-blue-300 hover:bg-blue-950/60 rounded-lg transition-colors cursor-pointer border border-transparent hover:border-blue-800/50"
-                          >
-                            <Edit3 size={13} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => handleOpenDeleteModal(e, proj)}
-                            title="Eliminar proyecto"
-                            className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-950/60 rounded-lg transition-colors cursor-pointer border border-transparent hover:border-rose-800/50"
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                        </div>
-                      ) : (
-                        <div
-                          className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-medium bg-slate-800/80 text-slate-300 border border-slate-700/60 shrink-0 max-w-[130px]"
-                          title={`Propietario: ${proj.ownerName || 'Arquitecto'}`}
+                      {/* Action buttons (History, Clone, Edit, Delete) */}
+                      <div className="flex items-center gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          type="button"
+                          onClick={(e) => handleOpenHistoryModal(e, proj)}
+                          title="Consultar historial y trazabilidad (CU05)"
+                          className="p-1.5 text-slate-400 hover:text-purple-300 hover:bg-purple-950/60 rounded-lg transition-colors cursor-pointer border border-transparent hover:border-purple-800/50"
                         >
-                          <Users size={11} className="text-purple-400 shrink-0" />
-                          <span className="truncate">{proj.ownerName || 'Arquitecto'}</span>
-                        </div>
-                      )}
+                          <History size={13} />
+                        </button>
+                        {!isSuperAdmin ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={(e) => handleOpenCloneModal(e, proj)}
+                              title="Clonar proyecto"
+                              className="p-1.5 text-slate-400 hover:text-blue-300 hover:bg-blue-950/60 rounded-lg transition-colors cursor-pointer border border-transparent hover:border-blue-800/50"
+                            >
+                              <Copy size={13} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => handleOpenEditModal(e, proj)}
+                              title="Editar metadatos y tags"
+                              className="p-1.5 text-slate-400 hover:text-blue-300 hover:bg-blue-950/60 rounded-lg transition-colors cursor-pointer border border-transparent hover:border-blue-800/50"
+                            >
+                              <Edit3 size={13} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => handleOpenDeleteModal(e, proj)}
+                              title="Enviar a papelera de reciclaje"
+                              className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-950/60 rounded-lg transition-colors cursor-pointer border border-transparent hover:border-rose-800/50"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </>
+                        ) : (
+                          <div
+                            className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-medium bg-slate-800/80 text-slate-300 border border-slate-700/60 shrink-0 max-w-[130px]"
+                            title={`Propietario: ${proj.ownerName || 'Arquitecto'}`}
+                          >
+                            <Users size={11} className="text-purple-400 shrink-0" />
+                            <span className="truncate">{proj.ownerName || 'Arquitecto'}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     <h3 className={`font-semibold text-sm text-white transition-colors line-clamp-1 ${!isSuperAdmin ? 'group-hover:text-blue-200' : ''}`}>
@@ -734,6 +955,8 @@ export const DashboardPage: React.FC = () => {
                 </button>
               </div>
             </div>
+          )}
+          </>
           )}
         </section>
       </div>
@@ -1074,12 +1297,12 @@ export const DashboardPage: React.FC = () => {
             <div className="flex items-center gap-3 text-rose-400 border-b border-slate-800 pb-3">
               <AlertTriangle size={20} />
               <h3 className="font-bold text-white text-sm sm:text-base">
-                ¿Eliminar Proyecto UML?
+                Mover a la Papelera de Reciclaje
               </h3>
             </div>
 
             <p className="text-xs text-slate-300 leading-relaxed">
-              ¿Estás seguro de que deseas eliminar el proyecto <span className="font-semibold text-white">{deleteModalProject.name}</span>? El proyecto será retirado de tu espacio de trabajo de manera segura.
+              ¿Estás seguro de que deseas mover el proyecto <span className="font-semibold text-white">{deleteModalProject.name}</span> a la papelera de reciclaje? Podrás restaurarlo o auditar su trazabilidad en cualquier momento.
             </p>
 
             <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800 mt-2">
@@ -1097,12 +1320,71 @@ export const DashboardPage: React.FC = () => {
                 className="flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-rose-600/20 transition-all cursor-pointer disabled:opacity-50"
               >
                 {submittingAction ? <RefreshCw size={13} className="animate-spin" /> : <Trash2 size={13} />}
-                <span>Confirmar Eliminación</span>
+                <span>Mover a la Papelera</span>
               </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* ============================================================ */}
+      {/* MODAL 5: CONFIRMAR PURGA DEFINITIVA (CU05)                   */}
+      {/* ============================================================ */}
+      {purgeModalProject && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-slate-900 border border-rose-900/60 w-full max-w-md rounded-2xl p-6 shadow-2xl flex flex-col gap-4">
+            <div className="flex items-center gap-3 text-rose-400 border-b border-slate-800 pb-3">
+              <div className="p-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400">
+                <AlertTriangle size={22} />
+              </div>
+              <div>
+                <h3 className="font-bold text-white text-sm sm:text-base">
+                  Eliminar Definitivamente
+                </h3>
+                <p className="text-[11px] text-rose-400/80 font-mono">
+                  Purga física irreversible en PostgreSQL
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3 bg-rose-950/20 border border-rose-900/40 rounded-xl text-xs text-rose-200 leading-relaxed space-y-2">
+              <p>
+                ¿Confirmas la eliminación física permanente del proyecto <strong className="text-white font-semibold">"{purgeModalProject.name}"</strong>?
+              </p>
+              <p className="text-[11px] text-rose-300/80">
+                Se purgarán de forma irreversible de la base de datos todas las clases UML, atributos, métodos, relaciones y registros de historial asociados.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800 mt-2">
+              <button
+                type="button"
+                onClick={() => setPurgeModalProject(null)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-750 text-slate-300 rounded-xl text-xs font-medium transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmPurge}
+                disabled={submittingAction}
+                className="flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-rose-600/30 transition-all cursor-pointer disabled:opacity-50"
+              >
+                {submittingAction ? <RefreshCw size={13} className="animate-spin" /> : <Trash2 size={13} />}
+                <span>Eliminar Definitivamente</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CU05: Modal de Historial y Trazabilidad */}
+      <ProjectHistoryModal
+        isOpen={!!historyModalProject}
+        projectId={historyModalProject?.id || ''}
+        projectName={historyModalProject?.name}
+        onClose={() => setHistoryModalProject(null)}
+      />
     </AppLayout>
   );
 };

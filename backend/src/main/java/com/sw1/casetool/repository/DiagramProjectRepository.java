@@ -19,4 +19,14 @@ public interface DiagramProjectRepository extends JpaRepository<DiagramProject, 
     long countByOwnerIdAndIsDeletedFalse(UUID ownerId);
 
     long countByIsDeletedFalse();
+
+    List<DiagramProject> findByOwnerIdAndIsDeletedTrueOrderByUpdatedAtDesc(UUID ownerId);
+
+    List<DiagramProject> findAllByIsDeletedTrueOrderByUpdatedAtDesc();
+
+    Optional<DiagramProject> findByIdAndIsDeletedTrue(UUID id);
+
+    long countByOwnerIdAndIsDeletedTrue(UUID ownerId);
+
+    long countByIsDeletedTrue();
 }

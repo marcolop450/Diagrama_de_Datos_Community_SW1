@@ -178,4 +178,22 @@ export const api = {
     });
     return res.data;
   },
+
+  // Consultar Historial y Trazabilidad (CU05)
+  getProjectHistory: async (projectId: string) => {
+    const res = await apiClient.get(`/projects/${projectId}/history`);
+    return res.data;
+  },
+  getTrashProjects: async () => {
+    const res = await apiClient.get('/projects/trash');
+    return res.data;
+  },
+  restoreProject: async (id: string) => {
+    const res = await apiClient.post(`/projects/${id}/restore`);
+    return res.data;
+  },
+  purgeProject: async (id: string) => {
+    const res = await apiClient.delete(`/projects/${id}/purge`);
+    return res.data;
+  },
 };

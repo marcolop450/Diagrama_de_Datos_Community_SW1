@@ -52,6 +52,15 @@ public class DiagramController {
         return ResponseEntity.ok(ApiResponse.success("Lista de proyectos obtenida", projects));
     }
 
+    @GetMapping("/trash")
+    @Operation(summary = "Listar proyectos en la papelera de reciclaje (CU05)")
+    public ResponseEntity<ApiResponse<List<ProjectResponse>>> getTrashProjects(
+            @AuthenticationPrincipal String userEmail
+    ) {
+        List<ProjectResponse> trash = diagramService.getTrashProjects(userEmail);
+        return ResponseEntity.ok(ApiResponse.success("Proyectos en papelera obtenidos", trash));
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "Obtener detalles y metadatos de un proyecto (CU03)")
     public ResponseEntity<ApiResponse<ProjectResponse>> getProject(@PathVariable UUID id) {
@@ -102,6 +111,34 @@ public class DiagramController {
         CloneProjectRequest cloneRequest = request != null ? request : new CloneProjectRequest();
         ProjectResponse cloned = diagramService.cloneProject(id, cloneRequest, userEmail, ip, userAgent);
         return new ResponseEntity<>(ApiResponse.success("Proyecto clonado exitosamente", cloned), HttpStatus.CREATED);
+    }
+
+    @PostMapping("/{id}/restore")
+    @Operation(summary = "Restaurar un proyecto desde la papelera de reciclaje (CU05)")
+    public ResponseEntity<ApiResponse<ProjectResponse>> restoreProject(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal String userEmail,
+            HttpServletRequest servletRequest
+    ) {
+        String ip = servletRequest.getRemoteAddr();
+        String userAgent = servletRequest.getHeader("User-Agent");
+
+        ProjectResponse restored = diagramService.restoreProject(id, userEmail, ip, userAgent);
+        return ResponseEntity.ok(ApiResponse.success("Proyecto restaurado exitosamente", restored));
+    }
+
+    @DeleteMapping("/{id}/purge")
+    @Operation(summary = "Purga definitiva (hard delete) de un proyecto y sus elementos dependientes (CU05)")
+    public ResponseEntity<ApiResponse<Void>> purgeProject(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal String userEmail,
+            HttpServletRequest servletRequest
+    ) {
+        String ip = servletRequest.getRemoteAddr();
+        String userAgent = servletRequest.getHeader("User-Agent");
+
+        diagramService.purgeProject(id, userEmail, ip, userAgent);
+        return ResponseEntity.ok(ApiResponse.success("Proyecto eliminado definitivamente", null));
     }
 
     // --- Nodos de Clases UML ---
