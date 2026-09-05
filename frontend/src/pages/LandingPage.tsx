@@ -10,11 +10,9 @@ import {
   CheckCircle2, 
   ArrowRight, 
   Lock, 
-  Zap, 
   Sparkles, 
   Database, 
   Workflow,
-  Check,
   Server,
   FileCheck
 } from 'lucide-react';
@@ -63,66 +61,7 @@ export const LandingPage: React.FC = () => {
     }
   ];
 
-  const pricingPlans = [
-    {
-      id: 'COMMUNITY',
-      name: 'Community Free',
-      badge: 'Básico',
-      price: '$0.00',
-      period: 'para siempre',
-      description: 'Ideal para estudiantes y aprendizaje individual de modelado UML y fundamentos de datos.',
-      features: [
-        'Hasta 3 proyectos activos',
-        'Modelado visual de clases y relaciones',
-        'Validación de normalización 1NF a 3NF',
-        '1 sala colaborativa (máx. 2 participantes)',
-        'Exportación de diagramas en PNG y JSON',
-        'Sesión volátil protegida en memoria'
-      ],
-      cta: 'Comenzar Gratis',
-      popular: false,
-      buttonStyle: 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
-    },
-    {
-      id: 'PRO_ARCHITECT',
-      name: 'Pro Architect',
-      badge: 'Recomendado',
-      price: '$9.99',
-      period: 'por 30 días de vigencia',
-      description: 'Para arquitectos de software e ingenieros que requieren generación de código y asistencia IA.',
-      features: [
-        'Proyectos y clases ilimitadas',
-        'Generador Backend Spring Boot 4 Capas (ZIP)',
-        'Generador de Esquema DDL PostgreSQL 17',
-        'Generador de Colección Postman v2.1 + Runner',
-        'Exportación e Importación XMI 2.1 (ArchiTec)',
-        'Asistente IA por Dictado de Voz y Fotos de Pizarra',
-        'Recibo digital de pago persistido en bitácora'
-      ],
-      cta: 'Adquirir Plan Pro',
-      popular: true,
-      buttonStyle: 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-500/25'
-    },
-    {
-      id: 'ENTERPRISE',
-      name: 'Enterprise Team',
-      badge: 'Empresas',
-      price: '$29.99',
-      period: 'por 30 días de vigencia',
-      description: 'Para equipos de desarrollo, universidades y organizaciones con administración centralizada.',
-      features: [
-        'Todo lo incluido en Pro Architect',
-        'Salas colaborativas multiusuario simultáneas',
-        'Consola Super Admin con gestión RBAC',
-        'Auditoría inmutable de bitácora y pagos',
-        'Historial de versiones y papelera de proyectos',
-        'Soporte técnico prioritario y SLA 99.9%'
-      ],
-      cta: 'Contactar Enterprise',
-      popular: false,
-      buttonStyle: 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
-    }
-  ];
+
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 relative selection:bg-blue-500 selection:text-white font-sans">
@@ -138,7 +77,6 @@ export const LandingPage: React.FC = () => {
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300">
             <a href="#caracteristicas" className="hover:text-blue-400 transition-colors">Características</a>
             <a href="#arquitectura" className="hover:text-blue-400 transition-colors">Arquitectura PUDS</a>
-            <a href="#precios" className="hover:text-blue-400 transition-colors">Planes SaaS</a>
           </nav>
 
           {/* Action Buttons */}
@@ -193,11 +131,11 @@ export const LandingPage: React.FC = () => {
             <ArrowRight className="w-5 h-5" />
           </button>
           <a
-            href="#precios"
+            href="#caracteristicas"
             className="w-full sm:w-auto px-7 py-3.5 rounded-xl text-base font-semibold text-slate-200 bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 flex items-center justify-center gap-2 transition-all"
           >
-            <Zap className="w-5 h-5 text-amber-400" />
-            <span>Ver Planes SaaS</span>
+            <Layers className="w-5 h-5 text-indigo-400" />
+            <span>Ver Características</span>
           </a>
         </div>
 
@@ -350,75 +288,7 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section id="precios" className="relative z-10 py-20 bg-slate-900/40 border-t border-slate-800/60">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-xs font-semibold uppercase tracking-widest text-blue-400 font-mono mb-2">
-              Modelo Comercial SaaS
-            </h2>
-            <p className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
-              Planes de suscripción transparentes y flexibles
-            </p>
-            <p className="mt-3 text-sm text-slate-400">
-              Integración nativa con pasarela de pagos PayPal Sandbox y recibo digital emitido en bitácora.
-            </p>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
-            {pricingPlans.map((plan) => (
-              <div
-                key={plan.id}
-                className={`p-8 rounded-3xl flex flex-col justify-between transition-all duration-300 ${
-                  plan.popular
-                    ? 'bg-slate-900/90 border-2 border-blue-500 shadow-2xl shadow-blue-500/10 relative scale-105'
-                    : 'bg-slate-900/60 border border-slate-800 hover:border-slate-700'
-                }`}
-              >
-                {plan.popular && (
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-blue-500 text-white text-[11px] font-bold uppercase tracking-wider shadow-md">
-                    {plan.badge}
-                  </div>
-                )}
-
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-xl font-bold text-white">{plan.name}</h3>
-                    {!plan.popular && (
-                      <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700/60">
-                        {plan.badge}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-400 mb-6 leading-relaxed">{plan.description}</p>
-
-                  <div className="mb-6 pb-6 border-b border-slate-800">
-                    <span className="text-4xl font-extrabold text-white">{plan.price}</span>
-                    <span className="text-xs text-slate-400 font-medium ml-2">USD / {plan.period}</span>
-                  </div>
-
-                  <ul className="space-y-3 mb-8">
-                    {plan.features.map((item, fIdx) => (
-                      <li key={fIdx} className="flex items-start gap-3 text-xs sm:text-sm text-slate-300">
-                        <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <button
-                  onClick={() => navigate('/login')}
-                  className={`w-full py-3 px-4 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${plan.buttonStyle}`}
-                >
-                  <span>{plan.cta}</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       </div>
 

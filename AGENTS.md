@@ -1,40 +1,105 @@
-﻿# GUIA PERMANENTE DE DISENO Y DESARROLLO — CASE TOOL UML
+# MEMORIA OPERATIVA Y GUIA PERMANENTE — CASE TOOL UML
 
-Este documento define las reglas de observancia obligatoria para el desarrollo de cualquier nueva pantalla, componente o endpoint en la plataforma.
-
----
-
-## 1. Reglas de Interfaz de Usuario (UI/UX)
-
-### Regla 1.1: Cero Redundancia de Navegacion y Controles
-* **Un solo control por destino:** Prohibido duplicar botones o enlaces que lleven al mismo destino en la misma vista.
-* **Navegacion de retorno unica:** El boton "Volver al Dashboard" reside exclusivamente en el Header superior para todas las subpaginas (/admin/users, /settings, /editor). Ninguna subpagina debe contener botones adicionales de "Volver" en sus encabezados o barras de herramientas internas.
-* **Acciones directas no repetitivas:** Si un panel o dashboard ya cuenta con un boton de llamada a la accion (CTA) principal hacia una seccion (ej. "Gestionar Usuarios (RBAC)"), no se deben agregar enlaces repetitivos identicos sobre las tarjetas de metricas o cabeceras adyacentes.
-
-### Regla 1.2: Control de Usuario Unificado (Pildora Unica)
-* El acceso a **Perfil y Configuracion** en el Header debe estar unificado en un solo componente interactivo que agrupe el avatar, el nombre de usuario y el icono de configuracion (Settings).
-* Prohibido tener botones independientes contiguos que conduzcan a la misma ruta (/settings).
-
-### Regla 1.3: Animaciones Fluidas y Microinteracciones
-* **Apertura y Cierre de Barra Lateral (Sidebar):** El Sidebar debe animar su entrada y repliegue de manera continua y fluida mediante transiciones CSS de ancho (w-64 a w-0 con overflow-hidden y contenedor interno w-64 shrink-0) bajo la curva cubic-bezier(0.16, 1, 0.3, 1). En moviles, debe emplear deslizamiento horizontal (translate-x) y desvanecimiento suave del fondo translucido.
-* **Animacion de Entrada de Paginas (animate-page-enter):** Toda pantalla o vista nueva que se cargue debe incluir la animacion de montaje suave (elevacion de 10px y transicion de opacidad de 0.35s).
-* **Microinteracciones en Hover:** Los botones, tarjetas y selectores deben poseer respuesta haptica/visual suave (active:scale-95, rotacion sutil de iconos, realce de bordes).
-
-### Regla 1.4: Pure Dark Mode Estricto
-* Paleta exclusiva de modo oscuro de alto contraste (bg-slate-950, bg-slate-900, acentos blue-500, purple-500, emerald-500 segun rol).
-* Queda terminantemente prohibido incorporar temas claros o alternadores a modo claro.
-
-### Regla 1.5: Cero Emojis
-* Toda la iconografia del sistema debe ser 100% vectorial con la libreria lucide-react.
-* No utilizar emojis en botones, modales, tablas, notificaciones toast ni documentacion.
-
-### Regla 1.6: Transparencia Comercial SaaS (Sin Codigos de Casos de Uso)
-* Las pantallas visibles para el usuario no deben mostrar nomenclaturas academicas ni siglas de Casos de Uso como (CU01), (CU02), etc. La interfaz debe reflejar un producto SaaS comercial de ingenieria de software.
+> **FUENTE DE VERDAD Y MEMORIA EXTERNA DEL AGENTE:**
+> La memoria persistente, histórica y técnica del sistema reside exclusivamente en la **Bóveda de Obsidian** ubicada en:
+> `D:\Memoria Boveda\SW1_PrimerP`
+> Cualquier consulta sobre fundamentos teóricos, perfiles, actas o registros de fases PUDS anteriores debe ser consultada y contrastada contra dicha bóveda.
 
 ---
 
-## 2. Reglas de Control de Acceso Basado en Roles (RBAC)
+## 1. Enfoque de Desarrollo y Estado Real de los Casos de Uso (CU)
 
-* **SUPER_ADMIN (Gobernanza):** Acceso a metricas de plataforma, gestion de usuarios, asignacion de roles y bitacora de auditoria. **No tiene lienzo de dibujado UML ni acceso a /editor** (redireccion forzada a /dashboard).
-* **ARQUITECTO (Ingenieria CASE):** Disenador principal de modelos de clases UML, validacion de reglas de normalizacion (1NF a 3NF), generacion de codigo Spring Boot y exportacion XMI.
-* **COLABORADOR (Co-Diseno):** Acceso a proyectos compartidos para modelado en tiempo real.
+El desarrollo del sistema se ejecuta **estrictamente Caso de Uso por Caso de Uso (CU por CU)** bajo el Proceso Unificado de Desarrollo de Software (PUDS).
+* **Realizados Correctamente y Validados:** Exclusivamente hasta el **CU03**.
+* **Todo lo posterior a CU03:** Eran maquetas/demos no definitivas que deben ser desarrolladas formalmente desde cero paso a paso.
+* **Foco Inmediato de Construcción:** **CU04** (Auditar Bitácora Global y Transacciones).
+
+### Matriz de Estado de Casos de Uso por Ciclos
+
+| CU | Nombre del Caso de Uso | Ciclo | Actor(es) Principal(es) | Estado Real | Alcance Técnico / Entregable Formal |
+|---|---|---|---|---|---|
+| **CU00** | Autenticarse en el Sistema (Sesión Volátil) | Ciclo 1 | `USUARIO` | **Implementado** | Login seguro con JWT Bearer volátil en `sessionStorage`, filtro `OncePerRequestFilter`, validación stateless. |
+| **CU01** | Registrarse en la Plataforma | Ciclo 1 | `USUARIO` | **Implementado** | Registro de nuevos usuarios, hashing BCrypt, asignación de rol base por defecto. |
+| **CU02** | Gestionar Usuarios y Roles (RBAC) | Ciclo 1 | `A1: Super Admin` | **Implementado** | Vista `/admin/users`, alternancia de estado (activo/suspendido), asignación de roles y métricas de gobernanza. |
+| **CU03** | Gestión de Proyectos y Espacios de Trabajo | Ciclo 1 | `A2: Arquitecto` / `A3: Colaborador` | **Implementado** | **Reemplazo íntegro del SaaS.** CRUD completo de proyectos, metadatos, tags, versionado `v1.0.0` y **clonación profunda** de nodos y relaciones. |
+| **CU04** | Auditar Bitácora Global y Transacciones | Ciclo 1 | `A1: Super Admin` | **Siguiente a Implementar (Foco Actual)** | Registro inmutable de eventos críticos en tabla `audit_logs` con IP, timestamp, entidad y acción. |
+| **CU05** | Consultar Historial y Trazabilidad | Ciclo 1 | `A3: Colaborador` / `A2: Arquitecto` | **Pendiente** | Timeline cronológico de mutaciones del proyecto y trazabilidad de cambios por usuario. |
+| **CU06** | Ejecutar Tutorial Onboarding (< 2 min) | Ciclo 1 | `A3: Colaborador` | **Pendiente** | Guía interactiva paso a paso para adopción rápida del editor y herramientas CASE. |
+| **CU07** | Crear Proyecto desde Plantilla Base | Ciclo 1 | `A2: Arquitecto` | **Pendiente** | Scaffolding de diagramas iniciales basados en patrones de diseño GoF y arquitecturas base. |
+| **CU08** | Modelar Clases UML (Tipos y Visibilidad) | Ciclo 1 | `A2: Arquitecto` / `A3: Colaborador` | **Pendiente** | Lienzo `/editor` interactivo: creación/edición de clases, atributos, métodos y visibilidades (+, -, #, ~). |
+| **CU09** | Conectar Relaciones y Cardinalidades | Ciclo 1 | `A2: Arquitecto` / `A3: Colaborador` | **Pendiente** | Trazado de asociaciones, agregaciones, composiciones, herencias y dependencias con multiplicidades. |
+| **CU10** | Validar Normalización Lógica (1NF a 3NF) | Ciclo 1 | `A2: Arquitecto` / `A3: Colaborador` | **Pendiente** | Motor heurístico de auditoría de normalización para alertar atributos compuestos, transitivos o redundantes. |
+| **CU11** | Exportar Modelo y Documentación Técnica | Ciclo 2 | `A2: Arquitecto` / `A3: Colaborador` | **Pendiente** | 4 formatos: OMG XMI 2.1 (ArchiTec/StarUML), PNG alta resolución, PDF técnico ejecutivo y Excel (.xlsx) con tipo de dato SQL/JPA por columna. |
+| **CU12** | Importar Modelo desde XMI (ArchiTec) | Ciclo 2 | `A2: Arquitecto` | **Pendiente** | Parser bidireccional XML/XMI OMG para importar modelos externos de ArchiTec y StarUML directamente al canvas. |
+| **CU13** | Generar Backend Spring Boot (4 Capas en ZIP) | Ciclo 2 | `A2: Arquitecto` | **Pendiente** | Generación automatizada de código Java 21: Entities JPA, Repositories, Services y Controllers empaquetados en `.zip`. |
+| **CU14** | Generar Esquema DDL SQL (PostgreSQL 17) | Ciclo 2 | `A2: Arquitecto` | **Pendiente** | Exportación de script SQL DDL para Supabase con tablas, PKs, FKs, tipos de datos y restricciones de integridad. |
+| **CU15** | Generar Colección de Pruebas Postman v2.1 | Ciclo 2 | `A2: Arquitecto` | **Pendiente** | Generación de archivo JSON con colección de peticiones HTTP REST CRUD para cada entidad del diagrama. |
+| **CU16** | Modelar por Dictado de Voz (IA PLN) | Ciclo 3 | `A2: Arquitecto (Host)` | **Pendiente** | Entrada por micrófono (Web Speech API / Whisper), procesamiento semántico con Gemini Flash y modelado automático. |
+| **CU17** | Digitalizar Foto de Pizarra (IA Visión) | Ciclo 3 | `A2: Arquitecto (Host)` | **Pendiente** | Subida de fotografía de boceto en pizarra física, inferencia con Gemini 2.5 Flash y vectorización a nodos UML. |
+| **CU18** | Sincronizar Sesión Colaborativa (WSS + DNI) | Ciclo 3 | `A2: Host` / `A3: Guest` | **Pendiente** | Salas concurrentes en tiempo real vía WebSockets STOMP sobre SockJS (< 50ms latencia) ingresando con DNI/nombre. |
+
+---
+
+## 2. Metodología de Trabajo y Estándares Técnicos
+
+### 2.1 Metodología de Desarrollo: PUDS + CBD (Riguroso CU por CU)
+1. **PUDS (Proceso Unificado de Desarrollo de Software):**
+   * Cada CU se aborda de forma integral y secuencial: **Requisitos -> Análisis -> Diseño -> Implementación -> Pruebas -> Documentación en Bóveda**.
+   * No se avanza al siguiente CU hasta que el actual esté 100% probado y funcional en backend y frontend.
+2. **CBD (Desarrollo Basado en Componentes):**
+   * **Backend (Spring Boot 4.1.0 / Java 21):** Arquitectura estricta en 4 capas desacopladas:
+     - `controller`: Endpoints REST stateless y contratos DTO.
+     - `service`: Lógica de negocio pura, validaciones de dominio y transaccionalidad `@Transactional`.
+     - `repository`: Interfaces Spring Data JPA conectadas a Supabase PostgreSQL 17.
+     - `model / entity`: Entidades JPA mapeadas a esquema relacional.
+   * **Frontend (React 18 + TypeScript + Vite):** Componentes funcionales reutilizables, Tailwind CSS, estado reactivo limpio y Lucide React.
+
+### 2.2 Prohibición Permanente de SaaS / Pagos
+* Totalmente erradicado. La plataforma es una herramienta CASE de ingeniería de software pura.
+
+---
+
+## 3. Reglas Inviolables de Gobernanza y Operación del Agente
+
+### 3.1 Consulta Obligatoria de la Bóveda de Obsidian (Contexto Permanente)
+* La **Bóveda de Obsidian (`D:\Memoria Boveda\SW1_PrimerP`)** es la fuente de verdad inmutable y la memoria persistente del sistema.
+* Para mantener siempre el contexto técnico, histórico y metodológico a lo largo de las sesiones, se debe consultar y contrastar activamente la información contra dicha bóveda antes de diseñar o implementar.
+
+### 3.2 Manejo Riguroso y Correcto de las Skills
+* El agente debe utilizar proactivamente sus herramientas y paquetes de habilidades (skills) especializadas según la tarea (TDD, Spring Boot / Java, React / TypeScript, PostgreSQL, seguridad, etc.).
+* Se deben revisar las instrucciones de `SKILL.md` para garantizar las mejores prácticas de ingeniería y ejecución sin desvíos metodológicos.
+
+### 3.3 Política Estricta de Subida a GitHub (Cero Pushes Parciales o Prematuros)
+* **Toda subida (commit y push) al repositorio de GitHub se realizará ÚNICAMENTE cuando el Caso de Uso (CU) en curso esté TOTALMENTE CORRECTO y finalizado.**
+* Criterio de aceptación para Git Push:
+  1. Backend implementado bajo las 4 capas y compilando sin errores (`mvn test-compile` SUCCESS).
+  2. Frontend implementado, limpio y compilando sin errores (`npm run build` SUCCESS).
+  3. Pruebas funcionales del CU superadas al 100%.
+  4. Documentación y trazabilidad del CU debidamente registradas en la Bóveda de Obsidian.
+* Queda terminantemente prohibido hacer commit o push con código roto, incompleto o a medio implementar.
+
+---
+
+## 4. Reglas Inviolables de Interfaz de Usuario (UI/UX)
+
+1. **Pure Dark Mode Estricto:** Paleta visual de alto contraste (`bg-slate-950`, `bg-slate-900`, acentos `blue-500`, `purple-500`, `emerald-500`).
+2. **Cero Emojis:** Toda la iconografía debe ser 100% vectorial con `lucide-react`. Sin emojis en ninguna vista o texto.
+3. **Cero Redundancia de Navegación:**
+   * El botón "Volver al Dashboard" reside únicamente en el Header principal para todas las subpáginas (`/admin/users`, `/settings`, `/editor`).
+   * Píldora de usuario unificada (avatar + nombre + settings) sin controles duplicados.
+4. **Identidad CASE Profesional:** Sin nomenclaturas académicas ni etiquetas tipo `(CU01)` visibles para el usuario final en la interfaz.
+
+---
+
+## 5. Reglas Estrictas para Diagramas PlantUML
+
+1. **Disposición Flanqueada de 3 Columnas:**
+   * **Columna Izquierda:** Casos de uso de gobernanza, auditoría, trazabilidad e importación.
+   * **Columna Central:** Actores en columna vertical (`Arquitecto`, `Colaborador`, `Administrador Principal`) y en medio `CU1: Registrarse` y `CU0: Autenticarse`.
+   * **Columna Derecha:** Casos de uso de modelado técnico y herramientas CASE, finalizando en esquina inferior derecha con `USUARIO`.
+2. **Cuadro Bounding Box Único y Limpio:**
+   * Encapsulado en `rectangle " " as Marco { ... }` sin texto ni títulos de ciclos en el marco.
+3. **Asociaciones Direccionales:**
+   * Flechas hacia la izquierda con `-left->` y hacia la derecha con `-right->`.
+   * Generalización hacia `USUARIO` (`--|> U`).
+   * Asociaciones de `USUARIO` hacia el centro (`U -left-> CU1`, `U -left-> CU0`).

@@ -16,8 +16,3 @@ springdoc:
   api-docs:
     path: /v3/api-docs
 
-paypal:
-  mode: ${PAYPAL_MODE:sandbox}
-  client-id: ${PAYPAL_CLIENT_ID:BAAEZt0Yfq-bOz9gNms5brjPxsI5rg76weuPR4Af4MdDP5g5XkLEMd9FOfZppWGz2g1q-3CeacCFe4Pc-w}
-  client-secret: ${PAYPAL_CLIENT_SECRET:EC2Ox4xw8-9QJcQbbyBIoX4-bKlT2eoaqT81VQj2XMKB6tsPz3ZP_NJzIdEJeytWFDbrqV10K3dbWQNF}
-

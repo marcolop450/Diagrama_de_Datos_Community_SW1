@@ -5,60 +5,296 @@ import com.sw1.casetool.exception.ResourceNotFoundException;
 import com.sw1.casetool.model.ClassNode;
 import com.sw1.casetool.model.DiagramProject;
 import com.sw1.casetool.model.Relationship;
+import com.sw1.casetool.model.UserProfile;
 import com.sw1.casetool.repository.ClassNodeRepository;
 import com.sw1.casetool.repository.DiagramProjectRepository;
 import com.sw1.casetool.repository.RelationshipRepository;
+import com.sw1.casetool.repository.UserProfileRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class DiagramService {
-    
+
     private final DiagramProjectRepository projectRepository;
     private final ClassNodeRepository classNodeRepository;
     private final RelationshipRepository relationshipRepository;
+    private final UserProfileRepository userProfileRepository;
+    private final AuditLogService auditLogService;
 
     @Transactional
-    public DiagramProject createProject(CreateProjectRequest request) {
+    public ProjectResponse createProject(CreateProjectRequest request, String userEmail, String ip, String userAgent) {
+        UserProfile user = resolveUser(userEmail);
+
+        String version = (request.getVersion() != null && !request.getVersion().trim().isEmpty())
+                ? request.getVersion().trim()
+                : "v1.0.0";
+
+        List<String> tags = request.getTags() != null ? new ArrayList<>(request.getTags()) : new ArrayList<>();
+
         DiagramProject project = DiagramProject.builder()
-                .name(request.getName())
+                .name(request.getName().trim())
                 .description(request.getDescription())
-                .ownerId(request.getOwnerId())
-                .metadata(request.getMetadata())
+                .version(version)
+                .tags(tags)
+                .ownerId(user.getId())
+                .isDeleted(false)
+                .metadata(request.getMetadata() != null ? request.getMetadata() : new HashMap<>())
                 .build();
-        return projectRepository.save(project);
+
+        DiagramProject saved = projectRepository.save(project);
+
+        // Inmutable audit logging
+        Map<String, Object> details = new HashMap<>();
+        details.put("projectName", saved.getName());
+        details.put("version", saved.getVersion());
+        details.put("tags", saved.getTags());
+
+        auditLogService.recordAction(
+                user.getId(),
+                "PROJECT_CREATED",
+                "diagram_projects",
+                saved.getId(),
+                ip,
+                userAgent,
+                details
+        );
+
+        return toProjectResponse(saved, 0, 0, user.getFullName());
     }
 
+    @Transactional(readOnly = true)
+    public List<ProjectResponse> getProjects(String userEmail, String search, String tag) {
+        UserProfile user = resolveUser(userEmail);
+        boolean isSuperAdmin = "SUPER_ADMIN".equalsIgnoreCase(user.getRole());
+
+        List<DiagramProject> projects = isSuperAdmin
+                ? projectRepository.findAllByIsDeletedFalseOrderByUpdatedAtDesc()
+                : projectRepository.findByOwnerIdAndIsDeletedFalseOrderByUpdatedAtDesc(user.getId());
+
+        // Cache user full names for response
+        Map<UUID, String> userNames = new HashMap<>();
+        userNames.put(user.getId(), user.getFullName());
+
+        return projects.stream()
+                .filter(p -> {
+                    if (search == null || search.trim().isEmpty()) return true;
+                    String q = search.trim().toLowerCase();
+                    boolean matchName = p.getName() != null && p.getName().toLowerCase().contains(q);
+                    boolean matchDesc = p.getDescription() != null && p.getDescription().toLowerCase().contains(q);
+                    return matchName || matchDesc;
+                })
+                .filter(p -> {
+                    if (tag == null || tag.trim().isEmpty() || tag.equalsIgnoreCase("ALL")) return true;
+                    if (p.getTags() == null) return false;
+                    return p.getTags().stream().anyMatch(t -> t.equalsIgnoreCase(tag.trim()));
+                })
+                .map(p -> {
+                    long nodeCount = classNodeRepository.countByProjectId(p.getId());
+                    long relCount = relationshipRepository.countByProjectId(p.getId());
+                    String ownerName = userNames.computeIfAbsent(p.getOwnerId(), id ->
+                            userProfileRepository.findById(id).map(UserProfile::getFullName).orElse("Desconocido")
+                    );
+                    return toProjectResponse(p, nodeCount, relCount, ownerName);
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public ProjectResponse getProjectResponse(UUID id) {
+        DiagramProject project = projectRepository.findByIdAndIsDeletedFalse(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Proyecto no encontrado o eliminado: " + id));
+
+        long nodeCount = classNodeRepository.countByProjectId(project.getId());
+        long relCount = relationshipRepository.countByProjectId(project.getId());
+        String ownerName = userProfileRepository.findById(project.getOwnerId())
+                .map(UserProfile::getFullName).orElse("Desconocido");
+
+        return toProjectResponse(project, nodeCount, relCount, ownerName);
+    }
+
+    @Transactional(readOnly = true)
     public DiagramProject getProject(UUID id) {
-        return projectRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + id));
+        return projectRepository.findByIdAndIsDeletedFalse(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Proyecto no encontrado con ID: " + id));
     }
 
     @Transactional
-    public DiagramProject updateProject(UUID id, UpdateProjectRequest request) {
+    public ProjectResponse updateProject(UUID id, UpdateProjectRequest request, String userEmail, String ip, String userAgent) {
+        UserProfile user = resolveUser(userEmail);
         DiagramProject project = getProject(id);
-        project.setName(request.getName());
-        project.setDescription(request.getDescription());
-        project.setMetadata(request.getMetadata());
-        return projectRepository.save(project);
+
+        // Ownership validation (IDOR check)
+        checkProjectOwnership(project, user);
+
+        project.setName(request.getName().trim());
+        if (request.getDescription() != null) {
+            project.setDescription(request.getDescription());
+        }
+        if (request.getVersion() != null && !request.getVersion().trim().isEmpty()) {
+            project.setVersion(request.getVersion().trim());
+        }
+        if (request.getTags() != null) {
+            project.setTags(new ArrayList<>(request.getTags()));
+        }
+        if (request.getMetadata() != null) {
+            project.setMetadata(request.getMetadata());
+        }
+
+        DiagramProject saved = projectRepository.save(project);
+
+        long nodeCount = classNodeRepository.countByProjectId(saved.getId());
+        long relCount = relationshipRepository.countByProjectId(saved.getId());
+
+        // Inmutable audit log
+        Map<String, Object> details = new HashMap<>();
+        details.put("projectName", saved.getName());
+        details.put("version", saved.getVersion());
+        details.put("tags", saved.getTags());
+
+        auditLogService.recordAction(
+                user.getId(),
+                "PROJECT_UPDATED",
+                "diagram_projects",
+                saved.getId(),
+                ip,
+                userAgent,
+                details
+        );
+
+        return toProjectResponse(saved, nodeCount, relCount, user.getFullName());
     }
 
     @Transactional
-    public void deleteProject(UUID id) {
-        if (!projectRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Project not found with id: " + id);
-        }
-        projectRepository.deleteById(id);
+    public void deleteProject(UUID id, String userEmail, String ip, String userAgent) {
+        UserProfile user = resolveUser(userEmail);
+        DiagramProject project = getProject(id);
+
+        // Ownership validation (IDOR check)
+        checkProjectOwnership(project, user);
+
+        // Soft delete execution
+        project.setIsDeleted(true);
+        projectRepository.save(project);
+
+        // Inmutable audit log
+        Map<String, Object> details = new HashMap<>();
+        details.put("deletedProjectName", project.getName());
+
+        auditLogService.recordAction(
+                user.getId(),
+                "PROJECT_DELETED",
+                "diagram_projects",
+                project.getId(),
+                ip,
+                userAgent,
+                details
+        );
     }
 
-    public List<DiagramProject> getProjectsByOwner(UUID ownerId) {
-        return projectRepository.findByOwnerId(ownerId);
+    /**
+     * Clonación Profunda Atómica (CU03 - Deep Clone)
+     * Re-vincula las relaciones hacia los nuevos IDs de nodos generados en la copia.
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public ProjectResponse cloneProject(UUID sourceProjectId, CloneProjectRequest request, String userEmail, String ip, String userAgent) {
+        UserProfile user = resolveUser(userEmail);
+        DiagramProject sourceProject = getProject(sourceProjectId);
+
+        String cloneName = (request.getNewName() != null && !request.getNewName().trim().isEmpty())
+                ? request.getNewName().trim()
+                : sourceProject.getName() + " (Copia)";
+
+        // 1. Clonar entidad DiagramProject
+        DiagramProject clonedProject = DiagramProject.builder()
+                .name(cloneName)
+                .description(sourceProject.getDescription())
+                .version(sourceProject.getVersion() != null ? sourceProject.getVersion() : "v1.0.0")
+                .tags(sourceProject.getTags() != null ? new ArrayList<>(sourceProject.getTags()) : new ArrayList<>())
+                .ownerId(user.getId())
+                .isDeleted(false)
+                .clonedFromId(sourceProject.getId())
+                .metadata(sourceProject.getMetadata() != null ? new HashMap<>(sourceProject.getMetadata()) : new HashMap<>())
+                .build();
+
+        DiagramProject savedProject = projectRepository.save(clonedProject);
+
+        // 2. Clonar ClassNodes y construir mapa de traducción de IDs
+        List<ClassNode> sourceNodes = classNodeRepository.findByProjectId(sourceProjectId);
+        Map<UUID, ClassNode> oldToNewNodeMap = new HashMap<>();
+
+        for (ClassNode srcNode : sourceNodes) {
+            ClassNode clonedNode = ClassNode.builder()
+                    .project(savedProject)
+                    .name(srcNode.getName())
+                    .stereotype(srcNode.getStereotype())
+                    .abstractClass(srcNode.isAbstractClass())
+                    .positionX(srcNode.getPositionX())
+                    .positionY(srcNode.getPositionY())
+                    .width(srcNode.getWidth())
+                    .height(srcNode.getHeight())
+                    .attributes(srcNode.getAttributes() != null ? new ArrayList<>(srcNode.getAttributes()) : new ArrayList<>())
+                    .methods(srcNode.getMethods() != null ? new ArrayList<>(srcNode.getMethods()) : new ArrayList<>())
+                    .build();
+
+            ClassNode savedNode = classNodeRepository.save(clonedNode);
+            oldToNewNodeMap.put(srcNode.getId(), savedNode);
+        }
+
+        // 3. Clonar Relationships mapeando los nuevos nodos
+        List<Relationship> sourceRels = relationshipRepository.findByProjectId(sourceProjectId);
+        int clonedRelCount = 0;
+
+        for (Relationship srcRel : sourceRels) {
+            ClassNode newSource = oldToNewNodeMap.get(srcRel.getSourceClass().getId());
+            ClassNode newTarget = oldToNewNodeMap.get(srcRel.getTargetClass().getId());
+
+            if (newSource != null && newTarget != null) {
+                Relationship clonedRel = Relationship.builder()
+                        .project(savedProject)
+                        .sourceClass(newSource)
+                        .targetClass(newTarget)
+                        .type(srcRel.getType())
+                        .sourceCardinality(srcRel.getSourceCardinality())
+                        .targetCardinality(srcRel.getTargetCardinality())
+                        .label(srcRel.getLabel())
+                        .sourceRole(srcRel.getSourceRole())
+                        .targetRole(srcRel.getTargetRole())
+                        .build();
+
+                relationshipRepository.save(clonedRel);
+                clonedRelCount++;
+            }
+        }
+
+        // 4. Inmutable audit log
+        Map<String, Object> details = new HashMap<>();
+        details.put("sourceProjectId", sourceProject.getId());
+        details.put("sourceProjectName", sourceProject.getName());
+        details.put("clonedProjectId", savedProject.getId());
+        details.put("clonedProjectName", savedProject.getName());
+        details.put("nodesCloned", sourceNodes.size());
+        details.put("relationshipsCloned", clonedRelCount);
+
+        auditLogService.recordAction(
+                user.getId(),
+                "PROJECT_CLONED",
+                "diagram_projects",
+                savedProject.getId(),
+                ip,
+                userAgent,
+                details
+        );
+
+        return toProjectResponse(savedProject, sourceNodes.size(), clonedRelCount, user.getFullName());
     }
+
+    // --- Métodos de modelado (compatibilidad con lienzo CASE) ---
 
     @Transactional
     public ClassNode addClassNode(UUID projectId, ClassNodeRequest request) {
@@ -83,7 +319,7 @@ public class DiagramService {
         ClassNode node = classNodeRepository.findById(classId)
                 .filter(c -> c.getProject().getId().equals(projectId))
                 .orElseThrow(() -> new ResourceNotFoundException("Class node not found in project"));
-        
+
         node.setName(request.getName());
         node.setStereotype(request.getStereotype());
         node.setAbstractClass(request.isAbstractClass());
@@ -93,7 +329,7 @@ public class DiagramService {
         node.setHeight(request.getHeight());
         node.setAttributes(request.getAttributes());
         node.setMethods(request.getMethods());
-        
+
         return classNodeRepository.save(node);
     }
 
@@ -116,7 +352,7 @@ public class DiagramService {
                 .orElseThrow(() -> new ResourceNotFoundException("Source class not found"));
         ClassNode target = classNodeRepository.findById(request.getTargetClassId())
                 .orElseThrow(() -> new ResourceNotFoundException("Target class not found"));
-        
+
         Relationship rel = Relationship.builder()
                 .project(project)
                 .sourceClass(source)
@@ -128,7 +364,7 @@ public class DiagramService {
                 .sourceRole(request.getSourceRole())
                 .targetRole(request.getTargetRole())
                 .build();
-        
+
         return relationshipRepository.save(rel);
     }
 
@@ -137,12 +373,12 @@ public class DiagramService {
         Relationship rel = relationshipRepository.findById(relId)
                 .filter(r -> r.getProject().getId().equals(projectId))
                 .orElseThrow(() -> new ResourceNotFoundException("Relationship not found in project"));
-        
+
         ClassNode source = classNodeRepository.findById(request.getSourceClassId())
                 .orElseThrow(() -> new ResourceNotFoundException("Source class not found"));
         ClassNode target = classNodeRepository.findById(request.getTargetClassId())
                 .orElseThrow(() -> new ResourceNotFoundException("Target class not found"));
-                
+
         rel.setSourceClass(source);
         rel.setTargetClass(target);
         rel.setType(request.getType());
@@ -151,7 +387,7 @@ public class DiagramService {
         rel.setLabel(request.getLabel());
         rel.setSourceRole(request.getSourceRole());
         rel.setTargetRole(request.getTargetRole());
-        
+
         return relationshipRepository.save(rel);
     }
 
@@ -171,11 +407,47 @@ public class DiagramService {
         DiagramProject project = getProject(projectId);
         List<ClassNode> classes = getClassNodesByProject(projectId);
         List<Relationship> relationships = getRelationshipsByProject(projectId);
-        
+
         return FullDiagramResponse.builder()
                 .project(project)
                 .classNodes(classes)
                 .relationships(relationships)
+                .build();
+    }
+
+    // --- Helpers de Seguridad y Mapeo ---
+
+    private UserProfile resolveUser(String userIdentifier) {
+        return userProfileRepository.findByEmailIgnoreCase(userIdentifier)
+                .orElseGet(() -> userProfileRepository.findByUsernameIgnoreCase(userIdentifier)
+                        .orElseThrow(() -> new IllegalArgumentException("Usuario no autenticado: " + userIdentifier)));
+    }
+
+    private void checkProjectOwnership(DiagramProject project, UserProfile user) {
+        boolean isOwner = project.getOwnerId().equals(user.getId());
+        boolean isSuperAdmin = "SUPER_ADMIN".equalsIgnoreCase(user.getRole());
+
+        if (!isOwner && !isSuperAdmin) {
+            throw new IllegalArgumentException("Operación denegada: No tienes privilegios para modificar o eliminar este proyecto.");
+        }
+    }
+
+    private ProjectResponse toProjectResponse(DiagramProject p, long nodeCount, long relCount, String ownerName) {
+        return ProjectResponse.builder()
+                .id(p.getId())
+                .name(p.getName())
+                .description(p.getDescription())
+                .version(p.getVersion())
+                .tags(p.getTags())
+                .isDeleted(Boolean.TRUE.equals(p.getIsDeleted()))
+                .clonedFromId(p.getClonedFromId())
+                .ownerId(p.getOwnerId())
+                .ownerName(ownerName)
+                .nodeCount(nodeCount)
+                .relationshipCount(relCount)
+                .metadata(p.getMetadata())
+                .createdAt(p.getCreatedAt())
+                .updatedAt(p.getUpdatedAt())
                 .build();
     }
 }

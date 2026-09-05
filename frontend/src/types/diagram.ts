@@ -40,7 +40,14 @@ export interface DiagramProject {
   id: string;
   name: string;
   description?: string;
+  version?: string;
+  tags?: string[];
+  isDeleted?: boolean;
+  clonedFromId?: string;
   ownerId?: string;
+  ownerName?: string;
+  nodeCount?: number;
+  relationshipCount?: number;
   metadata?: Record<string, unknown>;
   createdAt?: string;
   updatedAt?: string;

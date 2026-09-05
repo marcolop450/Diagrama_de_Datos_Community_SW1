@@ -83,9 +83,9 @@ export const api = {
     return res.data;
   },
 
-  // Projects
-  getProjects: async (ownerId?: string) => {
-    const res = await apiClient.get('/projects', { params: { ownerId } });
+  // Projects (CU03)
+  getProjects: async (params?: { search?: string; tag?: string }) => {
+    const res = await apiClient.get('/projects', { params });
     return res.data;
   },
   getProjectById: async (id: string) => {
@@ -155,29 +155,9 @@ export const api = {
     return res.data;
   },
 
-  // Subscription & Billing (CU03)
-  getSubscriptionPlans: async () => {
-    const res = await apiClient.get('/subscription/plans');
-    return res.data;
-  },
-  getSubscriptionStatus: async () => {
-    const res = await apiClient.get('/subscription/status');
-    return res.data;
-  },
-  createPayPalOrder: async (planId: string) => {
-    const res = await apiClient.post('/subscription/paypal/create-order', { planId });
-    return res.data;
-  },
-  capturePayPalOrder: async (orderId: string, planId: string, payerId?: string) => {
-    const res = await apiClient.post('/subscription/paypal/capture-order', { orderId, planId, payerId });
-    return res.data;
-  },
-  cancelSubscription: async () => {
-    const res = await apiClient.post('/subscription/cancel');
-    return res.data;
-  },
-  getPaymentHistory: async () => {
-    const res = await apiClient.get('/subscription/history');
+  // Gestión de Proyectos y Espacios de Trabajo (CU03)
+  cloneProject: async (id: string, newName?: string) => {
+    const res = await apiClient.post(`/projects/${id}/clone`, { newName });
     return res.data;
   },
 };

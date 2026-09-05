@@ -9,4 +9,5 @@ import java.util.UUID;
 @Repository
 public interface ClassNodeRepository extends JpaRepository<ClassNode, UUID> {
     List<ClassNode> findByProjectId(UUID projectId);
+    long countByProjectId(UUID projectId);
 }

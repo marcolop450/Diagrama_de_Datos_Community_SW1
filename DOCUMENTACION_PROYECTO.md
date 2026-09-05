@@ -32,7 +32,7 @@ Este proyecto implementa una herramienta **I-CASE** que cubre desde el diseno (d
 ### 1.2 Desarrollo de Software Basado en Componentes (CBD)
 
 - **Arquitectura Modular**: Frontend desacoplado con componentes reactivos independientes en React 18 y TypeScript.
-- **Microservicios y Modulos Backend**: Division limpia de responsabilidades (Seguridad JWT, Administracion RBAC, Motor de Suscripciones y Facturacion PayPal, Diseno CASE UML).
+- **Microservicios y Modulos Backend**: Division limpia de responsabilidades (Seguridad JWT, Administracion RBAC, Gestion de Proyectos y Espacios de Trabajo, Diseno CASE UML).
 - **Interoperabilidad**: Interfaces estandarizadas REST JSON con contratos inmutables DTO.
 
 ---
@@ -51,145 +51,97 @@ Este proyecto implementa una herramienta **I-CASE** que cubre desde el diseno (d
 
 | Caso de Uso | Nombre Comercial | Actor Principal | Descripcion Sintetica |
 |---|---|---|---|
-| **CU01** | Autenticacion y Perfil de Usuario | Usuario / Arquitecto | Registro, inicio de sesion seguro con JWT volatil, actualizacion de credenciales y eliminacion en 2 pasos. |
+| **CU01** | Autenticacion y Perfil de Usuario | Usuario / Arquitecto | Registro, inicio de sesion seguro con JWT volatil, actualizacion de credenciales, preferencias de canvas y eliminacion en 2 pasos. |
 | **CU02** | Gobernanza RBAC y Auditoria | Super Administrador | Gestion de usuarios de plataforma, alternancia de estado activo/inactivo, asignacion de roles y registro inmutable de auditoria. |
-| **CU03** | Suscripcion SaaS y Facturacion (30 Dias) | Arquitecto / Equipo | Compra y renovacion de plan por 30 dias mediante PayPal Sandbox oficial, emision de factura fiscal imprimible y cancelacion inmediata (Opcion A). |
+| **CU03** | Gestion de Proyectos y Espacios de Trabajo | Arquitecto / Colaborador | Creacion de proyectos desde cero, edicion de metadatos (version semantica, tags), busqueda reactiva y clonacion integra de proyectos con su grafo de clases y relaciones. |
+| **CU11** | Exportacion de Modelo y Documentacion Tecnica | Arquitecto / Colaborador | Exportacion estandar OMG XMI 2.1 (ArchiTec / StarUML), renderizado PNG, memoria tecnica PDF y diccionario de datos en Excel (.xlsx) con tipos de datos por columna. |
 
 ---
 
-### 2.2 Especificacion Detallada del CU03: Suscripcion SaaS (30 Dias con PayPal Sandbox)
+### 2.2 Especificacion Detallada del CU03: Gestion de Proyectos y Espacios de Trabajo (CRUD y Clonacion)
 
 #### 2.2.1 Proposito y Alcance
-Permitir a los arquitectos de software adquirir o renovar licencias de uso avanzado (Plan Pro Architect $9.99 USD / 30 dias o Plan Enterprise Team $29.99 USD / 30 dias) mediante la pasarela certificada **PayPal Sandbox**, asegurando:
-1. Una vigencia exacta de 30 dias calendario.
-2. Persistencia inmutable del pago en la tabla `payments_log` con payload transaccional completo.
-3. Actualizacion del rol y plan en `user_profiles`.
-4. Registro del evento de auditoria `SUBSCRIPTION_PURCHASED`.
-5. Emision de recibo fiscal digital con formato `INV-YYYYMMDD-XXXX` y vista de impresion.
-6. **Modulo de Cancelacion con Garantia Antifallos (Opcion A)**: Reversion inmediata al plan `COMMUNITY`, limpieza de fecha de expiracion a `null` y registro de auditoria `SUBSCRIPTION_CANCELLED`, permitiendo al usuario volver a comprar y probar de forma ilimitada sin inconsistencias en la base de datos.
+Permitir a los arquitectos de software y colaboradores gestionar el ciclo de vida de sus diagramas UML directamente en el Dashboard:
+1. Creacion de proyectos en blanco con metadatos personalizados (titulo, descripcion, autor, version semantica inicial `v1.0.0` y etiquetas/tags de dominio).
+2. Edicion de propiedades y actualizacion de metadatos.
+3. **Clonacion / Duplicacion Integra de Proyectos**: Duplica un proyecto existente creando una copia exacta de todos sus nodos de clases (`class_nodes`) y relaciones (`relationships`) con sufijo ` (Copia)`, permitiendo bifurcaciones de arquitectura o ensayos sin alterar el modelo original.
+4. Busqueda reactiva por texto y filtrado por categorias/etiquetas.
+5. Eliminacion logica segura con confirmacion (`is_deleted = true`).
 
-#### 2.2.2 Diagrama de Secuencia UML (Compra de Suscripcion 30 Dias)
-
-```mermaid
-sequenceDiagram
-    autonumber
-    actor U as Arquitecto (Cliente)
-    participant UI as React Frontend (SettingsPage)
-    participant PP as PayPal Sandbox SDK
-    participant API as SubscriptionController
-    participant SVC as SubscriptionService
-    participant DB as Supabase PostgreSQL
-    participant AUD as AuditLogService
-
-    U->>UI: Selecciona Plan Pro ($9.99) y click "Adquirir Plan"
-    UI->>API: POST /api/subscription/paypal/create-order {planId: "PLAN_PRO_ARCHITECT"}
-    API->>SVC: createPayPalOrder(userId, planId)
-    SVC->>PP: REST API v2 /v2/checkout/orders (Bearer OAuth)
-    PP-->>SVC: orderId: "SANDBOX-ORD-XXXX"
-    SVC-->>API: CreatePayPalOrderResponse(orderId)
-    API-->>UI: 200 OK {orderId}
-    
-    UI->>PP: Abre Popup PayPal con cuenta Zuigo54@example.com
-    U->>PP: Autoriza el pago de $9.99 USD
-    PP-->>UI: onApprove(data: {orderID, payerID})
-    
-    UI->>API: POST /api/subscription/paypal/capture-order {orderId, planId, payerId}
-    API->>SVC: capturePayPalOrder(userId, req, ip, userAgent)
-    Note over SVC: Calcula vigencia: now + 30 dias
-    SVC->>DB: INSERT INTO payments_log (status: 'COMPLETED', amount: 9.99)
-    SVC->>DB: UPDATE user_profiles SET subscription_plan = 'PRO_ARCHITECT', subscription_expires_at = now + 30d
-    SVC->>AUD: recordAction('SUBSCRIPTION_PURCHASED')
-    AUD->>DB: INSERT INTO audit_logs (...)
-    SVC-->>API: PaymentReceiptResponse (invoiceNumber: "INV-20260904-4DF8")
-    API-->>UI: 200 OK {receipt}
-    UI->>UI: Actualiza authStore y renderiza recibo digital imprimible
-    UI-->>U: Notificacion Toast: "Suscripcion activada por 30 dias"
-```
-
-#### 2.2.3 Diagrama de Secuencia UML (Cancelacion Inmediata — Opcion A)
+#### 2.2.2 Diagrama de Secuencia UML (Clonacion de Proyecto)
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor U as Arquitecto (Cliente)
-    participant UI as React Frontend (SettingsPage)
-    participant API as SubscriptionController
-    participant SVC as SubscriptionService
+    actor U as Arquitecto / Colaborador
+    participant UI as React Frontend (DashboardPage)
+    participant API as DiagramController
+    participant SVC as DiagramService
     participant DB as Supabase PostgreSQL
     participant AUD as AuditLogService
 
-    U->>UI: Click en "Cancelar Suscripcion"
-    UI->>U: Despliega modal de confirmacion (Garantia Antifallos)
-    U->>UI: Confirma Cancelacion Inmediata
-    UI->>API: POST /api/subscription/cancel
-    API->>SVC: cancelSubscription(userId, ip, userAgent)
-    Note over SVC: Opcion A: Reset inmediato a COMMUNITY y expires_at = null
-    SVC->>DB: UPDATE user_profiles SET subscription_plan = 'COMMUNITY', subscription_expires_at = NULL
-    SVC->>AUD: recordAction('SUBSCRIPTION_CANCELLED', details: {cancellationType: 'OPTION_A_IMMEDIATE_RESET'})
+    U->>UI: Clic en "Clonar Proyecto" sobre tarjeta de proyecto
+    UI->>U: Despliega modal de confirmacion con nombre propuesto
+    U->>UI: Confirma clonacion ("Sistema Clinico (Copia)")
+    UI->>API: POST /api/diagrams/{id}/clone {name: "Sistema Clinico (Copia)"}
+    API->>SVC: cloneProject(sourceProjectId, newName, userId)
+    SVC->>DB: SELECT * FROM diagram_projects WHERE id = sourceProjectId
+    SVC->>DB: INSERT INTO diagram_projects (name, version, tags, owner_id) RETURNING new_id
+    SVC->>DB: SELECT * FROM class_nodes WHERE project_id = sourceProjectId
+    SVC->>DB: INSERT INTO class_nodes (para cada nodo con nuevo project_id)
+    SVC->>DB: SELECT * FROM relationships WHERE project_id = sourceProjectId
+    SVC->>DB: INSERT INTO relationships (con mapeo de nuevos node_ids)
+    SVC->>AUD: recordAction('PROJECT_CLONED', details: {sourceId, newId})
     AUD->>DB: INSERT INTO audit_logs (...)
-    SVC-->>API: SubscriptionStatusResponse(planId: 'COMMUNITY', active: false)
-    API-->>UI: 200 OK {status}
-    UI->>UI: Actualiza authStore (plan: 'COMMUNITY')
-    UI-->>U: Toast: "Suscripcion cancelada. Revertido a Community."
+    SVC-->>API: DiagramProjectResponse(newProject)
+    API-->>UI: 201 Created {project}
+    UI->>UI: Actualiza lista reactiva de proyectos en el Dashboard
+    UI-->>U: Notificacion Toast: "Proyecto clonado exitosamente"
 ```
 
-#### 2.2.4 Diagrama de Robustez (Analisis PUDS)
+#### 2.2.3 Diagrama de Robustez (Analisis PUDS — CU03)
 
 ```mermaid
 flowchart LR
     subgraph Boundary[Objetos de Limite / Interfaz]
-        B1[SettingsPage: Tab Suscripcion]
-        B2[PayPalButtons SDK Modal]
-        B3[Modal Recibo Digital Factura]
-        B4[Modal Confirmacion Cancelacion]
+        B1[DashboardPage: Grid de Proyectos]
+        B2[Modal Nuevo Proyecto / Metadatos]
+        B3[Modal Confirmar Clonacion]
+        B4[Barra de Filtros y Tags]
     end
 
     subgraph Control[Objetos de Control]
-        C1[SubscriptionController]
-        C2[SubscriptionService]
-        C3[PayPalHttpClient]
-        C4[AuditLogService]
+        C1[DiagramController]
+        C2[DiagramService]
+        C3[AuditLogService]
     end
 
     subgraph Entity[Objetos de Entidad / Persistencia]
-        E1[(user_profiles)]
-        E2[(subscription_plans)]
-        E3[(payments_log)]
+        E1[(diagram_projects)]
+        E2[(class_nodes)]
+        E3[(relationships)]
         E4[(audit_logs)]
     end
 
-    B1 -->|Ver catalogo y estado| C1
-    B1 -->|Iniciar compra| B2
-    B2 -->|Crear orden| C1
-    B2 -->|Capturar aprobacion| C1
-    B1 -->|Solicitar cancelacion| B4
-    B4 -->|Confirmar cancelacion| C1
-    B1 -->|Ver recibo| B3
+    B1 -->|Listar y buscar| C1
+    B2 -->|Crear proyecto| C1
+    B3 -->|Solicitar clonacion| C1
+    B4 -->|Filtrar por tags| B1
 
     C1 --> C2
-    C2 --> C3
-    C2 --> C4
     C2 --> E1
     C2 --> E2
     C2 --> E3
-    C4 --> E4
+    C2 --> C3
+    C3 --> E4
 ```
 
 ---
 
-## PARTE 3: GUIA DE VERIFICACION PAYPAL SANDBOX
+### 2.3 Especificacion Detallada del CU11: Exportacion de Modelo y Documentacion Tecnica
 
-Para ejecutar pruebas del flujo completo de compra y facturacion:
-1. **Credenciales del Comercio (Merchant Receptor)**:
-   - Cuenta Comercio: `Lis54@example.com`
-   - Client ID: `BAAEZt0Yfq-bOz9gNms5brjPxsI5rg76weuPR4Af4MdDP5g5XkLEMd9FOfZppWGz2g1q-3CeacCFe4Pc-w`
-2. **Credenciales del Comprador (Personal Buyer)**:
-   - Correo Comprador: `Zuigo54@example.com`
-3. **Flujo de Prueba**:
-   - Iniciar sesion como Arquitecto.
-   - Ir a la pestana **Suscripcion y Facturacion** en `/settings?tab=subscription`.
-   - Seleccionar **Pro Architect** o **Enterprise Team**.
-   - Completar el pago con el boton oficial PayPal o el boton de bypass de pruebas directas Sandbox.
-   - Observar el contador de 30 dias y la barra de progreso activa.
-   - Presionar **Ver Factura** para visualizar e imprimir el recibo digital oficial.
-   - Presionar **Cancelar Suscripcion** para verificar la reversion limpia a `COMMUNITY`.
+#### 2.3.1 Formatos de Exportacion Estandarizados
+1. **XMI 2.1 (OMG para ArchiTec / StarUML)**: Serializacion formal del metamodelo UML en XML estructurado.
+2. **Imagen Grafica PNG**: Renderizado vectorial exportado en mapa de bits de alta resolucion (escala 2x).
+3. **Memoria Tecnica PDF**: Informe ejecutivo formal que incluye caratula, ficha del proyecto, imagen incrustada del diagrama y matriz de clases.
+4. **Diccionario de Datos en Excel (.xlsx)**: Hoja de calculo estructurada mediante Apache POI con el inventario detallado de tablas, atributos, tipos de datos SQL (PostgreSQL 17), tipos Java, modificadores de visibilidad, llaves primarias (PK), llaves foraneas (FK) y cardinalidades.

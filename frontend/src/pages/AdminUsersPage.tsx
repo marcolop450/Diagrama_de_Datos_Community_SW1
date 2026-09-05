@@ -28,8 +28,6 @@ interface AdminUserItem {
   username: string;
   email: string;
   role: string;
-  subscriptionPlan: string;
-  subscriptionExpiresAt?: string | null;
   isActive: boolean;
   avatarUrl?: string;
   createdAt: string;
@@ -315,7 +313,6 @@ export const AdminUsersPage: React.FC = () => {
                   <th className="py-3 px-4">Usuario</th>
                   <th className="py-3 px-4">Correo Electrónico</th>
                   <th className="py-3 px-4">Rol RBAC</th>
-                  <th className="py-3 px-4">Plan SaaS</th>
                   <th className="py-3 px-4">Estado</th>
                   <th className="py-3 px-4">Fecha Alta</th>
                   <th className="py-3 px-4 text-right">Acciones</th>
@@ -324,13 +321,13 @@ export const AdminUsersPage: React.FC = () => {
               <tbody className="divide-y divide-slate-800/60">
                 {loading ? (
                   <tr>
-                    <td colSpan={7} className="py-12 text-center text-slate-500 animate-pulse font-mono">
+                    <td colSpan={6} className="py-12 text-center text-slate-500 animate-pulse font-mono">
                       Cargando directorio de usuarios...
                     </td>
                   </tr>
                 ) : filteredUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-12 text-center text-slate-500 font-mono">
+                    <td colSpan={6} className="py-12 text-center text-slate-500 font-mono">
                       No se encontraron usuarios coincidentes con los filtros aplicados.
                     </td>
                   </tr>
@@ -387,13 +384,6 @@ export const AdminUsersPage: React.FC = () => {
                           }`}>
                             {u.role === 'SUPER_ADMIN' ? <Crown size={11} /> : <ShieldCheck size={11} />}
                             {u.role}
-                          </span>
-                        </td>
-
-                        {/* Plan */}
-                        <td className="py-3 px-4">
-                          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-slate-800 text-slate-300 border border-slate-700">
-                            {u.subscriptionPlan}
                           </span>
                         </td>
 

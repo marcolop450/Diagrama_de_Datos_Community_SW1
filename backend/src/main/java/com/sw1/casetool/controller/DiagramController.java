@@ -2,15 +2,16 @@ package com.sw1.casetool.controller;
 
 import com.sw1.casetool.dto.*;
 import com.sw1.casetool.model.ClassNode;
-import com.sw1.casetool.model.DiagramProject;
 import com.sw1.casetool.model.Relationship;
 import com.sw1.casetool.service.DiagramService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,104 +20,169 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/projects")
 @RequiredArgsConstructor
-@Tag(name = "Diagram Project API", description = "Endpoints for managing projects and diagrams")
+@Tag(name = "Diagram Project API", description = "Endpoints para la gestión del ciclo de vida de proyectos CASE y modelos UML")
 public class DiagramController {
 
     private final DiagramService diagramService;
 
+    // --- Ciclo de Vida del Proyecto (CU03) ---
+
     @PostMapping
-    @Operation(summary = "Create a new project")
-    public ResponseEntity<ApiResponse<DiagramProject>> createProject(@Valid @RequestBody CreateProjectRequest request) {
-        return new ResponseEntity<>(new ApiResponse<>(true, "Project created", diagramService.createProject(request)), HttpStatus.CREATED);
+    @Operation(summary = "Crear un nuevo proyecto con metadatos (CU03)")
+    public ResponseEntity<ApiResponse<ProjectResponse>> createProject(
+            @Valid @RequestBody CreateProjectRequest request,
+            @AuthenticationPrincipal String userEmail,
+            HttpServletRequest servletRequest
+    ) {
+        String ip = servletRequest.getRemoteAddr();
+        String userAgent = servletRequest.getHeader("User-Agent");
+
+        ProjectResponse response = diagramService.createProject(request, userEmail, ip, userAgent);
+        return new ResponseEntity<>(ApiResponse.success("Proyecto creado exitosamente", response), HttpStatus.CREATED);
     }
 
     @GetMapping
-    @Operation(summary = "Get projects by owner ID")
-    public ResponseEntity<ApiResponse<List<DiagramProject>>> getProjectsByOwner(@RequestParam(required = false) UUID ownerId) {
-        if (ownerId == null) {
-            return ResponseEntity.ok(new ApiResponse<>(true, "All projects", diagramService.getProjectsByOwner(null))); // Need to implement get all if needed, but per requirements by ownerId
-        }
-        return ResponseEntity.ok(new ApiResponse<>(true, "Projects found", diagramService.getProjectsByOwner(ownerId)));
+    @Operation(summary = "Listar proyectos del usuario con filtros de búsqueda y tags (CU03)")
+    public ResponseEntity<ApiResponse<List<ProjectResponse>>> getProjects(
+            @AuthenticationPrincipal String userEmail,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String tag
+    ) {
+        List<ProjectResponse> projects = diagramService.getProjects(userEmail, search, tag);
+        return ResponseEntity.ok(ApiResponse.success("Lista de proyectos obtenida", projects));
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Get a project by ID")
-    public ResponseEntity<ApiResponse<DiagramProject>> getProject(@PathVariable UUID id) {
-        return ResponseEntity.ok(new ApiResponse<>(true, "Project found", diagramService.getProject(id)));
+    @Operation(summary = "Obtener detalles y metadatos de un proyecto (CU03)")
+    public ResponseEntity<ApiResponse<ProjectResponse>> getProject(@PathVariable UUID id) {
+        ProjectResponse response = diagramService.getProjectResponse(id);
+        return ResponseEntity.ok(ApiResponse.success("Proyecto encontrado", response));
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Update a project")
-    public ResponseEntity<ApiResponse<DiagramProject>> updateProject(@PathVariable UUID id, @Valid @RequestBody UpdateProjectRequest request) {
-        return ResponseEntity.ok(new ApiResponse<>(true, "Project updated", diagramService.updateProject(id, request)));
+    @Operation(summary = "Actualizar metadatos, versión o tags de un proyecto (CU03)")
+    public ResponseEntity<ApiResponse<ProjectResponse>> updateProject(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateProjectRequest request,
+            @AuthenticationPrincipal String userEmail,
+            HttpServletRequest servletRequest
+    ) {
+        String ip = servletRequest.getRemoteAddr();
+        String userAgent = servletRequest.getHeader("User-Agent");
+
+        ProjectResponse updated = diagramService.updateProject(id, request, userEmail, ip, userAgent);
+        return ResponseEntity.ok(ApiResponse.success("Proyecto actualizado exitosamente", updated));
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Delete a project")
-    public ResponseEntity<ApiResponse<Void>> deleteProject(@PathVariable UUID id) {
-        diagramService.deleteProject(id);
-        return ResponseEntity.ok(new ApiResponse<>(true, "Project deleted", null));
+    @Operation(summary = "Eliminación lógica segura de un proyecto (CU03)")
+    public ResponseEntity<ApiResponse<Void>> deleteProject(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal String userEmail,
+            HttpServletRequest servletRequest
+    ) {
+        String ip = servletRequest.getRemoteAddr();
+        String userAgent = servletRequest.getHeader("User-Agent");
+
+        diagramService.deleteProject(id, userEmail, ip, userAgent);
+        return ResponseEntity.ok(ApiResponse.success("Proyecto eliminado exitosamente", null));
     }
 
-    // --- Class Nodes ---
+    @PostMapping("/{id}/clone")
+    @Operation(summary = "Clonación profunda atómica de un proyecto UML (CU03)")
+    public ResponseEntity<ApiResponse<ProjectResponse>> cloneProject(
+            @PathVariable UUID id,
+            @Valid @RequestBody(required = false) CloneProjectRequest request,
+            @AuthenticationPrincipal String userEmail,
+            HttpServletRequest servletRequest
+    ) {
+        String ip = servletRequest.getRemoteAddr();
+        String userAgent = servletRequest.getHeader("User-Agent");
+
+        CloneProjectRequest cloneRequest = request != null ? request : new CloneProjectRequest();
+        ProjectResponse cloned = diagramService.cloneProject(id, cloneRequest, userEmail, ip, userAgent);
+        return new ResponseEntity<>(ApiResponse.success("Proyecto clonado exitosamente", cloned), HttpStatus.CREATED);
+    }
+
+    // --- Nodos de Clases UML ---
 
     @PostMapping("/{projectId}/classes")
-    @Operation(summary = "Add a class node")
-    public ResponseEntity<ApiResponse<ClassNode>> addClassNode(@PathVariable UUID projectId, @Valid @RequestBody ClassNodeRequest request) {
-        return new ResponseEntity<>(new ApiResponse<>(true, "Class node added", diagramService.addClassNode(projectId, request)), HttpStatus.CREATED);
+    @Operation(summary = "Agregar un nodo de clase al diagrama")
+    public ResponseEntity<ApiResponse<ClassNode>> addClassNode(
+            @PathVariable UUID projectId,
+            @Valid @RequestBody ClassNodeRequest request
+    ) {
+        return new ResponseEntity<>(ApiResponse.success("Clase agregada exitosamente", diagramService.addClassNode(projectId, request)), HttpStatus.CREATED);
     }
 
     @GetMapping("/{projectId}/classes")
-    @Operation(summary = "Get all class nodes for a project")
+    @Operation(summary = "Obtener todos los nodos de clases de un proyecto")
     public ResponseEntity<ApiResponse<List<ClassNode>>> getClassNodes(@PathVariable UUID projectId) {
-        return ResponseEntity.ok(new ApiResponse<>(true, "Class nodes found", diagramService.getClassNodesByProject(projectId)));
+        return ResponseEntity.ok(ApiResponse.success("Clases encontradas", diagramService.getClassNodesByProject(projectId)));
     }
 
     @PutMapping("/{projectId}/classes/{classId}")
-    @Operation(summary = "Update a class node")
-    public ResponseEntity<ApiResponse<ClassNode>> updateClassNode(@PathVariable UUID projectId, @PathVariable UUID classId, @Valid @RequestBody ClassNodeRequest request) {
-        return ResponseEntity.ok(new ApiResponse<>(true, "Class node updated", diagramService.updateClassNode(projectId, classId, request)));
+    @Operation(summary = "Actualizar un nodo de clase")
+    public ResponseEntity<ApiResponse<ClassNode>> updateClassNode(
+            @PathVariable UUID projectId,
+            @PathVariable UUID classId,
+            @Valid @RequestBody ClassNodeRequest request
+    ) {
+        return ResponseEntity.ok(ApiResponse.success("Clase actualizada exitosamente", diagramService.updateClassNode(projectId, classId, request)));
     }
 
     @DeleteMapping("/{projectId}/classes/{classId}")
-    @Operation(summary = "Delete a class node")
-    public ResponseEntity<ApiResponse<Void>> deleteClassNode(@PathVariable UUID projectId, @PathVariable UUID classId) {
+    @Operation(summary = "Eliminar un nodo de clase")
+    public ResponseEntity<ApiResponse<Void>> deleteClassNode(
+            @PathVariable UUID projectId,
+            @PathVariable UUID classId
+    ) {
         diagramService.deleteClassNode(projectId, classId);
-        return ResponseEntity.ok(new ApiResponse<>(true, "Class node deleted", null));
+        return ResponseEntity.ok(ApiResponse.success("Clase eliminada exitosamente", null));
     }
 
-    // --- Relationships ---
+    // --- Relaciones UML ---
 
     @PostMapping("/{projectId}/relationships")
-    @Operation(summary = "Add a relationship")
-    public ResponseEntity<ApiResponse<Relationship>> addRelationship(@PathVariable UUID projectId, @Valid @RequestBody RelationshipRequest request) {
-        return new ResponseEntity<>(new ApiResponse<>(true, "Relationship added", diagramService.addRelationship(projectId, request)), HttpStatus.CREATED);
+    @Operation(summary = "Agregar una relación entre clases")
+    public ResponseEntity<ApiResponse<Relationship>> addRelationship(
+            @PathVariable UUID projectId,
+            @Valid @RequestBody RelationshipRequest request
+    ) {
+        return new ResponseEntity<>(ApiResponse.success("Relación agregada exitosamente", diagramService.addRelationship(projectId, request)), HttpStatus.CREATED);
     }
 
     @GetMapping("/{projectId}/relationships")
-    @Operation(summary = "Get all relationships for a project")
+    @Operation(summary = "Obtener todas las relaciones de un proyecto")
     public ResponseEntity<ApiResponse<List<Relationship>>> getRelationships(@PathVariable UUID projectId) {
-        return ResponseEntity.ok(new ApiResponse<>(true, "Relationships found", diagramService.getRelationshipsByProject(projectId)));
+        return ResponseEntity.ok(ApiResponse.success("Relaciones encontradas", diagramService.getRelationshipsByProject(projectId)));
     }
 
     @PutMapping("/{projectId}/relationships/{relId}")
-    @Operation(summary = "Update a relationship")
-    public ResponseEntity<ApiResponse<Relationship>> updateRelationship(@PathVariable UUID projectId, @PathVariable UUID relId, @Valid @RequestBody RelationshipRequest request) {
-        return ResponseEntity.ok(new ApiResponse<>(true, "Relationship updated", diagramService.updateRelationship(projectId, relId, request)));
+    @Operation(summary = "Actualizar una relación")
+    public ResponseEntity<ApiResponse<Relationship>> updateRelationship(
+            @PathVariable UUID projectId,
+            @PathVariable UUID relId,
+            @Valid @RequestBody RelationshipRequest request
+    ) {
+        return ResponseEntity.ok(ApiResponse.success("Relación actualizada exitosamente", diagramService.updateRelationship(projectId, relId, request)));
     }
 
     @DeleteMapping("/{projectId}/relationships/{relId}")
-    @Operation(summary = "Delete a relationship")
-    public ResponseEntity<ApiResponse<Void>> deleteRelationship(@PathVariable UUID projectId, @PathVariable UUID relId) {
+    @Operation(summary = "Eliminar una relación")
+    public ResponseEntity<ApiResponse<Void>> deleteRelationship(
+            @PathVariable UUID projectId,
+            @PathVariable UUID relId
+    ) {
         diagramService.deleteRelationship(projectId, relId);
-        return ResponseEntity.ok(new ApiResponse<>(true, "Relationship deleted", null));
+        return ResponseEntity.ok(ApiResponse.success("Relación eliminada exitosamente", null));
     }
 
-    // --- Full Diagram ---
+    // --- Diagrama Completo ---
 
     @GetMapping("/{projectId}/full-diagram")
-    @Operation(summary = "Get full diagram (project, nodes, relationships)")
+    @Operation(summary = "Obtener diagrama completo (proyecto, nodos y relaciones)")
     public ResponseEntity<ApiResponse<FullDiagramResponse>> getFullDiagram(@PathVariable UUID projectId) {
-        return ResponseEntity.ok(new ApiResponse<>(true, "Full diagram found", diagramService.getFullDiagram(projectId)));
+        return ResponseEntity.ok(ApiResponse.success("Diagrama completo obtenido", diagramService.getFullDiagram(projectId)));
     }
 }

@@ -4,26 +4,29 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UpdateProjectRequest {
-    @NotBlank(message = "El nombre del proyecto no puede estar vacío")
-    @Size(min = 3, max = 120, message = "El nombre del proyecto debe tener entre 3 y 120 caracteres")
+public class ProjectResponse {
+    private UUID id;
     private String name;
-
-    @Size(max = 2000, message = "La descripción no puede exceder 2000 caracteres")
     private String description;
-
     private String version;
-
     private List<String> tags;
-
+    private Boolean isDeleted;
+    private UUID clonedFromId;
+    private UUID ownerId;
+    private String ownerName;
+    private long nodeCount;
+    private long relationshipCount;
     private Map<String, Object> metadata;
+    private Instant createdAt;
+    private Instant updatedAt;
 }

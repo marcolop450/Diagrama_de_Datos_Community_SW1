@@ -8,21 +8,39 @@ Desarrollada bajo la metodologia PUDS (Proceso Unificado de Desarrollo de Softwa
 
 ## 1. Estado de Desarrollo del Proyecto (PUDS)
 
-### Ciclo 1: Fase de Inicio y Elaboracion
+### Ciclo 1: Fase de Inicio y Elaboracion (Fundacion, Seguridad, Gestion de Proyectos y Modelado Visual)
 
 | Caso de Uso | Denominacion Tecnica | Estado | Especificacion Funcional |
 | :--- | :--- | :---: | :--- |
 | **CU00** | Autenticacion con Sesion Volatil | Completado | Autenticacion con JWT Bearer (HMAC-SHA256), almacenamiento exclusivo en memoria `sessionStorage`, proteccion de rutas con Spring Security 6, hashing de contraseñas con BCrypt (factor 12) y Landing Page publica. |
-| **CU01** | Registrarse, Perfil y Configuracion de Usuario | Completado | Registro de nuevos arquitectos con nombre de usuario obligatorio y plan Community, login dual por correo o usuario sin restricciones de formato, pagina dedicada de perfil y ajustes (`/settings`), interfaz profesional en modo oscuro de alto contraste, gestion de avatar, preferencias de canvas (grid, snap, auto-save, zoom) con persistencia JSONB en PostgreSQL y cambio seguro de contraseña con hash BCrypt. |
+| **CU01** | Registrarse, Perfil y Configuracion de Usuario | Completado | Registro de arquitectos y colaboradores, login dual por correo o username, pagina dedicada de perfil y ajustes (`/settings`), interfaz profesional en modo oscuro de alto contraste, gestion de avatar, preferencias de canvas (grid, snap, auto-save, zoom) con persistencia JSONB en PostgreSQL y cambio seguro de contraseña con hash BCrypt. |
 | **CU02** | Gestion de Usuarios y Roles (RBAC) | Completado | Control de acceso basado en roles con consola administrativa para SUPER_ADMIN (`/admin/users`), endpoints protegidos en `/api/admin/**`, asignacion de roles (SUPER_ADMIN, ARQUITECTO, COLABORADOR), suspension y reactivacion de cuentas (`is_active`), regla anti auto-degradacion y anti auto-bloqueo, bitacora inmutable en `audit_logs` con IP y JSONB, Dashboard adaptativo por rol (`/dashboard`) y Sidebar segmentado segun privilegios. |
-| **CU03** | Adquisicion de Suscripcion SaaS (30 Dias) | Planificado | Pasarela de pago con PayPal Sandbox y facturacion automatica de 30 dias. |
-| **CU04** | Auditoria de Bitacora Global y Transacciones | Planificado | Registro inmutable de eventos administrativos y mutaciones. |
-| **CU05** | Trazabilidad de Proyecto y Papelera | Planificado | Historial cronologico de cambios por autor y restauracion de proyectos. |
-| **CU06** | Tutorial Guiado de Onboarding | Planificado | Induccion interactiva paso a paso en el lienzo en menos de 2 minutos. |
-| **CU07** | Creacion de Proyectos desde Plantilla Base | Planificado | Carga automatica de dominios predefinidos (E-Commerce, Clinica, etc.). |
-| **CU08** | Modelado de Clases UML (Tipos y Visibilidad) | Planificado | Creacion y edicion reactiva de clases, atributos tipados y metodos. |
-| **CU09** | Conexion de Relaciones y Cardinalidades | Planificado | Asociacion, herencia, composicion, agregacion y dependencias. |
-| **CU10** | Validacion de Normalizacion Logica (1NF a 3NF) | Planificado | Motor cliente de verificacion relacional de reglas TOM. |
+| **CU03** | Gestion de Proyectos y Espacios de Trabajo | Completado | Administracion integral de proyectos en el Dashboard: creacion de proyectos en blanco con metadatos personalizados (titulo, descripcion, autor, version semantica y tags de dominio), busqueda reactiva, eliminacion logica segura y **clonacion/duplicacion integra de proyectos** con su grafo completo de clases y relaciones para crear versiones de prueba o bifurcaciones de arquitectura sin alterar el proyecto original. |
+| **CU04** | Auditoria de Bitacora Global y Eventos de Seguridad | Planificado | Consola de auditoria inmutable para SUPER_ADMIN con filtros por usuario, fecha y tipo de evento administrativo o mutacion estructural. |
+| **CU05** | Trazabilidad de Proyecto y Papelera | Planificado | Historial cronologico de cambios por autor y restauracion de proyectos desde la papelera de reciclaje. |
+| **CU06** | Tutorial Guiado de Onboarding | Planificado | Induccion interactiva paso a paso en el lienzo en menos de 2 minutos mediante spotlight interactivo. |
+| **CU07** | Creacion de Proyectos desde Plantilla Base | Planificado | Carga automatica de dominios predefinidos (E-Commerce, Clinica, Colegio, etc.) evitando lienzos en blanco. |
+| **CU08** | Modelado de Clases UML (Tipos y Visibilidad) | Planificado | Creacion y edicion reactiva de clases, atributos tipados (Java/SQL) y metodos con modificadores de visibilidad (+, -, #). |
+| **CU09** | Conexion de Relaciones y Cardinalidades | Planificado | Trazado de asociaciones, agregaciones, composiciones, herencias y dependencias con cardinalidades estandar. |
+| **CU10** | Validacion de Normalizacion Logica (1NF a 3NF) | Planificado | Motor cliente de verificacion relacional de reglas TOM (claves primarias en 1NF, llaves foraneas en 2NF y tablas intermedias en 3NF). |
+
+### Ciclo 2: Fase de Construccion (Interoperabilidad XMI y Motor Generador CASE)
+
+| Caso de Uso | Denominacion Tecnica | Estado | Especificacion Funcional |
+| :--- | :--- | :---: | :--- |
+| **CU11** | Exportacion de Modelo y Documentacion Tecnica | Planificado | Exportacion en cuatro formatos: archivo estandar OMG XMI 2.1 (ArchiTec / StarUML), imagen grafica de alta resolucion en PNG, memoria tecnica ejecutiva en PDF y diccionario de datos en Excel (.xlsx) con especificaciones de tipos de datos SQL y Java por cada columna de las entidades. |
+| **CU12** | Importacion de Modelo desde XMI (ArchiTec) | Planificado | Deserializacion de archivos XML XMI 2.1 e inyeccion directa en el lienzo con algoritmo de posicionamiento automatico (Dagre). |
+| **CU13** | Generacion de Backend Spring Boot en 4 Capas | Planificado | Compilacion de plantillas FreeMarker y empaquetado Maven en ZIP ejecutable estructurado limpiamente en Controller, Service, Repository y Entity. |
+| **CU14** | Generacion de Esquema DDL SQL (PostgreSQL 17) | Planificado | Produccion de scripts SQL normalizados con `CREATE TABLE`, claves primarias, foraneas (`ON DELETE CASCADE`), restricciones e indices. |
+| **CU15** | Generacion de Coleccion de Pruebas Postman v2.1 | Planificado | Generacion de archivo JSON compatible con Postman v2.1.0 con carpetas por entidad y 5 peticiones CRUD preconfiguradas con datos mock. |
+
+### Ciclo 3: Fase de Transicion (Asistencia con Inteligencia Artificial y Colaboracion)
+
+| Caso de Uso | Denominacion Tecnica | Estado | Especificacion Funcional |
+| :--- | :--- | :---: | :--- |
+| **CU16** | Modelado por Dictado de Voz (IA PLN) | Planificado | Reconocimiento de voz mediante Web Speech API y procesamiento de lenguaje natural con IA para mutar el grafo de clases de manera reactiva e incremental sin destruir el lienzo. |
+| **CU17** | Digitalizacion Optica de Pizarras (IA Vision) | Planificado | Extraccion de clases, atributos y relaciones desde fotografias de pizarras fisicas mediante IA Multimodal con patron Circuit Breaker Fallback (Gemini -> Groq). |
+| **CU18** | Sincronizacion Colaborativa en Tiempo Real | Planificado | Comunicacion concurrente bidireccional multiusuario mediante WebSockets y subprotocolo STOMP con salas compartidas, acceso por DNI/nombre y bloqueo optimista de elementos. |
 
 ---
 

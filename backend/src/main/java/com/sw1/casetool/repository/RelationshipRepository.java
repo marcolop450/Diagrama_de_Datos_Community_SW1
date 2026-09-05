@@ -10,4 +10,5 @@ import java.util.UUID;
 public interface RelationshipRepository extends JpaRepository<Relationship, UUID> {
     List<Relationship> findByProjectId(UUID projectId);
     List<Relationship> findBySourceClassIdOrTargetClassId(UUID sourceId, UUID targetId);
+    long countByProjectId(UUID projectId);
 }
