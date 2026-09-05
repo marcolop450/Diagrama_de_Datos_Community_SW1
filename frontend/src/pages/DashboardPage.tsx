@@ -564,8 +564,12 @@ export const DashboardPage: React.FC = () => {
               paginatedProjects.map((proj) => (
                 <div
                   key={proj.id}
-                  onClick={() => handleOpenProject(proj.id, proj.name)}
-                  className="group bg-slate-900/50 hover:bg-slate-900/90 border border-slate-800/80 hover:border-blue-500/50 rounded-2xl p-4 sm:p-5 flex flex-col justify-between gap-4 transition-all shadow-md hover:shadow-xl hover:-translate-y-0.5 cursor-pointer relative overflow-hidden"
+                  onClick={!isSuperAdmin ? () => handleOpenProject(proj.id, proj.name) : undefined}
+                  className={`group bg-slate-900/50 border border-slate-800/80 rounded-2xl p-4 sm:p-5 flex flex-col justify-between gap-4 transition-all shadow-md relative overflow-hidden ${
+                    !isSuperAdmin
+                      ? 'hover:bg-slate-900/90 hover:border-blue-500/50 hover:shadow-xl hover:-translate-y-0.5 cursor-pointer'
+                      : 'cursor-default'
+                  }`}
                 >
                   {/* Top: Icon + Version + Fork Badge + Owner / Actions */}
                   <div className="flex flex-col gap-2.5">
@@ -624,7 +628,7 @@ export const DashboardPage: React.FC = () => {
                       )}
                     </div>
 
-                    <h3 className="font-semibold text-sm text-white group-hover:text-blue-200 transition-colors line-clamp-1">
+                    <h3 className={`font-semibold text-sm text-white transition-colors line-clamp-1 ${!isSuperAdmin ? 'group-hover:text-blue-200' : ''}`}>
                       {proj.name}
                     </h3>
 
@@ -665,9 +669,11 @@ export const DashboardPage: React.FC = () => {
                       </span>
                     </div>
 
-                    <span className="group-hover:text-blue-400 transition-colors flex items-center gap-1 text-[11px]">
-                      {isSuperAdmin ? 'Inspeccionar' : 'Abrir'} <ArrowRight size={12} />
-                    </span>
+                    {!isSuperAdmin && (
+                      <span className="group-hover:text-blue-400 transition-colors flex items-center gap-1 text-[11px]">
+                        Abrir <ArrowRight size={12} />
+                      </span>
+                    )}
                   </div>
                 </div>
               ))
