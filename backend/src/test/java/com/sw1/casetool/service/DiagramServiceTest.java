@@ -307,4 +307,49 @@ public class DiagramServiceTest {
                 eq(userId), eq("PROJECT_PURGED"), eq("diagram_projects"), eq(projectId), anyString(), anyString(), anyMap()
         );
     }
+
+    @Test
+    @DisplayName("CU05-T4: Super Admin no puede purgar proyectos (solo restaurar)")
+    void testPurgeProject_SuperAdminCannotPurge() {
+        mockProject.setIsDeleted(true);
+        UserProfile adminUser = UserProfile.builder()
+                .id(UUID.randomUUID())
+                .email("admin@casetool.com")
+                .role("SUPER_ADMIN")
+                .build();
+
+        when(userProfileRepository.findByEmailIgnoreCase("admin@casetool.com"))
+                .thenReturn(Optional.of(adminUser));
+        when(projectRepository.findByIdAndIsDeletedTrue(projectId))
+                .thenReturn(Optional.of(mockProject));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+                diagramService.purgeProject(projectId, "admin@casetool.com", "127.0.0.1", "JUnit")
+        );
+
+        assertTrue(ex.getMessage().contains("El Administrador solo puede supervisar y restaurar"));
+        verify(projectRepository, never()).delete(any());
+    }
+
+    @Test
+    @DisplayName("CU05-T5: Super Admin no puede eliminar proyectos lógicamente (solo restaurar)")
+    void testDeleteProject_SuperAdminCannotDelete() {
+        UserProfile adminUser = UserProfile.builder()
+                .id(UUID.randomUUID())
+                .email("admin@casetool.com")
+                .role("SUPER_ADMIN")
+                .build();
+
+        when(userProfileRepository.findByEmailIgnoreCase("admin@casetool.com"))
+                .thenReturn(Optional.of(adminUser));
+        when(projectRepository.findByIdAndIsDeletedFalse(projectId))
+                .thenReturn(Optional.of(mockProject));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+                diagramService.deleteProject(projectId, "admin@casetool.com", "127.0.0.1", "JUnit")
+        );
+
+        assertTrue(ex.getMessage().contains("El Administrador solo puede supervisar y restaurar"));
+        verify(projectRepository, never()).save(any());
+    }
 }

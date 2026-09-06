@@ -12,7 +12,8 @@ import {
   History,
   Users2,
   ShieldCheck,
-  Server
+  Server,
+  FolderKanban
 } from 'lucide-react';
 import { useUiStore } from '../../stores/uiStore';
 import { useDiagramStore } from '../../stores/diagramStore';
@@ -126,6 +127,18 @@ const Sidebar: React.FC = () => {
             </Link>
 
             <Link
+              to="/admin/projects"
+              className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+                location.pathname === '/admin/projects'
+                  ? 'bg-purple-600/20 text-purple-300 border border-purple-500/40'
+                  : 'text-slate-400 hover:text-purple-300 hover:bg-slate-900 border border-transparent'
+              }`}
+            >
+              <FolderKanban size={15} className="shrink-0 text-purple-400" />
+              <span>Supervisión de Proyectos</span>
+            </Link>
+
+            <Link
               to="/admin/users"
               className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
                 location.pathname === '/admin/users'
@@ -162,6 +175,18 @@ const Sidebar: React.FC = () => {
             >
               <LayoutDashboard size={15} className="shrink-0 text-blue-400" />
               <span>Dashboard</span>
+            </Link>
+
+            <Link
+              to="/projects"
+              className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+                location.pathname === '/projects'
+                  ? 'bg-blue-600/20 text-blue-300 border border-blue-500/40'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900 border border-transparent'
+              }`}
+            >
+              <FolderKanban size={15} className="shrink-0 text-blue-400" />
+              <span>{isColaborador ? 'Modelos Compartidos' : 'Mis Proyectos UML'}</span>
             </Link>
 
             <Link

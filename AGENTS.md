@@ -77,6 +77,20 @@ El desarrollo del sistema se ejecuta **estrictamente Caso de Uso por Caso de Uso
   3. Pruebas funcionales del CU superadas al 100%.
   4. Documentación y trazabilidad del CU debidamente registradas en la Bóveda de Obsidian.
 * Queda terminantemente prohibido hacer commit o push con código roto, incompleto o a medio implementar.
+* **Control Estricto por el Usuario:** El usuario es quien indica de forma explícita cuándo realizar `git commit` y `git push`, y cuándo planificar el siguiente Caso de Uso. El agente NUNCA debe ejecutar commits/pushes ni pasar a planificar un nuevo CU por iniciativa propia.
+
+### 3.4 Restricciones de Privilegios de Super Admin en Proyectos
+* El Administrador Principal (`SUPER_ADMIN`) **únicamente puede supervisar y restaurar** proyectos desde la papelera de reciclaje (`/admin/projects`).
+* **Prohibición de Eliminación:** El Super Admin **JAMÁS puede eliminar lógicamente ni purgar definitivamente** proyectos ajenos. 
+* No deben existir controles ni botones de eliminación para el Super Admin en el frontend, y el backend bloquea cualquier intento arrojando `IllegalArgumentException` ("El Administrador solo puede supervisar y restaurar proyectos, mas no eliminarlos").
+
+### 3.5 Arquitectura de Vistas: Dashboard Ejecutivo vs Páginas Dedicadas
+* **`/dashboard`:** Es exclusivamente un resumen ejecutivo y cuadro de mando adaptado al rol:
+  - Super Admin: Métricas globales de RBAC, eventos de seguridad y enlaces a gobernanza.
+  - Arquitecto / Colaborador: KPIs de clases/relaciones modeladas, accesos directos y modelos recientes trabajados.
+* **`/projects`:** Espacio de trabajo dedicado para Arquitectos y Colaboradores con CRUD completo, tags, clonación profunda, papelera y purga física.
+* **`/admin/projects`:** Espacio de trabajo dedicado para Super Admin con auditoría global y restauración de proyectos en papelera.
+* La separación y acceso entre vistas reside exclusivamente en el `Sidebar` lateral por rol.
 
 ---
 
@@ -88,6 +102,13 @@ El desarrollo del sistema se ejecuta **estrictamente Caso de Uso por Caso de Uso
    * El botón "Volver al Dashboard" reside únicamente en el Header principal para todas las subpáginas (`/admin/users`, `/settings`, `/editor`).
    * Píldora de usuario unificada (avatar + nombre + settings) sin controles duplicados.
 4. **Identidad CASE Profesional:** Sin nomenclaturas académicas ni etiquetas tipo `(CU01)` visibles para el usuario final en la interfaz.
+5. **Separación y Espaciado de Layout (Respeto de Límites):**
+   * Todo contenedor principal de página debe poseer padding generoso (`p-4 sm:p-6 lg:p-8 pb-20`).
+   * Queda estrictamente prohibido que el contenido quede pegado al `Sidebar` lateral izquierdo o al borde derecho de la pantalla.
+6. **Cero Desbordamiento de Componentes e Iconos:**
+   * Ningún icono, botón, badge o texto debe salirse jamás de su recuadro, card o contenedor.
+   * Todos los cards deben declarar `overflow-hidden`.
+   * Los encabezados de cards con badges y botones de acción deben implementar `flex-wrap`, `min-w-0` y `shrink-0` con márgenes adecuados (`gap-2`), de modo que en pantallas o columnas estrechas los botones se acomoden limpiamente sin desbordar el ancho de la tarjeta.
 
 ---
 
@@ -103,3 +124,15 @@ El desarrollo del sistema se ejecuta **estrictamente Caso de Uso por Caso de Uso
    * Flechas hacia la izquierda con `-left->` y hacia la derecha con `-right->`.
    * Generalización hacia `USUARIO` (`--|> U`).
    * Asociaciones de `USUARIO` hacia el centro (`U -left-> CU1`, `U -left-> CU0`).
+
+---
+
+## 6. Bitácora de Lecciones Aprendidas e Incidentes Resueltos
+
+### Incidente BD-01: Constraint Check Obsoleto en `diagram_history`
+* **Síntoma:** Al crear, editar, clonar, borrar o restaurar proyectos, Spring Boot respondía HTTP 500 con el mensaje `Transaction silently rolled back because it has been marked as rollback-only`.
+* **Causa Raíz:** Existía una restricción CHECK en PostgreSQL 17 (`diagram_history_action_type_check`) que solo permitía un subconjunto restringido de strings (`create_class`, `update_class`, etc.) y rechazaba `PROJECT_CREATED`, `PROJECT_UPDATED`, `PROJECT_DELETED`, `PROJECT_RESTORED`, `PROJECT_CLONED`. La excepción SQL en Hibernate marcaba la transacción activa como `rollback-only`.
+* **Solución Aplicada:**
+  1. Se eliminó la restricción CHECK restrictiva en Supabase PostgreSQL (`ALTER TABLE diagram_history DROP CONSTRAINT IF EXISTS diagram_history_action_type_check;`).
+  2. Se configuró enriquecimiento defensivo en frontend para extraer `err.response?.data?.message` en lugar de mensajes genéricos en los toasts.
+

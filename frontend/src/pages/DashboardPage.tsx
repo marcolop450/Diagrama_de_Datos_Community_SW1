@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AppLayout from '../components/layout/AppLayout';
 import { useAuthStore } from '../stores/authStore';
@@ -7,32 +7,21 @@ import { api } from '../services/api';
 import { DiagramProject } from '../types/diagram';
 import { 
   ShieldCheck, 
-  ShieldAlert, 
   Users, 
   Layers, 
   FolderPlus, 
   ArrowRight, 
   Crown, 
-  Search, 
-  Tag, 
-  Copy, 
-  Edit3, 
-  Trash2, 
-  GitFork, 
-  RefreshCw, 
-  Check, 
-  X, 
-  AlertTriangle,
-  FolderKanban,
-  FileCode2,
-  Share2,
-  ChevronLeft,
+  FolderKanban, 
+  FileCode2, 
+  RotateCcw, 
+  History,
+  Clock,
   ChevronRight,
-  RotateCcw,
-  History
+  RefreshCw,
+  Sparkles
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { ProjectHistoryModal } from '../components/history/ProjectHistoryModal';
 
 interface AdminMetrics {
   totalUsers: number;
@@ -50,54 +39,22 @@ export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
 
   const [projects, setProjects] = useState<DiagramProject[]>([]);
+  const [trashProjects, setTrashProjects] = useState<DiagramProject[]>([]);
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-
-  // Search & Filter State
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedTag, setSelectedTag] = useState('ALL');
-
-  // Modals State (CU03)
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [newProjectName, setNewProjectName] = useState('');
-  const [newProjectDesc, setNewProjectDesc] = useState('');
-  const [newProjectVersion, setNewProjectVersion] = useState('v1.0.0');
-  const [newProjectTags, setNewProjectTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState('');
-
-  const [cloneModalProject, setCloneModalProject] = useState<DiagramProject | null>(null);
-  const [cloneName, setCloneName] = useState('');
-
-  const [editModalProject, setEditModalProject] = useState<DiagramProject | null>(null);
-  const [editName, setEditName] = useState('');
-  const [editDesc, setEditDesc] = useState('');
-  const [editVersion, setEditVersion] = useState('v1.0.0');
-  const [editTags, setEditTags] = useState<string[]>([]);
-  const [editTagInput, setEditTagInput] = useState('');
-
-  const [deleteModalProject, setDeleteModalProject] = useState<DiagramProject | null>(null);
-  const [submittingAction, setSubmittingAction] = useState(false);
-
-  // Trash & History State (CU05)
-  const [trashProjects, setTrashProjects] = useState<DiagramProject[]>([]);
-  const [activeTab, setActiveTab] = useState<'active' | 'trash'>('active');
-  const [historyModalProject, setHistoryModalProject] = useState<DiagramProject | null>(null);
-  const [purgeModalProject, setPurgeModalProject] = useState<DiagramProject | null>(null);
-  const [restoringId, setRestoringId] = useState<string | null>(null);
 
   const role = user?.role || 'ARQUITECTO';
   const isSuperAdmin = role === 'SUPER_ADMIN';
   const isColaborador = role === 'COLABORADOR';
 
   useEffect(() => {
-    loadDashboardData();
+    loadDashboardSummary();
   }, [role]);
 
-  const loadDashboardData = async () => {
+  const loadDashboardSummary = async () => {
     try {
       setLoading(true);
-
       const [metricsRes, projRes, trashRes] = await Promise.all([
         isSuperAdmin ? api.getAdminMetrics() : Promise.resolve(null),
         api.getProjects(),
@@ -119,1272 +76,422 @@ export const DashboardPage: React.FC = () => {
       toast.error('Error al cargar datos del Dashboard');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  const handleRefresh = async () => {
+  const handleRefresh = () => {
     setRefreshing(true);
-    await loadDashboardData();
-    setRefreshing(false);
-    toast.success('Espacio de trabajo sincronizado');
+    loadDashboardSummary();
   };
-
-  // Dynamic tags list extracted from real projects
-  const availableTags = useMemo(() => {
-    const set = new Set<string>();
-    projects.forEach((p) => {
-      if (Array.isArray(p.tags)) {
-        p.tags.forEach((t) => set.add(t));
-      }
-    });
-    return Array.from(set);
-  }, [projects]);
-
-  // Filtered projects
-  const filteredProjects = useMemo(() => {
-    return projects.filter((p) => {
-      const q = searchTerm.toLowerCase().trim();
-      const matchSearch =
-        !q ||
-        (p.name && p.name.toLowerCase().includes(q)) ||
-        (p.description && p.description.toLowerCase().includes(q)) ||
-        (p.tags && p.tags.some((t) => t.toLowerCase().includes(q)));
-
-      const matchTag =
-        selectedTag === 'ALL' ||
-        (p.tags && p.tags.some((t) => t.toLowerCase() === selectedTag.toLowerCase()));
-
-      return matchSearch && matchTag;
-    });
-  }, [projects, searchTerm, selectedTag]);
-
-  // Pagination State
-  const [currentPage, setCurrentPage] = useState(1);
-  const PROJECTS_PER_PAGE = 6;
-
-  // Reset to page 1 whenever searchTerm or selectedTag changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, selectedTag]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredProjects.length / PROJECTS_PER_PAGE));
-
-  const paginatedProjects = useMemo(() => {
-    const startIndex = (currentPage - 1) * PROJECTS_PER_PAGE;
-    return filteredProjects.slice(startIndex, startIndex + PROJECTS_PER_PAGE);
-  }, [filteredProjects, currentPage]);
 
   const handleOpenProject = (id: string, name: string) => {
     loadDiagram(id);
     navigate(`/editor/${id}`);
-    toast.success(`Abriendo proyecto: ${name}`);
+    toast.success(`Cargando modelo: ${name}`);
   };
 
-  // --- Handlers CU03 ---
-
-  // 1. Create Project
-  const handleCreateProject = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newProjectName.trim()) {
-      toast.error('El nombre del proyecto es obligatorio');
-      return;
-    }
-
-    try {
-      setSubmittingAction(true);
-      const res = await api.createProject({
-        name: newProjectName.trim(),
-        description: newProjectDesc.trim(),
-        version: newProjectVersion.trim() || 'v1.0.0',
-        tags: newProjectTags,
-      });
-
-      toast.success(res.message || 'Proyecto creado exitosamente');
-      setIsCreateModalOpen(false);
-      resetCreateForm();
-      await loadDashboardData();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Error al crear el proyecto');
-    } finally {
-      setSubmittingAction(false);
-    }
-  };
-
-  const resetCreateForm = () => {
-    setNewProjectName('');
-    setNewProjectDesc('');
-    setNewProjectVersion('v1.0.0');
-    setNewProjectTags([]);
-    setTagInput('');
-  };
-
-  const handleAddTag = () => {
-    const val = tagInput.trim();
-    if (val && !newProjectTags.includes(val) && newProjectTags.length < 10) {
-      setNewProjectTags([...newProjectTags, val]);
-      setTagInput('');
-    }
-  };
-
-  const handleRemoveTag = (tag: string) => {
-    setNewProjectTags(newProjectTags.filter((t) => t !== tag));
-  };
-
-  // 2. Clone Project (Deep Clone)
-  const handleOpenCloneModal = (e: React.MouseEvent, p: DiagramProject) => {
-    e.stopPropagation();
-    setCloneModalProject(p);
-    setCloneName(`${p.name} (Copia)`);
-  };
-
-  const handleConfirmClone = async () => {
-    if (!cloneModalProject) return;
-    if (!cloneName.trim()) {
-      toast.error('El nombre del clon es obligatorio');
-      return;
-    }
-
-    try {
-      setSubmittingAction(true);
-      const res = await api.cloneProject(cloneModalProject.id, cloneName.trim());
-      toast.success(res.message || 'Proyecto clonado exitosamente con todas sus clases y relaciones');
-      setCloneModalProject(null);
-      await loadDashboardData();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Error al clonar el proyecto');
-    } finally {
-      setSubmittingAction(false);
-    }
-  };
-
-  // 3. Edit Metadata
-  const handleOpenEditModal = (e: React.MouseEvent, p: DiagramProject) => {
-    e.stopPropagation();
-    setEditModalProject(p);
-    setEditName(p.name);
-    setEditDesc(p.description || '');
-    setEditVersion(p.version || 'v1.0.0');
-    setEditTags(Array.isArray(p.tags) ? [...p.tags] : []);
-    setEditTagInput('');
-  };
-
-  const handleConfirmEdit = async () => {
-    if (!editModalProject) return;
-    if (!editName.trim()) {
-      toast.error('El nombre del proyecto es obligatorio');
-      return;
-    }
-
-    try {
-      setSubmittingAction(true);
-      const res = await api.updateProject(editModalProject.id, {
-        name: editName.trim(),
-        description: editDesc.trim(),
-        version: editVersion.trim() || 'v1.0.0',
-        tags: editTags,
-      });
-
-      toast.success(res.message || 'Metadatos del proyecto actualizados');
-      setEditModalProject(null);
-      await loadDashboardData();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Error al actualizar metadatos');
-    } finally {
-      setSubmittingAction(false);
-    }
-  };
-
-  const handleAddEditTag = () => {
-    const val = editTagInput.trim();
-    if (val && !editTags.includes(val) && editTags.length < 10) {
-      setEditTags([...editTags, val]);
-      setEditTagInput('');
-    }
-  };
-
-  const handleRemoveEditTag = (tag: string) => {
-    setEditTags(editTags.filter((t) => t !== tag));
-  };
-
-  // 4. Soft Delete Project
-  const handleOpenDeleteModal = (e: React.MouseEvent, p: DiagramProject) => {
-    e.stopPropagation();
-    setDeleteModalProject(p);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!deleteModalProject) return;
-
-    try {
-      setSubmittingAction(true);
-      const res = await api.deleteProject(deleteModalProject.id);
-      toast.success(res.message || 'Proyecto enviado a la papelera');
-      setDeleteModalProject(null);
-      await loadDashboardData();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Error al eliminar el proyecto');
-    } finally {
-      setSubmittingAction(false);
-    }
-  };
-
-  // 5. CU05 Handlers (Trazabilidad y Papelera de Reciclaje)
-  const handleOpenHistoryModal = (e: React.MouseEvent, p: DiagramProject) => {
-    e.stopPropagation();
-    setHistoryModalProject(p);
-  };
-
-  const handleRestoreProject = async (e: React.MouseEvent, p: DiagramProject) => {
-    e.stopPropagation();
-    try {
-      setRestoringId(p.id);
-      const res = await api.restoreProject(p.id);
-      toast.success(res.message || `Proyecto "${p.name}" restaurado exitosamente`);
-      await loadDashboardData();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Error al restaurar el proyecto');
-    } finally {
-      setRestoringId(null);
-    }
-  };
-
-  const handleOpenPurgeModal = (e: React.MouseEvent, p: DiagramProject) => {
-    e.stopPropagation();
-    setPurgeModalProject(p);
-  };
-
-  const handleConfirmPurge = async () => {
-    if (!purgeModalProject) return;
-    try {
-      setSubmittingAction(true);
-      const res = await api.purgeProject(purgeModalProject.id);
-      toast.success(res.message || `Proyecto "${purgeModalProject.name}" eliminado definitivamente`);
-      setPurgeModalProject(null);
-      await loadDashboardData();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Error al purgar el proyecto');
-    } finally {
-      setSubmittingAction(false);
-    }
-  };
-
-  // Filtered trash projects (CU05)
-  const filteredTrashProjects = useMemo(() => {
-    return trashProjects.filter((p) => {
-      const q = searchTerm.toLowerCase().trim();
-      if (!q) return true;
-      return (
-        (p.name && p.name.toLowerCase().includes(q)) ||
-        (p.description && p.description.toLowerCase().includes(q)) ||
-        (p.tags && p.tags.some((t) => t.toLowerCase().includes(q)))
-      );
-    });
-  }, [trashProjects, searchTerm]);
+  // Aggregated stats for Architect / Collaborator
+  const totalClasses = projects.reduce((acc, p) => acc + (p.nodeCount || 0), 0);
+  const totalRelations = projects.reduce((acc, p) => acc + (p.relationshipCount || 0), 0);
+  const recentProjects = projects.slice(0, 4);
 
   return (
     <AppLayout>
-      <div className="max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-8">
-        {/* Welcome & Role Capabilities Banner */}
-        <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900/80 to-slate-950 border border-slate-800/80 p-6 sm:p-8 shadow-2xl">
-          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="flex flex-col gap-2 max-w-2xl">
+      <div className="max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6 pb-20">
+        {/* Welcome Header */}
+        <div className="relative overflow-hidden bg-gradient-to-r from-slate-900/90 via-slate-900/60 to-slate-950/90 border border-slate-800 rounded-3xl p-6 md:p-8 backdrop-blur-md shadow-xl">
+          <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
-                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-mono font-semibold border ${
-                  isSuperAdmin
-                    ? 'bg-purple-500/10 border-purple-500/30 text-purple-300'
-                    : isColaborador
-                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-                      : 'bg-blue-500/10 border-blue-500/30 text-blue-300'
-                }`}>
-                  {isSuperAdmin ? <Crown size={12} /> : <ShieldCheck size={12} />}
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                  {isSuperAdmin ? <Crown size={13} className="text-purple-400" /> : <Sparkles size={13} />}
                   Espacio: {role}
                 </span>
+                <span className="text-xs text-slate-500 font-mono">CASE Tool v1.0</span>
               </div>
-
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white mt-1">
-                Bienvenido, {user?.fullName || user?.username || 'Usuario'}
+              <h1 className="text-2xl md:text-3xl font-bold text-slate-100 tracking-tight">
+                {isSuperAdmin 
+                  ? 'Panel de Gobernanza y Supervisión Global'
+                  : isColaborador 
+                    ? `Bienvenido, ${user?.fullName || 'Colaborador'}` 
+                    : `Bienvenido, ${user?.fullName || 'Arquitecto'}`}
               </h1>
-
-              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-                {isSuperAdmin
-                  ? 'Panel de control y gobernanza de la plataforma CASE. Como Administrador Principal, supervisas la gestión de usuarios, asignación de roles RBAC, bitácora de seguridad y salud del sistema.'
-                  : isColaborador
-                    ? 'Entorno de co-diseño colaborativo en tiempo real. Tienes acceso a los diagramas UML compartidos y sesiones activas de trabajo en equipo.'
-                    : 'Entorno de ingeniería CASE para modelado UML de clases y relaciones, validación de reglas de normalización (1NF a 3NF), gestión de proyectos y generación de código Spring Boot.'}
+              <p className="text-xs md:text-sm text-slate-400 max-w-2xl leading-relaxed">
+                {isSuperAdmin 
+                  ? 'Control centralizado de usuarios, supervisión global de modelos UML y auditoría de eventos de seguridad.'
+                  : isColaborador 
+                    ? 'Explora y co-diseña los diagramas de clases asignados a tu cuenta con persistencia y control de versiones.'
+                    : 'Entorno de ingeniería CASE UML 2.5+: modelado de clases, trazabilidad histórica, validación de reglas TOM y generación de código Spring Boot.'}
               </p>
             </div>
 
-            {/* Header Actions */}
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-3 shrink-0">
               <button
                 onClick={handleRefresh}
                 disabled={refreshing}
-                className="flex items-center gap-2 px-3.5 py-2.5 bg-slate-900/80 hover:bg-slate-850 border border-slate-700/80 text-slate-300 hover:text-white rounded-xl text-xs font-semibold transition-all active:scale-95 cursor-pointer disabled:opacity-50"
-                title="Sincronizar proyectos"
+                className="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-400 hover:text-slate-200 transition-all cursor-pointer shadow-xs active:scale-95"
+                title="Actualizar resumen"
               >
-                <RefreshCw size={14} className={refreshing ? 'animate-spin text-blue-400' : 'text-blue-400'} />
-                <span>{refreshing ? 'Sincronizando...' : 'Sincronizar'}</span>
+                <RefreshCw size={15} className={refreshing ? 'animate-spin text-blue-400' : ''} />
               </button>
 
-              {isSuperAdmin ? (
+              {!isSuperAdmin ? (
                 <Link
-                  to="/admin/users"
-                  className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-purple-500/20 transition-all active:scale-95 cursor-pointer"
+                  to="/editor"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-md shadow-blue-500/25 transition-all active:scale-95 cursor-pointer"
                 >
-                  <ShieldAlert size={16} />
-                  <span>Gestionar Usuarios (RBAC)</span>
+                  <Layers size={15} />
+                  <span>Abrir Lienzo CASE</span>
                 </Link>
               ) : (
-                <>
-                  <button
-                    onClick={() => setIsCreateModalOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-blue-500/20 transition-all active:scale-95 cursor-pointer"
-                  >
-                    <FolderPlus size={16} />
-                    <span>Nuevo Proyecto UML</span>
-                  </button>
-
-                  <Link
-                    to="/editor"
-                    className="flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-slate-200 hover:text-white border border-slate-700/80 rounded-xl text-xs font-semibold transition-all active:scale-95 cursor-pointer"
-                  >
-                    <Layers size={16} className="text-blue-400" />
-                    <span>Abrir Lienzo CASE</span>
-                  </Link>
-                </>
+                <Link
+                  to="/admin/audit"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-md shadow-purple-500/25 transition-all active:scale-95 cursor-pointer"
+                >
+                  <History size={15} />
+                  <span>Ver Bitácora Forense</span>
+                </Link>
               )}
             </div>
           </div>
-        </section>
+        </div>
 
-        {/* 1. SUPER_ADMIN METRICS SECTION */}
+        {/* ========================================================================= */}
+        {/* VISTA 1: SUPER_ADMIN RESUMEN DE GOBERNANZA                                */}
+        {/* ========================================================================= */}
         {isSuperAdmin && (
-          <section className="flex flex-col gap-4">
-            <div className="flex items-center gap-2">
-              <ShieldAlert size={18} className="text-purple-400" />
-              <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
-                Métricas de Gobernanza y Usuarios
-              </h2>
+          <>
+            {/* KPI Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Link 
+                to="/admin/users"
+                className="bg-slate-900/40 hover:bg-slate-900/70 border border-slate-800/80 hover:border-purple-500/40 rounded-2xl p-4.5 flex flex-col justify-between transition-all group shadow-sm"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-slate-400">Usuarios Registrados</span>
+                  <div className="w-8 h-8 rounded-lg bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                    <Users size={16} />
+                  </div>
+                </div>
+                <div className="flex items-baseline justify-between mt-1">
+                  <span className="text-2xl font-bold text-slate-100 font-mono">
+                    {metrics?.totalUsers ?? '...'}
+                  </span>
+                  <span className="text-[11px] text-emerald-400 font-medium">
+                    {metrics?.totalActiveUsers ?? 0} activos
+                  </span>
+                </div>
+                <div className="mt-3 pt-2.5 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-500 group-hover:text-purple-300 transition-colors">
+                  <span>Gestionar roles y cuentas</span>
+                  <ChevronRight size={13} />
+                </div>
+              </Link>
+
+              <Link 
+                to="/admin/projects"
+                className="bg-slate-900/40 hover:bg-slate-900/70 border border-slate-800/80 hover:border-purple-500/40 rounded-2xl p-4.5 flex flex-col justify-between transition-all group shadow-sm"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-slate-400">Modelos en Plataforma</span>
+                  <div className="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
+                    <FolderKanban size={16} />
+                  </div>
+                </div>
+                <div className="flex items-baseline justify-between mt-1">
+                  <span className="text-2xl font-bold text-slate-100 font-mono">
+                    {projects.length}
+                  </span>
+                  <span className="text-[11px] text-blue-400 font-medium">
+                    Activos
+                  </span>
+                </div>
+                <div className="mt-3 pt-2.5 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-500 group-hover:text-blue-300 transition-colors">
+                  <span>Supervisar todos los proyectos</span>
+                  <ChevronRight size={13} />
+                </div>
+              </Link>
+
+              <Link 
+                to="/admin/audit"
+                className="bg-slate-900/40 hover:bg-slate-900/70 border border-slate-800/80 hover:border-purple-500/40 rounded-2xl p-4.5 flex flex-col justify-between transition-all group shadow-sm"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-slate-400">Bitácora Forense</span>
+                  <div className="w-8 h-8 rounded-lg bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+                    <ShieldCheck size={16} />
+                  </div>
+                </div>
+                <div className="flex items-baseline justify-between mt-1">
+                  <span className="text-2xl font-bold text-slate-100 font-mono">
+                    Inmutable
+                  </span>
+                  <span className="text-[11px] text-indigo-400 font-medium">
+                    PostgreSQL
+                  </span>
+                </div>
+                <div className="mt-3 pt-2.5 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-500 group-hover:text-indigo-300 transition-colors">
+                  <span>Consultar eventos y exportar</span>
+                  <ChevronRight size={13} />
+                </div>
+              </Link>
+
+              <Link 
+                to="/admin/projects"
+                className="bg-slate-900/40 hover:bg-slate-900/70 border border-slate-800/80 hover:border-purple-500/40 rounded-2xl p-4.5 flex flex-col justify-between transition-all group shadow-sm"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-slate-400">Papelera del Sistema</span>
+                  <div className="w-8 h-8 rounded-lg bg-rose-600/20 border border-rose-500/30 flex items-center justify-center text-rose-400">
+                    <RotateCcw size={16} />
+                  </div>
+                </div>
+                <div className="flex items-baseline justify-between mt-1">
+                  <span className="text-2xl font-bold text-slate-100 font-mono">
+                    {trashProjects.length}
+                  </span>
+                  <span className="text-[11px] text-rose-400 font-medium">
+                    Recuperables
+                  </span>
+                </div>
+                <div className="mt-3 pt-2.5 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-500 group-hover:text-rose-300 transition-colors">
+                  <span>Restaurar proyectos eliminados</span>
+                  <ChevronRight size={13} />
+                </div>
+              </Link>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-              <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-4 flex flex-col">
-                <span className="text-xs font-medium text-slate-400">Total Usuarios</span>
-                <span className="text-2xl font-bold font-mono text-white mt-2">
-                  {metrics ? metrics.totalUsers : '-'}
+            {/* Governance Direct Access Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+              <Link
+                to="/admin/projects"
+                className="p-5 bg-slate-900/40 hover:bg-slate-900/70 border border-slate-800 rounded-2xl flex flex-col justify-between transition-all group"
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-purple-600/20 border border-purple-500/40 flex items-center justify-center text-purple-400">
+                    <FolderKanban size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-200">Supervisión de Proyectos</h3>
+                    <p className="text-xs text-slate-400">Auditoría y restauración de modelos</p>
+                  </div>
+                </div>
+                <span className="text-xs font-semibold text-purple-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                  Ver proyectos de la plataforma <ArrowRight size={13} />
                 </span>
-                <span className="text-[10px] text-slate-500 mt-1">Registrados en PostgreSQL</span>
-              </div>
+              </Link>
 
-              <div className="bg-slate-900/40 border border-purple-900/40 rounded-2xl p-4 flex flex-col">
-                <span className="text-xs font-medium text-purple-300">Super Admins</span>
-                <span className="text-2xl font-bold font-mono text-purple-200 mt-2">
-                  {metrics ? metrics.totalSuperAdmins : '-'}
+              <Link
+                to="/admin/users"
+                className="p-5 bg-slate-900/40 hover:bg-slate-900/70 border border-slate-800 rounded-2xl flex flex-col justify-between transition-all group"
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-purple-600/20 border border-purple-500/40 flex items-center justify-center text-purple-400">
+                    <Users size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-200">Gestión de Usuarios (RBAC)</h3>
+                    <p className="text-xs text-slate-400">Roles, estados y accesos</p>
+                  </div>
+                </div>
+                <span className="text-xs font-semibold text-purple-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                  Administrar usuarios <ArrowRight size={13} />
                 </span>
-                <span className="text-[10px] text-purple-400/70 mt-1">Control RBAC</span>
-              </div>
+              </Link>
 
-              <div className="bg-slate-900/40 border border-blue-900/40 rounded-2xl p-4 flex flex-col">
-                <span className="text-xs font-medium text-blue-300">Arquitectos</span>
-                <span className="text-2xl font-bold font-mono text-blue-200 mt-2">
-                  {metrics ? metrics.totalArchitects : '-'}
+              <Link
+                to="/admin/audit"
+                className="p-5 bg-slate-900/40 hover:bg-slate-900/70 border border-slate-800 rounded-2xl flex flex-col justify-between transition-all group"
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-purple-600/20 border border-purple-500/40 flex items-center justify-center text-purple-400">
+                    <History size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-200">Bitácora Global</h3>
+                    <p className="text-xs text-slate-400">Filtros forenses y exportación Excel/CSV</p>
+                  </div>
+                </div>
+                <span className="text-xs font-semibold text-purple-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                  Ver registros de auditoría <ArrowRight size={13} />
                 </span>
-                <span className="text-[10px] text-blue-400/70 mt-1">Modelado CASE</span>
-              </div>
-
-              <div className="bg-slate-900/40 border border-emerald-900/40 rounded-2xl p-4 flex flex-col">
-                <span className="text-xs font-medium text-emerald-300">Colaboradores</span>
-                <span className="text-2xl font-bold font-mono text-emerald-200 mt-2">
-                  {metrics ? metrics.totalCollaborators : '-'}
-                </span>
-                <span className="text-[10px] text-emerald-400/70 mt-1">Co-diseñadores</span>
-              </div>
-
-              <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-4 flex flex-col">
-                <span className="text-xs font-medium text-slate-400">Cuentas Activas</span>
-                <span className="text-2xl font-bold font-mono text-emerald-400 mt-2">
-                  {metrics ? metrics.totalActiveUsers : '-'}
-                </span>
-                <span className="text-[10px] text-slate-500 mt-1">Acceso Permitido</span>
-              </div>
-
-              <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-4 flex flex-col">
-                <span className="text-xs font-medium text-slate-400">Suspendidos</span>
-                <span className="text-2xl font-bold font-mono text-rose-400 mt-2">
-                  {metrics ? metrics.totalInactiveUsers : '-'}
-                </span>
-                <span className="text-[10px] text-slate-500 mt-1">Bloqueados</span>
-              </div>
+              </Link>
             </div>
-          </section>
+          </>
         )}
 
-        {/* 2. PROYECTOS Y ESPACIOS DE TRABAJO (CU03) */}
-        <section className="flex flex-col gap-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400 shadow-sm">
-                <FolderKanban size={18} />
-              </div>
-              <div>
-                <h2 className="text-lg font-bold text-white tracking-tight">
-                  {isSuperAdmin ? 'Proyectos en la Plataforma (Supervisión Global)' : 'Proyectos y Espacios de Trabajo'}
-                </h2>
-                <p className="text-xs text-slate-400">
-                  {isSuperAdmin
-                    ? 'Supervisión y auditoría de todos los modelos UML diseñados en la plataforma.'
-                    : 'Gestión integral del ciclo de vida, clonación profunda y metadatos de diagramas UML.'}
-                </p>
-              </div>
-            </div>
-
-            {!isSuperAdmin && (
-              <button
-                onClick={() => setIsCreateModalOpen(true)}
-                className="flex items-center gap-2 px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-blue-500/20 transition-all cursor-pointer"
+        {/* ========================================================================= */}
+        {/* VISTA 2: ARQUITECTO & COLABORADOR RESUMEN DE MODELADO                     */}
+        {/* ========================================================================= */}
+        {!isSuperAdmin && (
+          <>
+            {/* KPI Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Link 
+                to="/projects"
+                className="bg-slate-900/40 hover:bg-slate-900/70 border border-slate-800/80 hover:border-blue-500/40 rounded-2xl p-4.5 flex flex-col justify-between transition-all group shadow-sm"
               >
-                <FolderPlus size={14} />
-                <span>Nuevo Proyecto</span>
-              </button>
-            )}
-          </div>
-
-          {/* CU05: Tabs for Active Projects vs Trash Bin */}
-          <div className="flex items-center gap-2 border-b border-slate-800/80 pb-2">
-            <button
-              onClick={() => setActiveTab('active')}
-              className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
-                activeTab === 'active'
-                  ? 'bg-blue-600/20 text-blue-300 border border-blue-500/40 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900 border border-transparent'
-              }`}
-            >
-              <FolderKanban size={15} className={activeTab === 'active' ? 'text-blue-400' : 'text-slate-500'} />
-              <span>Proyectos Activos</span>
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono ${
-                activeTab === 'active' ? 'bg-blue-500/20 text-blue-300' : 'bg-slate-800 text-slate-400'
-              }`}>
-                {projects.length}
-              </span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('trash')}
-              className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
-                activeTab === 'trash'
-                  ? 'bg-rose-600/20 text-rose-300 border border-rose-500/40 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900 border border-transparent'
-              }`}
-            >
-              <Trash2 size={15} className={activeTab === 'trash' ? 'text-rose-400' : 'text-slate-500'} />
-              <span>Papelera de Reciclaje</span>
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono ${
-                activeTab === 'trash' ? 'bg-rose-500/20 text-rose-300' : 'bg-slate-800 text-slate-400'
-              }`}>
-                {trashProjects.length}
-              </span>
-            </button>
-          </div>
-
-          {/* Search Bar & Tag Chips Filter */}
-          <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-3 sm:p-4 flex flex-col gap-3">
-            <div className="relative">
-              <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
-              <input
-                type="text"
-                placeholder="Buscar proyectos por nombre, descripción o etiquetas..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 text-slate-100 placeholder:text-slate-500 rounded-xl pl-9 pr-3 py-2 text-xs focus:outline-none transition-colors"
-              />
-            </div>
-
-            {/* Tag Filter Chips */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs scrollbar-none">
-              <span className="text-[11px] font-mono text-slate-500 flex items-center gap-1 shrink-0 mr-1">
-                <Tag size={12} /> Tags:
-              </span>
-              <button
-                type="button"
-                onClick={() => setSelectedTag('ALL')}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-mono font-medium transition-colors shrink-0 cursor-pointer ${
-                  selectedTag === 'ALL'
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'bg-slate-950 hover:bg-slate-800 text-slate-400 border border-slate-800'
-                }`}
-              >
-                Todos ({projects.length})
-              </button>
-
-              {availableTags.map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setSelectedTag(t)}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-mono font-medium transition-colors shrink-0 cursor-pointer ${
-                    selectedTag.toLowerCase() === t.toLowerCase()
-                      ? 'bg-blue-600 text-white shadow-sm'
-                      : 'bg-slate-950 hover:bg-slate-800 text-slate-400 border border-slate-800'
-                  }`}
-                >
-                  #{t}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Projects Grid: Active vs Trash */}
-          {activeTab === 'trash' ? (
-            /* TRASH BIN VIEW (CU05) */
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredTrashProjects.length === 0 ? (
-                <div className="col-span-full py-16 text-center text-slate-500 border border-dashed border-slate-800 rounded-3xl flex flex-col items-center gap-3">
-                  <div className="p-3 bg-slate-900 rounded-2xl border border-slate-800">
-                    <Trash2 size={32} className="text-slate-600" />
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-slate-400">
+                    {isColaborador ? 'Modelos Compartidos' : 'Mis Proyectos UML'}
+                  </span>
+                  <div className="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
+                    <FolderKanban size={16} />
                   </div>
-                  <p className="text-xs max-w-sm text-slate-400">
-                    {searchTerm
-                      ? 'No se encontraron proyectos en la papelera que coincidan con la búsqueda.'
-                      : 'La papelera de reciclaje está vacía. Los proyectos eliminados se conservarán aquí hasta que decidas restaurarlos o eliminarlos definitivamente.'}
-                  </p>
                 </div>
-              ) : (
-                filteredTrashProjects.map((proj) => (
-                  <div
-                    key={proj.id}
-                    className="bg-slate-900/40 border border-rose-950/60 hover:border-rose-800/50 rounded-2xl p-4 sm:p-5 flex flex-col justify-between gap-4 transition-all shadow-md relative overflow-hidden"
-                  >
-                    <div className="flex flex-col gap-2.5">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
-                          <div className="w-7 h-7 rounded-lg bg-rose-600/15 border border-rose-500/30 flex items-center justify-center text-rose-400 shrink-0">
-                            <Trash2 size={14} />
-                          </div>
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-rose-950/60 text-rose-300 border border-rose-800/50 shrink-0">
-                            {proj.version || 'v1.0.0'}
-                          </span>
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800/80 text-slate-400 border border-slate-700/60">
-                            En Papelera
-                          </span>
-                        </div>
+                <div className="flex items-baseline justify-between mt-1">
+                  <span className="text-2xl font-bold text-slate-100 font-mono">
+                    {projects.length}
+                  </span>
+                  <span className="text-[11px] text-blue-400 font-medium">
+                    Activos
+                  </span>
+                </div>
+                <div className="mt-3 pt-2.5 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-500 group-hover:text-blue-300 transition-colors">
+                  <span>Gestionar todos los proyectos</span>
+                  <ChevronRight size={13} />
+                </div>
+              </Link>
 
-                        {/* Action buttons: Restore, History, Purge */}
-                        <div className="flex items-center gap-1 shrink-0">
-                          <button
-                            type="button"
-                            onClick={(e) => handleRestoreProject(e, proj)}
-                            disabled={restoringId === proj.id}
-                            title="Restaurar proyecto al espacio de trabajo activo"
-                            className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-emerald-300 bg-emerald-950/50 hover:bg-emerald-900/60 border border-emerald-800/50 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
-                          >
-                            <RotateCcw size={12} className={restoringId === proj.id ? 'animate-spin' : ''} />
-                            <span>Restaurar</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={(e) => handleOpenHistoryModal(e, proj)}
-                            title="Consultar historial y trazabilidad (CU05)"
-                            className="p-1.5 text-slate-400 hover:text-purple-300 hover:bg-purple-950/60 rounded-lg transition-colors cursor-pointer border border-transparent hover:border-purple-800/50"
-                          >
-                            <History size={13} />
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={(e) => handleOpenPurgeModal(e, proj)}
-                            title="Eliminar definitivamente (Purga física en PostgreSQL)"
-                            className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-950/60 rounded-lg transition-colors cursor-pointer border border-transparent hover:border-rose-800/50"
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                        </div>
-                      </div>
-
-                      <h3 className="font-semibold text-sm text-slate-200 line-clamp-1">
-                        {proj.name}
-                      </h3>
-
-                      <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
-                        {proj.description || 'Espacio de trabajo UML sin descripción detallada.'}
-                      </p>
-
-                      {Array.isArray(proj.tags) && proj.tags.length > 0 && (
-                        <div className="flex flex-wrap items-center gap-1 mt-1">
-                          {proj.tags.slice(0, 4).map((tag) => (
-                            <span
-                              key={tag}
-                              className="px-2 py-0.5 rounded-md text-[10px] font-mono text-slate-400 bg-slate-950 border border-slate-800"
-                            >
-                              #{tag}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex items-center justify-between pt-3 border-t border-slate-800/60 text-[11px] text-slate-500 font-mono">
-                      <div className="flex items-center gap-3">
-                        <span className="flex items-center gap-1" title="Nodos de clases UML">
-                          <FileCode2 size={12} className="text-slate-400" />
-                          {proj.nodeCount !== undefined ? proj.nodeCount : 0} clases
-                        </span>
-                        <span className="flex items-center gap-1" title="Relaciones y cardinalidades">
-                          <Share2 size={12} className="text-slate-400" />
-                          {proj.relationshipCount !== undefined ? proj.relationshipCount : 0} rels
-                        </span>
-                      </div>
-                      <span className="text-[10px] text-slate-500">
-                        {proj.ownerName ? `Por: ${proj.ownerName}` : ''}
-                      </span>
-                    </div>
+              <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-4.5 flex flex-col justify-between shadow-sm">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-slate-400">Clases Modeladas</span>
+                  <div className="w-8 h-8 rounded-lg bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                    <Layers size={16} />
                   </div>
-                ))
-              )}
-            </div>
-          ) : (
-            <>
-              {/* Projects Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {loading ? (
-              <div className="col-span-full py-16 text-center text-slate-500 animate-pulse font-mono text-xs flex flex-col items-center gap-2">
-                <RefreshCw size={20} className="animate-spin text-blue-400" />
-                <span>Cargando proyectos desde PostgreSQL...</span>
+                </div>
+                <div className="flex items-baseline justify-between mt-1">
+                  <span className="text-2xl font-bold text-slate-100 font-mono">
+                    {totalClasses}
+                  </span>
+                  <span className="text-[11px] text-emerald-400 font-medium">
+                    Entidades UML
+                  </span>
+                </div>
+                <div className="mt-3 pt-2.5 border-t border-slate-800/60 text-[11px] text-slate-500">
+                  En todos tus proyectos
+                </div>
               </div>
-            ) : filteredProjects.length === 0 ? (
-              <div className="col-span-full py-16 text-center text-slate-500 border border-dashed border-slate-800 rounded-3xl flex flex-col items-center gap-3">
-                <FolderKanban size={32} className="text-slate-600" />
-                <p className="text-xs max-w-sm">
-                  {searchTerm || selectedTag !== 'ALL'
-                    ? 'No se encontraron proyectos coincidentes con los filtros aplicados.'
-                    : isSuperAdmin
-                      ? 'No hay proyectos registrados en la plataforma actualmente.'
-                      : 'No tienes proyectos aún. Comienza creando un nuevo proyecto UML o clonando una arquitectura base.'}
-                </p>
-                {!isSuperAdmin && !searchTerm && selectedTag === 'ALL' && (
-                  <button
-                    onClick={() => setIsCreateModalOpen(true)}
-                    className="flex items-center gap-1.5 px-3.5 py-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/40 rounded-xl text-xs font-semibold cursor-pointer transition-all mt-1"
+
+              <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-4.5 flex flex-col justify-between shadow-sm">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-slate-400">Relaciones UML</span>
+                  <div className="w-8 h-8 rounded-lg bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+                    <FileCode2 size={16} />
+                  </div>
+                </div>
+                <div className="flex items-baseline justify-between mt-1">
+                  <span className="text-2xl font-bold text-slate-100 font-mono">
+                    {totalRelations}
+                  </span>
+                  <span className="text-[11px] text-indigo-400 font-medium">
+                    Asociaciones
+                  </span>
+                </div>
+                <div className="mt-3 pt-2.5 border-t border-slate-800/60 text-[11px] text-slate-500">
+                  Con cardinalidad y tipos
+                </div>
+              </div>
+
+              <Link 
+                to="/projects"
+                className="bg-slate-900/40 hover:bg-slate-900/70 border border-slate-800/80 hover:border-rose-500/40 rounded-2xl p-4.5 flex flex-col justify-between transition-all group shadow-sm"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-slate-400">Papelera de Reciclaje</span>
+                  <div className="w-8 h-8 rounded-lg bg-rose-600/20 border border-rose-500/30 flex items-center justify-center text-rose-400">
+                    <RotateCcw size={16} />
+                  </div>
+                </div>
+                <div className="flex items-baseline justify-between mt-1">
+                  <span className="text-2xl font-bold text-slate-100 font-mono">
+                    {trashProjects.length}
+                  </span>
+                  <span className="text-[11px] text-rose-400 font-medium">
+                    Recuperables
+                  </span>
+                </div>
+                <div className="mt-3 pt-2.5 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-500 group-hover:text-rose-300 transition-colors">
+                  <span>Ver papelera</span>
+                  <ChevronRight size={13} />
+                </div>
+              </Link>
+            </div>
+
+            {/* Quick Actions & Recent Projects Section */}
+            <div className="flex flex-col gap-4 mt-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-base font-bold text-slate-100">Proyectos Recientes</h2>
+                  <p className="text-xs text-slate-400">Últimos modelos de clases trabajados</p>
+                </div>
+
+                <Link
+                  to="/projects"
+                  className="text-xs font-semibold text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors"
+                >
+                  <span>Ver todos ({projects.length})</span>
+                  <ArrowRight size={13} />
+                </Link>
+              </div>
+
+              {loading ? (
+                <div className="py-12 text-center text-xs text-slate-500 flex items-center justify-center gap-2">
+                  <RefreshCw size={14} className="animate-spin text-blue-500" />
+                  <span>Cargando modelos...</span>
+                </div>
+              ) : recentProjects.length === 0 ? (
+                <div className="p-8 bg-slate-900/30 border border-dashed border-slate-800 rounded-2xl text-center">
+                  <p className="text-xs text-slate-400 mb-3">No tienes proyectos creados todavía.</p>
+                  <Link
+                    to="/projects"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-all shadow-xs cursor-pointer"
                   >
                     <FolderPlus size={14} />
-                    <span>Crear Mi Primer Proyecto</span>
-                  </button>
-                )}
-              </div>
-            ) : (
-              paginatedProjects.map((proj) => (
-                <div
-                  key={proj.id}
-                  onClick={!isSuperAdmin ? () => handleOpenProject(proj.id, proj.name) : undefined}
-                  className={`group bg-slate-900/50 border border-slate-800/80 rounded-2xl p-4 sm:p-5 flex flex-col justify-between gap-4 transition-all shadow-md relative overflow-hidden ${
-                    !isSuperAdmin
-                      ? 'hover:bg-slate-900/90 hover:border-blue-500/50 hover:shadow-xl hover:-translate-y-0.5 cursor-pointer'
-                      : 'cursor-default'
-                  }`}
-                >
-                  {/* Top: Icon + Version + Fork Badge + Owner / Actions */}
-                  <div className="flex flex-col gap-2.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
-                        <div className="w-7 h-7 rounded-lg bg-blue-600/15 border border-blue-500/30 flex items-center justify-center text-blue-400 shrink-0">
-                          <Layers size={14} />
+                    <span>Crear Proyecto en Proyectos UML</span>
+                  </Link>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {recentProjects.map(proj => (
+                    <div
+                      key={proj.id}
+                      onClick={() => handleOpenProject(proj.id, proj.name)}
+                      className="p-4 bg-slate-900/40 hover:bg-slate-900/70 border border-slate-800 hover:border-blue-500/40 rounded-2xl flex flex-col justify-between transition-all cursor-pointer group shadow-sm overflow-hidden"
+                    >
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-blue-950/60 border border-blue-800/60 text-blue-300">
+                            {proj.version || 'v1.0.0'}
+                          </span>
+                          <span className="text-[10px] text-slate-500 flex items-center gap-1">
+                            <Clock size={11} />
+                            {proj.updatedAt ? new Date(proj.updatedAt).toLocaleDateString() : 'Reciente'}
+                          </span>
                         </div>
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-blue-950/60 text-blue-300 border border-blue-800/50 shrink-0">
-                          {proj.version || 'v1.0.0'}
+
+                        <h3 className="text-sm font-semibold text-slate-200 group-hover:text-blue-400 transition-colors line-clamp-1 mb-1">
+                          {proj.name}
+                        </h3>
+                        <p className="text-xs text-slate-400 line-clamp-2 min-h-[32px] mb-3">
+                          {proj.description || 'Sin descripción.'}
+                        </p>
+                      </div>
+
+                      <div className="pt-2.5 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-400">
+                        <span className="font-mono">{proj.nodeCount || 0} clases</span>
+                        <span className="text-blue-400 font-semibold flex items-center gap-0.5 group-hover:translate-x-1 transition-transform">
+                          Abrir <ChevronRight size={12} />
                         </span>
-                        {proj.clonedFromId && (
-                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-purple-950/60 text-purple-300 border border-purple-800/50 shrink-0" title="Proyecto bifurcado mediante clonación profunda">
-                            <GitFork size={10} />
-                            Clon
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Action buttons (History, Clone, Edit, Delete) */}
-                      <div className="flex items-center gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
-                        <button
-                          type="button"
-                          onClick={(e) => handleOpenHistoryModal(e, proj)}
-                          title="Consultar historial y trazabilidad (CU05)"
-                          className="p-1.5 text-slate-400 hover:text-purple-300 hover:bg-purple-950/60 rounded-lg transition-colors cursor-pointer border border-transparent hover:border-purple-800/50"
-                        >
-                          <History size={13} />
-                        </button>
-                        {!isSuperAdmin ? (
-                          <>
-                            <button
-                              type="button"
-                              onClick={(e) => handleOpenCloneModal(e, proj)}
-                              title="Clonar proyecto"
-                              className="p-1.5 text-slate-400 hover:text-blue-300 hover:bg-blue-950/60 rounded-lg transition-colors cursor-pointer border border-transparent hover:border-blue-800/50"
-                            >
-                              <Copy size={13} />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={(e) => handleOpenEditModal(e, proj)}
-                              title="Editar metadatos y tags"
-                              className="p-1.5 text-slate-400 hover:text-blue-300 hover:bg-blue-950/60 rounded-lg transition-colors cursor-pointer border border-transparent hover:border-blue-800/50"
-                            >
-                              <Edit3 size={13} />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={(e) => handleOpenDeleteModal(e, proj)}
-                              title="Enviar a papelera de reciclaje"
-                              className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-950/60 rounded-lg transition-colors cursor-pointer border border-transparent hover:border-rose-800/50"
-                            >
-                              <Trash2 size={13} />
-                            </button>
-                          </>
-                        ) : (
-                          <div
-                            className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-medium bg-slate-800/80 text-slate-300 border border-slate-700/60 shrink-0 max-w-[130px]"
-                            title={`Propietario: ${proj.ownerName || 'Arquitecto'}`}
-                          >
-                            <Users size={11} className="text-purple-400 shrink-0" />
-                            <span className="truncate">{proj.ownerName || 'Arquitecto'}</span>
-                          </div>
-                        )}
                       </div>
                     </div>
-
-                    <h3 className={`font-semibold text-sm text-white transition-colors line-clamp-1 ${!isSuperAdmin ? 'group-hover:text-blue-200' : ''}`}>
-                      {proj.name}
-                    </h3>
-
-                    <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
-                      {proj.description || 'Espacio de trabajo UML sin descripción detallada.'}
-                    </p>
-
-                    {/* Tag Chips */}
-                    {Array.isArray(proj.tags) && proj.tags.length > 0 && (
-                      <div className="flex flex-wrap items-center gap-1 mt-1">
-                        {proj.tags.slice(0, 4).map((tag) => (
-                          <span
-                            key={tag}
-                            className="px-2 py-0.5 rounded-md text-[10px] font-mono text-slate-300 bg-slate-950 border border-slate-800"
-                          >
-                            #{tag}
-                          </span>
-                        ))}
-                        {proj.tags.length > 4 && (
-                          <span className="text-[10px] font-mono text-slate-500">
-                            +{proj.tags.length - 4}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Bottom Stats & Open Action */}
-                  <div className="flex items-center justify-between pt-3 border-t border-slate-800/60 text-[11px] text-slate-500 font-mono">
-                    <div className="flex items-center gap-3">
-                      <span className="flex items-center gap-1" title="Nodos de clases UML">
-                        <FileCode2 size={12} className="text-blue-400" />
-                        {proj.nodeCount !== undefined ? proj.nodeCount : 0} clases
-                      </span>
-                      <span className="flex items-center gap-1" title="Relaciones y cardinalidades">
-                        <Share2 size={12} className="text-purple-400" />
-                        {proj.relationshipCount !== undefined ? proj.relationshipCount : 0} rels
-                      </span>
-                    </div>
-
-                    {!isSuperAdmin && (
-                      <span className="group-hover:text-blue-400 transition-colors flex items-center gap-1 text-[11px]">
-                        Abrir <ArrowRight size={12} />
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-
-          {/* Pagination Controls */}
-          {filteredProjects.length > PROJECTS_PER_PAGE && (
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 text-xs text-slate-400 font-mono">
-              <span>
-                Mostrando{' '}
-                <strong className="text-white">
-                  {(currentPage - 1) * PROJECTS_PER_PAGE + 1}
-                </strong>{' '}
-                -{' '}
-                <strong className="text-white">
-                  {Math.min(currentPage * PROJECTS_PER_PAGE, filteredProjects.length)}
-                </strong>{' '}
-                de <strong className="text-white">{filteredProjects.length}</strong> proyectos
-              </span>
-
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 disabled:opacity-40 disabled:hover:bg-slate-900 text-slate-300 border border-slate-800 transition-colors cursor-pointer disabled:cursor-not-allowed flex items-center gap-1"
-                >
-                  <ChevronLeft size={14} />
-                  <span>Anterior</span>
-                </button>
-
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
-                    <button
-                      key={pageNum}
-                      type="button"
-                      onClick={() => setCurrentPage(pageNum)}
-                      className={`w-8 h-8 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
-                        currentPage === pageNum
-                          ? 'bg-blue-600 text-white shadow-sm'
-                          : 'bg-slate-900/60 hover:bg-slate-800 text-slate-400 border border-slate-800'
-                      }`}
-                    >
-                      {pageNum}
-                    </button>
                   ))}
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
-                  className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 disabled:opacity-40 disabled:hover:bg-slate-900 text-slate-300 border border-slate-800 transition-colors cursor-pointer disabled:cursor-not-allowed flex items-center gap-1"
-                >
-                  <span>Siguiente</span>
-                  <ChevronRight size={14} />
-                </button>
-              </div>
+              )}
             </div>
-          )}
           </>
-          )}
-        </section>
+        )}
       </div>
-
-      {/* ============================================================ */}
-      {/* MODAL 1: CREAR NUEVO PROYECTO (CU03)                        */}
-      {/* ============================================================ */}
-      {isCreateModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-2xl p-6 shadow-2xl flex flex-col gap-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div className="flex items-center gap-2">
-                <FolderPlus size={18} className="text-blue-400" />
-                <h3 className="font-bold text-white text-sm sm:text-base">
-                  Crear Nuevo Proyecto UML
-                </h3>
-              </div>
-              <button 
-                onClick={() => setIsCreateModalOpen(false)}
-                className="text-slate-500 hover:text-white transition-colors cursor-pointer"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateProject} className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-slate-300">
-                  Nombre del Proyecto <span className="text-rose-400">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="ej. Sistema de Facturación Electrónica"
-                  value={newProjectName}
-                  onChange={(e) => setNewProjectName(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 text-slate-100 placeholder:text-slate-600 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none transition-colors"
-                />
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-slate-300">
-                  Descripción del Proyecto
-                </label>
-                <textarea
-                  rows={3}
-                  placeholder="Especificación de dominio, módulos principales y objetivos de diseño..."
-                  value={newProjectDesc}
-                  onChange={(e) => setNewProjectDesc(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 text-slate-100 placeholder:text-slate-600 rounded-xl p-3 text-xs focus:outline-none transition-colors resize-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-slate-300">
-                    Versión Semántica
-                  </label>
-                  <input
-                    type="text"
-                    value={newProjectVersion}
-                    onChange={(e) => setNewProjectVersion(e.target.value)}
-                    placeholder="v1.0.0"
-                    className="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 text-slate-100 placeholder:text-slate-600 rounded-xl px-3 py-2 text-xs font-mono focus:outline-none transition-colors"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-slate-300">
-                    Etiquetas de Dominio (Tags)
-                  </label>
-                  <div className="flex items-center gap-1.5">
-                    <input
-                      type="text"
-                      value={tagInput}
-                      onChange={(e) => setTagInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          handleAddTag();
-                        }
-                      }}
-                      placeholder="ej. Finanzas"
-                      className="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 text-slate-100 placeholder:text-slate-600 rounded-xl px-3 py-2 text-xs focus:outline-none transition-colors"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleAddTag}
-                      className="px-2.5 py-2 bg-slate-850 hover:bg-slate-800 border border-slate-700 text-slate-200 rounded-xl text-xs font-medium cursor-pointer"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Tag Badges List */}
-              {newProjectTags.length > 0 && (
-                <div className="flex flex-wrap items-center gap-1.5 p-2 bg-slate-950/60 border border-slate-800/80 rounded-xl">
-                  {newProjectTags.map((t) => (
-                    <span
-                      key={t}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-mono text-blue-300 bg-blue-950/60 border border-blue-800/50"
-                    >
-                      #{t}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveTag(t)}
-                        className="hover:text-rose-400 cursor-pointer"
-                      >
-                        <X size={10} />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800 mt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsCreateModalOpen(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-750 text-slate-300 rounded-xl text-xs font-medium transition-colors cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={submittingAction}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-blue-500/20 transition-all cursor-pointer disabled:opacity-50"
-                >
-                  {submittingAction ? <RefreshCw size={13} className="animate-spin" /> : <Check size={13} />}
-                  <span>Crear Proyecto</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ============================================================ */}
-      {/* MODAL 2: CLONAR PROYECTO ÍNTEGRO (CU03 - Deep Clone)         */}
-      {/* ============================================================ */}
-      {cloneModalProject && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl p-6 shadow-2xl flex flex-col gap-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div className="flex items-center gap-2">
-                <Copy size={18} className="text-purple-400" />
-                <h3 className="font-bold text-white text-sm sm:text-base">
-                  Clonación Profunda de Proyecto
-                </h3>
-              </div>
-              <button 
-                onClick={() => setCloneModalProject(null)}
-                className="text-slate-500 hover:text-white transition-colors cursor-pointer"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <p className="text-xs text-slate-300 leading-relaxed">
-              Esta acción creará una copia idéntica e independiente del proyecto <span className="font-semibold text-white">{cloneModalProject.name}</span>, replicando íntegramente todas sus clases y relaciones re-vinculadas.
-            </p>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-slate-300">
-                Nombre del Proyecto Clonado
-              </label>
-              <input
-                type="text"
-                value={cloneName}
-                onChange={(e) => setCloneName(e.target.value)}
-                placeholder="Nombre para el nuevo proyecto"
-                className="w-full bg-slate-950 border border-slate-800 focus:border-purple-500 text-slate-100 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none transition-colors"
-              />
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800 mt-2">
-              <button
-                type="button"
-                onClick={() => setCloneModalProject(null)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-750 text-slate-300 rounded-xl text-xs font-medium transition-colors cursor-pointer"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmClone}
-                disabled={submittingAction}
-                className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-purple-500/20 transition-all cursor-pointer disabled:opacity-50"
-              >
-                {submittingAction ? <RefreshCw size={13} className="animate-spin" /> : <Copy size={13} />}
-                <span>Confirmar Clonación</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ============================================================ */}
-      {/* MODAL 3: EDITAR METADATOS DEL PROYECTO (CU03)                */}
-      {/* ============================================================ */}
-      {editModalProject && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-2xl p-6 shadow-2xl flex flex-col gap-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div className="flex items-center gap-2">
-                <Edit3 size={18} className="text-blue-400" />
-                <h3 className="font-bold text-white text-sm sm:text-base">
-                  Editar Metadatos del Proyecto
-                </h3>
-              </div>
-              <button 
-                onClick={() => setEditModalProject(null)}
-                className="text-slate-500 hover:text-white transition-colors cursor-pointer"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-slate-300">
-                  Nombre del Proyecto
-                </label>
-                <input
-                  type="text"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 text-slate-100 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none transition-colors"
-                />
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-slate-300">
-                  Descripción
-                </label>
-                <textarea
-                  rows={3}
-                  value={editDesc}
-                  onChange={(e) => setEditDesc(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 text-slate-100 rounded-xl p-3 text-xs focus:outline-none transition-colors resize-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-slate-300">
-                    Versión Semántica
-                  </label>
-                  <input
-                    type="text"
-                    value={editVersion}
-                    onChange={(e) => setEditVersion(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 text-slate-100 rounded-xl px-3 py-2 text-xs font-mono focus:outline-none transition-colors"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-slate-300">
-                    Agregar Tag
-                  </label>
-                  <div className="flex items-center gap-1.5">
-                    <input
-                      type="text"
-                      value={editTagInput}
-                      onChange={(e) => setEditTagInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          handleAddEditTag();
-                        }
-                      }}
-                      placeholder="Nuevo tag"
-                      className="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 text-slate-100 rounded-xl px-3 py-2 text-xs focus:outline-none transition-colors"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleAddEditTag}
-                      className="px-2.5 py-2 bg-slate-850 hover:bg-slate-800 border border-slate-700 text-slate-200 rounded-xl text-xs font-medium cursor-pointer"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Tag Chips List */}
-              {editTags.length > 0 && (
-                <div className="flex flex-wrap items-center gap-1.5 p-2 bg-slate-950/60 border border-slate-800/80 rounded-xl">
-                  {editTags.map((t) => (
-                    <span
-                      key={t}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-mono text-blue-300 bg-blue-950/60 border border-blue-800/50"
-                    >
-                      #{t}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveEditTag(t)}
-                        className="hover:text-rose-400 cursor-pointer"
-                      >
-                        <X size={10} />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800 mt-2">
-                <button
-                  type="button"
-                  onClick={() => setEditModalProject(null)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-750 text-slate-300 rounded-xl text-xs font-medium transition-colors cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  onClick={handleConfirmEdit}
-                  disabled={submittingAction}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-blue-500/20 transition-all cursor-pointer disabled:opacity-50"
-                >
-                  {submittingAction ? <RefreshCw size={13} className="animate-spin" /> : <Check size={13} />}
-                  <span>Guardar Cambios</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ============================================================ */}
-      {/* MODAL 4: CONFIRMAR ELIMINACIÓN LÓGICA (CU03)                 */}
-      {/* ============================================================ */}
-      {deleteModalProject && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl p-6 shadow-2xl flex flex-col gap-4">
-            <div className="flex items-center gap-3 text-rose-400 border-b border-slate-800 pb-3">
-              <AlertTriangle size={20} />
-              <h3 className="font-bold text-white text-sm sm:text-base">
-                Mover a la Papelera de Reciclaje
-              </h3>
-            </div>
-
-            <p className="text-xs text-slate-300 leading-relaxed">
-              ¿Estás seguro de que deseas mover el proyecto <span className="font-semibold text-white">{deleteModalProject.name}</span> a la papelera de reciclaje? Podrás restaurarlo o auditar su trazabilidad en cualquier momento.
-            </p>
-
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800 mt-2">
-              <button
-                type="button"
-                onClick={() => setDeleteModalProject(null)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-750 text-slate-300 rounded-xl text-xs font-medium transition-colors cursor-pointer"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmDelete}
-                disabled={submittingAction}
-                className="flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-rose-600/20 transition-all cursor-pointer disabled:opacity-50"
-              >
-                {submittingAction ? <RefreshCw size={13} className="animate-spin" /> : <Trash2 size={13} />}
-                <span>Mover a la Papelera</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ============================================================ */}
-      {/* MODAL 5: CONFIRMAR PURGA DEFINITIVA (CU05)                   */}
-      {/* ============================================================ */}
-      {purgeModalProject && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-slate-900 border border-rose-900/60 w-full max-w-md rounded-2xl p-6 shadow-2xl flex flex-col gap-4">
-            <div className="flex items-center gap-3 text-rose-400 border-b border-slate-800 pb-3">
-              <div className="p-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400">
-                <AlertTriangle size={22} />
-              </div>
-              <div>
-                <h3 className="font-bold text-white text-sm sm:text-base">
-                  Eliminar Definitivamente
-                </h3>
-                <p className="text-[11px] text-rose-400/80 font-mono">
-                  Purga física irreversible en PostgreSQL
-                </p>
-              </div>
-            </div>
-
-            <div className="p-3 bg-rose-950/20 border border-rose-900/40 rounded-xl text-xs text-rose-200 leading-relaxed space-y-2">
-              <p>
-                ¿Confirmas la eliminación física permanente del proyecto <strong className="text-white font-semibold">"{purgeModalProject.name}"</strong>?
-              </p>
-              <p className="text-[11px] text-rose-300/80">
-                Se purgarán de forma irreversible de la base de datos todas las clases UML, atributos, métodos, relaciones y registros de historial asociados.
-              </p>
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800 mt-2">
-              <button
-                type="button"
-                onClick={() => setPurgeModalProject(null)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-750 text-slate-300 rounded-xl text-xs font-medium transition-colors cursor-pointer"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmPurge}
-                disabled={submittingAction}
-                className="flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-rose-600/30 transition-all cursor-pointer disabled:opacity-50"
-              >
-                {submittingAction ? <RefreshCw size={13} className="animate-spin" /> : <Trash2 size={13} />}
-                <span>Eliminar Definitivamente</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* CU05: Modal de Historial y Trazabilidad */}
-      <ProjectHistoryModal
-        isOpen={!!historyModalProject}
-        projectId={historyModalProject?.id || ''}
-        projectName={historyModalProject?.name}
-        onClose={() => setHistoryModalProject(null)}
-      />
     </AppLayout>
   );
 };

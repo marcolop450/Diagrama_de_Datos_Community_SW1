@@ -8,6 +8,8 @@ import SettingsPage from './pages/SettingsPage';
 import DashboardPage from './pages/DashboardPage';
 import AdminUsersPage from './pages/AdminUsersPage';
 import { AdminAuditPage } from './pages/AdminAuditPage';
+import { AdminProjectsPage } from './pages/AdminProjectsPage';
+import { ProjectsPage } from './pages/ProjectsPage';
 import MainLayout from './components/layout/MainLayout';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { useAuthStore } from './stores/authStore';
@@ -72,6 +74,26 @@ function App() {
           element={
             <ProtectedRoute>
               <DashboardPage />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* Protected Projects Management Page for Architect & Collaborator (CU03 / CU05) */}
+        <Route 
+          path="/projects" 
+          element={
+            <ProtectedRoute>
+              <ProjectsPage />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* Protected Admin Projects Global Supervision Page (SUPER_ADMIN only) */}
+        <Route 
+          path="/admin/projects" 
+          element={
+            <ProtectedRoute requiredRole="SUPER_ADMIN">
+              <AdminProjectsPage />
             </ProtectedRoute>
           } 
         />

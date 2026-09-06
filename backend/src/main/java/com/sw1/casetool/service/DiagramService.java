@@ -218,6 +218,11 @@ public class DiagramService {
         UserProfile user = resolveUser(userEmail);
         DiagramProject project = getProject(id);
 
+        // El Administrador solo puede supervisar y restaurar proyectos, mas no eliminarlos
+        if ("SUPER_ADMIN".equalsIgnoreCase(user.getRole())) {
+            throw new IllegalArgumentException("Operación denegada: El Administrador solo puede supervisar y restaurar proyectos, mas no eliminarlos.");
+        }
+
         // Ownership validation (IDOR check)
         checkProjectOwnership(project, user);
 
@@ -441,8 +446,15 @@ public class DiagramService {
         DiagramProject project = projectRepository.findByIdAndIsDeletedTrue(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Proyecto no encontrado en la papelera para purga: " + id));
 
-        // Ownership validation (IDOR check)
-        checkProjectOwnership(project, user);
+        // El Administrador solo puede supervisar y restaurar proyectos, mas no eliminarlos definitivamente
+        if ("SUPER_ADMIN".equalsIgnoreCase(user.getRole())) {
+            throw new IllegalArgumentException("Operación denegada: El Administrador solo puede supervisar y restaurar proyectos, mas no eliminarlos definitivamente.");
+        }
+
+        // Solo el propietario del proyecto puede purgar definitivamente su proyecto
+        if (!project.getOwnerId().equals(user.getId())) {
+            throw new IllegalArgumentException("Operación denegada: Solo el propietario puede purgar definitivamente su proyecto.");
+        }
 
         String projectName = project.getName();
         UUID projectId = project.getId();
