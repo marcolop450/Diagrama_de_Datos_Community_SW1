@@ -551,7 +551,7 @@ export const ProjectsPage: React.FC = () => {
                           <button
                             onClick={() => setHistoryModalProject(proj)}
                             className="p-1.5 text-slate-400 hover:text-purple-400 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer shrink-0"
-                            title="Consultar historial y trazabilidad (CU05)"
+                            title="Consultar historial y trazabilidad"
                           >
                             <History size={13} />
                           </button>
@@ -581,7 +581,7 @@ export const ProjectsPage: React.FC = () => {
                           <button
                             onClick={() => setHistoryModalProject(proj)}
                             className="p-1.5 text-slate-400 hover:text-purple-400 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer shrink-0"
-                            title="Consultar historial y trazabilidad (CU05)"
+                            title="Consultar historial y trazabilidad"
                           >
                             <History size={13} />
                           </button>

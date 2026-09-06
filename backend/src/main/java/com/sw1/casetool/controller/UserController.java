@@ -52,6 +52,24 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success("Preferencias del editor actualizadas", updated));
     }
 
+    @PostMapping("/onboarding/complete")
+    public ResponseEntity<ApiResponse<UserProfileDto>> completeOnboarding(@AuthenticationPrincipal String email) {
+        if (email == null) {
+            return ResponseEntity.status(401).body(ApiResponse.error(401, "No autenticado"));
+        }
+        UserProfileDto updated = userService.completeOnboarding(email);
+        return ResponseEntity.ok(ApiResponse.success("Tutorial onboarding completado con éxito", updated));
+    }
+
+    @PostMapping("/onboarding/reset")
+    public ResponseEntity<ApiResponse<UserProfileDto>> resetOnboarding(@AuthenticationPrincipal String email) {
+        if (email == null) {
+            return ResponseEntity.status(401).body(ApiResponse.error(401, "No autenticado"));
+        }
+        UserProfileDto updated = userService.resetOnboarding(email);
+        return ResponseEntity.ok(ApiResponse.success("Tutorial onboarding reiniciado", updated));
+    }
+
     @PutMapping("/change-password")
     public ResponseEntity<ApiResponse<String>> changePassword(
             @AuthenticationPrincipal String email,

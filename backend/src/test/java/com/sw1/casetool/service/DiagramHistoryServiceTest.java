@@ -127,7 +127,7 @@ public class DiagramHistoryServiceTest {
     }
 
     @Test
-    @DisplayName("CU05-H3: Debe denegar consulta de trazabilidad si el usuario no es propietario ni SUPER_ADMIN")
+    @DisplayName("CU05-H3: Debe denegar consulta de trazabilidad si el usuario no es propietario ni SUPER_ADMIN en proyecto en papelera")
     void testGetProjectHistory_AccessDenied() {
         UUID strangerId = UUID.randomUUID();
         UserProfile stranger = UserProfile.builder()
@@ -135,6 +135,8 @@ public class DiagramHistoryServiceTest {
                 .email("stranger@casetool.com")
                 .role("COLABORADOR")
                 .build();
+
+        mockProject.setIsDeleted(true);
 
         when(userProfileRepository.findByEmailIgnoreCase("stranger@casetool.com"))
                 .thenReturn(Optional.of(stranger));

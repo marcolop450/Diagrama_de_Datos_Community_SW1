@@ -70,9 +70,18 @@ export const api = {
     snapToGrid?: boolean;
     autoSaveInterval?: number;
     defaultZoom?: number;
+    onboardingCompleted?: boolean;
     customSettings?: Record<string, any>;
   }) => {
     const res = await apiClient.put('/users/preferences', data);
+    return res.data;
+  },
+  completeOnboarding: async () => {
+    const res = await apiClient.post('/users/onboarding/complete');
+    return res.data;
+  },
+  resetOnboarding: async () => {
+    const res = await apiClient.post('/users/onboarding/reset');
     return res.data;
   },
   changePassword: async (data: { currentPassword: string; newPassword: string }) => {

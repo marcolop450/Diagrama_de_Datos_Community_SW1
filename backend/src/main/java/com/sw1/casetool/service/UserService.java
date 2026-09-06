@@ -82,10 +82,39 @@ public class UserService {
         if (request.getDefaultZoom() != null) {
             currentPrefs.put("defaultZoom", request.getDefaultZoom());
         }
+        if (request.getOnboardingCompleted() != null) {
+            currentPrefs.put("onboardingCompleted", request.getOnboardingCompleted());
+        }
         if (request.getCustomSettings() != null) {
             currentPrefs.putAll(request.getCustomSettings());
         }
 
+        user.setPreferences(currentPrefs);
+        UserProfile saved = userProfileRepository.saveAndFlush(user);
+        return mapToDto(saved);
+    }
+
+    @Transactional
+    public UserProfileDto completeOnboarding(String email) {
+        UserProfile user = findUser(email);
+        Map<String, Object> currentPrefs = user.getPreferences() != null
+                ? new HashMap<>(user.getPreferences())
+                : new HashMap<>();
+
+        currentPrefs.put("onboardingCompleted", true);
+        user.setPreferences(currentPrefs);
+        UserProfile saved = userProfileRepository.saveAndFlush(user);
+        return mapToDto(saved);
+    }
+
+    @Transactional
+    public UserProfileDto resetOnboarding(String email) {
+        UserProfile user = findUser(email);
+        Map<String, Object> currentPrefs = user.getPreferences() != null
+                ? new HashMap<>(user.getPreferences())
+                : new HashMap<>();
+
+        currentPrefs.put("onboardingCompleted", false);
         user.setPreferences(currentPrefs);
         UserProfile saved = userProfileRepository.saveAndFlush(user);
         return mapToDto(saved);

@@ -72,10 +72,22 @@ public class DiagramHistoryService {
                 .orElseThrow(() -> new ResourceNotFoundException("Proyecto no encontrado con ID: " + projectId));
 
         boolean isSuperAdmin = "SUPER_ADMIN".equalsIgnoreCase(user.getRole());
-        boolean isOwner = project.getOwnerId() != null && project.getOwnerId().equals(user.getId());
+        UUID userProfileId = user.getId();
+        UUID authUserId = user.getUserId();
+        boolean isOwner = project.getOwnerId() != null && 
+                (project.getOwnerId().equals(userProfileId) || (authUserId != null && project.getOwnerId().equals(authUserId)));
+        boolean isDesignRole = "ARQUITECTO".equalsIgnoreCase(user.getRole()) || "COLABORADOR".equalsIgnoreCase(user.getRole());
 
-        if (!isSuperAdmin && !isOwner) {
-            throw new AccessDeniedException("No tienes permisos para consultar la trazabilidad de este proyecto.");
+        // Si el proyecto está en papelera, solo el propietario o Super Admin pueden consultar el historial
+        if (Boolean.TRUE.equals(project.getIsDeleted())) {
+            if (!isSuperAdmin && !isOwner) {
+                throw new AccessDeniedException("No tienes permisos para consultar la trazabilidad de un proyecto en papelera.");
+            }
+        } else {
+            // Para proyectos activos en el espacio de trabajo, el propietario, Super Admin y miembros del equipo pueden auditar
+            if (!isSuperAdmin && !isOwner && !isDesignRole) {
+                throw new AccessDeniedException("No tienes permisos para consultar la trazabilidad de este proyecto.");
+            }
         }
 
         List<DiagramHistory> historyList = diagramHistoryRepository.findByProjectIdOrderByCreatedAtDesc(projectId);

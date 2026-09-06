@@ -101,6 +101,7 @@ export default function DiagramCanvas() {
 
   return (
     <div 
+      data-tour="diagram-canvas"
       className={`w-full h-full bg-transparent relative select-none ${isPlacementMode ? 'cursor-crosshair' : ''}`} 
       ref={reactFlowWrapper}
     >

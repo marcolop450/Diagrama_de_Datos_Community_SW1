@@ -14,6 +14,8 @@ interface ProjectHistoryModalProps {
   onClose: () => void;
 }
 
+const isUUID = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
 export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({
   projectId,
   projectName,
@@ -26,8 +28,14 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
+  const isDemoProject = !projectId || !isUUID(projectId);
+
   const fetchHistory = async () => {
-    if (!projectId) return;
+    if (!projectId || isDemoProject) {
+      setLoading(false);
+      setHistory([]);
+      return;
+    }
     setLoading(true);
     try {
       const res = await api.getProjectHistory(projectId);
@@ -271,6 +279,25 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({
               <RefreshCw size={24} className="animate-spin text-blue-500" />
               <p className="text-sm">Cargando trazabilidad del proyecto...</p>
             </div>
+          ) : isDemoProject ? (
+            <div className="py-16 text-center text-slate-500 flex flex-col items-center justify-center gap-3">
+              <div className="p-3.5 bg-blue-950/50 rounded-2xl border border-blue-800/40 text-blue-400">
+                <Clock size={28} />
+              </div>
+              <p className="text-sm font-semibold text-slate-200">Modo Demostración en Memoria</p>
+              <p className="text-xs text-slate-400 max-w-md leading-relaxed">
+                El diagrama actual (<span className="text-blue-300 font-mono font-medium">{projectName || 'Sistema de Gestión Académica'}</span>) se encuentra precargado en memoria local para demostración interactiva.
+              </p>
+              <div className="p-3 bg-slate-900/80 border border-slate-800 rounded-xl text-xs text-slate-400 max-w-md text-left space-y-1.5 mt-2">
+                <p className="text-slate-300 font-medium flex items-center gap-1.5">
+                  <Shield size={13} className="text-emerald-400" />
+                  ¿Cómo auditar la trazabilidad formal del proyecto?
+                </p>
+                <p className="text-slate-400 text-[11px] leading-relaxed">
+                  Para registrar y consultar el historial inmutable de mutaciones en PostgreSQL Supabase, guarda este proyecto en tu espacio de trabajo o abre uno existente desde la sección <strong className="text-slate-200">Proyectos</strong>.
+                </p>
+              </div>
+            </div>
           ) : filteredHistory.length === 0 ? (
             <div className="py-16 text-center text-slate-500 flex flex-col items-center justify-center gap-3">
               <div className="p-3 bg-slate-800/50 rounded-2xl border border-slate-700/50">
@@ -377,7 +404,7 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({
         <div className="px-6 py-3 border-t border-slate-800 bg-slate-950/60 flex items-center justify-between text-xs text-slate-400">
           <div className="flex items-center gap-2">
             <Shield size={14} className="text-emerald-400" />
-            <span>Registro inmutable de trazabilidad (CU05)</span>
+            <span>Registro inmutable de trazabilidad y auditoría</span>
           </div>
           <button
             onClick={onClose}

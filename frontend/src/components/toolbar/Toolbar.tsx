@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   MousePointer2, 
   Box, 
@@ -8,17 +8,22 @@ import {
   Image as ImageIcon,
   ZoomIn, 
   ZoomOut, 
-  Maximize
+  Maximize,
+  History,
+  Code2,
+  Database
 } from 'lucide-react';
 import { useUiStore } from '../../stores/uiStore';
 import { useDiagramStore } from '../../stores/diagramStore';
 import { useReactFlow } from '@xyflow/react';
+import { ProjectHistoryModal } from '../history/ProjectHistoryModal';
 import toast from 'react-hot-toast';
 
 export const Toolbar: React.FC = () => {
   const { activeTool, setActiveTool } = useUiStore();
-  const { createNewClass } = useDiagramStore();
+  const { project, createNewClass } = useDiagramStore();
   const { zoomIn, zoomOut, fitView, getViewport } = useReactFlow();
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
   const handleSelectTool = (tool: string, label: string) => {
     if (activeTool === tool) {
@@ -26,9 +31,7 @@ export const Toolbar: React.FC = () => {
       toast('Modo selección activado');
     } else {
       setActiveTool(tool);
-      toast.success(`Seleccionado: ${label}. Haz clic en el lienzo para colocarla`, {
-        icon: '🎯'
-      });
+      toast.success(`Seleccionado: ${label}. Haz clic en el lienzo para colocarla`);
     }
   };
 
@@ -48,7 +51,10 @@ export const Toolbar: React.FC = () => {
   };
 
   return (
-    <aside className="w-13 md:w-14 bg-slate-950 border-r border-slate-800/80 flex flex-col items-center py-2.5 gap-1.5 z-20 shadow-md select-none">
+    <aside 
+      data-tour="toolbar-root"
+      className="w-13 md:w-14 bg-slate-950 border-r border-slate-800/80 flex flex-col items-center py-2.5 gap-1.5 z-20 shadow-md select-none"
+    >
       {/* Selection pointer */}
       <button
         onClick={() => setActiveTool('pointer')}
@@ -65,20 +71,21 @@ export const Toolbar: React.FC = () => {
       <div className="w-7 h-px bg-slate-800 my-1" />
 
       {/* UML Class Creation Tools (Click to Arm & Drop) */}
-      <button
-        onClick={() => handleSelectTool('add-class', 'Clase Entidad')}
-        className={`p-2.5 rounded-xl transition-all relative group cursor-pointer ${
-          activeTool === 'add-class'
-            ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30 ring-2 ring-blue-400 animate-pulse'
-            : 'text-slate-400 hover:text-blue-400 hover:bg-slate-900'
-        }`}
-        title="Añadir Clase Entidad (Clic para armar y colocar)"
-      >
-        <Box size={17} />
-        <span className="absolute left-full ml-2 px-2.5 py-1 bg-slate-900 text-slate-200 text-[11px] font-medium rounded-md shadow-xl border border-slate-800 whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
-          Añadir Clase Entidad (Armar y colocar)
-        </span>
-      </button>
+      <div data-tour="toolbar-classes" className="flex flex-col items-center gap-1.5">
+        <button
+          onClick={() => handleSelectTool('add-class', 'Clase Entidad')}
+          className={`p-2.5 rounded-xl transition-all relative group cursor-pointer ${
+            activeTool === 'add-class'
+              ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30 ring-2 ring-blue-400 animate-pulse'
+              : 'text-slate-400 hover:text-blue-400 hover:bg-slate-900'
+          }`}
+          title="Añadir Clase Entidad (Clic para armar y colocar)"
+        >
+          <Box size={17} />
+          <span className="absolute left-full ml-2 px-2.5 py-1 bg-slate-900 text-slate-200 text-[11px] font-medium rounded-md shadow-xl border border-slate-800 whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
+            Añadir Clase Entidad (Armar y colocar)
+          </span>
+        </button>
 
       <button
         onClick={() => handleSelectTool('add-interface', 'Interfaz')}
@@ -109,6 +116,7 @@ export const Toolbar: React.FC = () => {
           Añadir Clase Abstracta (Armar y colocar)
         </span>
       </button>
+      </div>
 
       <div className="w-7 h-px bg-slate-800 my-1" />
 
@@ -134,6 +142,48 @@ export const Toolbar: React.FC = () => {
           Reconocer Foto de Pizarra (IA)
         </span>
       </button>
+
+      {/* Divider */}
+      <div className="w-7 h-px bg-slate-800 my-1" />
+
+      {/* CASE Architecture, Generation & History Tools */}
+      <div data-tour="toolbar-case-tools" className="flex flex-col items-center gap-1.5">
+        {/* Project History */}
+        <button
+          onClick={() => setIsHistoryOpen(true)}
+          className="p-2.5 rounded-xl text-slate-400 hover:text-purple-400 hover:bg-purple-950/30 transition-all group relative cursor-pointer"
+          title="Consultar Historial y Trazabilidad"
+        >
+          <History size={17} />
+          <span className="absolute left-full ml-2 px-2.5 py-1 bg-slate-900 text-slate-200 text-[11px] font-medium rounded-md shadow-xl border border-slate-800 whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
+            Historial y Trazabilidad
+          </span>
+        </button>
+
+        {/* Generate Backend Spring Boot */}
+        <button
+          onClick={() => toast('Generador de Backend Spring Boot (4 Capas en ZIP) en preparación')}
+          className="p-2.5 rounded-xl text-slate-400 hover:text-blue-400 hover:bg-blue-950/30 transition-all group relative cursor-pointer"
+          title="Generar Backend Spring Boot"
+        >
+          <Code2 size={17} />
+          <span className="absolute left-full ml-2 px-2.5 py-1 bg-slate-900 text-slate-200 text-[11px] font-medium rounded-md shadow-xl border border-slate-800 whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
+            Generar Backend Spring Boot
+          </span>
+        </button>
+
+        {/* Generate SQL DDL Script PostgreSQL 17 */}
+        <button
+          onClick={() => toast('Generador de Esquema DDL SQL para PostgreSQL 17 en preparación')}
+          className="p-2.5 rounded-xl text-slate-400 hover:text-emerald-400 hover:bg-emerald-950/30 transition-all group relative cursor-pointer"
+          title="Generar Script SQL DDL (PostgreSQL 17)"
+        >
+          <Database size={17} />
+          <span className="absolute left-full ml-2 px-2.5 py-1 bg-slate-900 text-slate-200 text-[11px] font-medium rounded-md shadow-xl border border-slate-800 whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
+            Generar Script SQL DDL (PostgreSQL 17)
+          </span>
+        </button>
+      </div>
 
       {/* Spacer */}
       <div className="flex-1" />
@@ -164,6 +214,16 @@ export const Toolbar: React.FC = () => {
       >
         <Maximize size={16} />
       </button>
+
+      {/* Project History Modal */}
+      {project && (
+        <ProjectHistoryModal
+          isOpen={isHistoryOpen}
+          projectId={project.id}
+          projectName={project.name}
+          onClose={() => setIsHistoryOpen(false)}
+        />
+      )}
     </aside>
   );
 };

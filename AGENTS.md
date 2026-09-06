@@ -10,9 +10,9 @@
 ## 1. Enfoque de Desarrollo y Estado Real de los Casos de Uso (CU)
 
 El desarrollo del sistema se ejecuta **estrictamente Caso de Uso por Caso de Uso (CU por CU)** bajo el Proceso Unificado de Desarrollo de Software (PUDS).
-* **Realizados Correctamente y Validados:** Exclusivamente hasta el **CU05**.
-* **Todo lo posterior a CU05:** Eran maquetas/demos no definitivas que deben ser desarrolladas formalmente desde cero paso a paso.
-* **Foco Inmediato de Construcción:** **CU06** (Ejecutar Tutorial Onboarding (< 2 min)).
+* **Realizados Correctamente y Validados:** Exclusivamente hasta el **CU06**.
+* **Todo lo posterior a CU06:** Eran maquetas/demos no definitivas que deben ser desarrolladas formalmente desde cero paso a paso.
+* **Foco Inmediato Siguiente:** **CU07** (Crear Proyecto desde Plantilla Base).
 
 ### Matriz de Estado de Casos de Uso por Ciclos
 
@@ -24,7 +24,7 @@ El desarrollo del sistema se ejecuta **estrictamente Caso de Uso por Caso de Uso
 | **CU03** | Gestión de Proyectos y Espacios de Trabajo | Ciclo 1 | `A2: Arquitecto` / `A3: Colaborador` | **Implementado** | **Reemplazo íntegro del SaaS.** CRUD completo de proyectos, metadatos, tags, versionado `v1.0.0` y **clonación profunda** de nodos y relaciones. |
 | **CU04** | Auditar Bitácora Global y Eventos de Seguridad | Ciclo 1 | `A1: Super Admin` | **Implementado** | Registro inmutable de eventos en `audit_logs` con IP, timestamp, enriquecimiento de usuarios, paginación (20/pág), filtros y exportación CSV/JSON. |
 | **CU05** | Consultar Historial y Trazabilidad | Ciclo 1 | `A3: Colaborador` / `A2: Arquitecto` | **Implementado** | Timeline cronológico de mutaciones (`diagram_history`) con diff antes/después, enriquecimiento de autores, papelera de reciclaje con restauración reversible y purga definitiva (hard delete) en cascada física. |
-| **CU06** | Ejecutar Tutorial Onboarding (< 2 min) | Ciclo 1 | `A3: Colaborador` | **Siguiente a Implementar (Foco Actual)** | Guía interactiva paso a paso para adopción rápida del editor y herramientas CASE. |
+| **CU06** | Ejecutar Tutorial Onboarding (< 2 min) | Ciclo 1 | `A3: Colaborador` / `A2: Arquitecto` | **Implementado** | Guía interactiva paso a paso para adopción rápida del editor y herramientas CASE (< 120s), spotlight no invasivo, gatillado automático/manual ("Guía Rápida") y persistencia en `user_profiles.preferences`. |
 | **CU07** | Crear Proyecto desde Plantilla Base | Ciclo 1 | `A2: Arquitecto` | **Pendiente** | Scaffolding de diagramas iniciales basados en patrones de diseño GoF y arquitecturas base. |
 | **CU08** | Modelar Clases UML (Tipos y Visibilidad) | Ciclo 1 | `A2: Arquitecto` / `A3: Colaborador` | **Pendiente** | Lienzo `/editor` interactivo: creación/edición de clases, atributos, métodos y visibilidades (+, -, #, ~). |
 | **CU09** | Conectar Relaciones y Cardinalidades | Ciclo 1 | `A2: Arquitecto` / `A3: Colaborador` | **Pendiente** | Trazado de asociaciones, agregaciones, composiciones, herencias y dependencias con multiplicidades. |
@@ -109,6 +109,9 @@ El desarrollo del sistema se ejecuta **estrictamente Caso de Uso por Caso de Uso
    * Ningún icono, botón, badge o texto debe salirse jamás de su recuadro, card o contenedor.
    * Todos los cards deben declarar `overflow-hidden`.
    * Los encabezados de cards con badges y botones de acción deben implementar `flex-wrap`, `min-w-0` y `shrink-0` con márgenes adecuados (`gap-2`), de modo que en pantallas o columnas estrechas los botones se acomoden limpiamente sin desbordar el ancho de la tarjeta.
+7. **Distribución Limpia del Editor (Header vs Canvas Sidebar):**
+   * El `Header` superior del editor `/editor` se mantiene ultraligero y despejado: únicamente el estado del proyecto (nombre + badge 'Guardado'), el botón principal 'Guardar', la burbuja circular de ayuda '?' (`HelpCircle`) para el tutorial onboarding, y el perfil de usuario.
+   * Las herramientas técnicas CASE (Historial/Trazabilidad CU05, Generación Backend Spring Boot CU13, Script DDL SQL PostgreSQL 17 CU14 y futuros exportadores) residen exclusivamente en la barra lateral vertical del lienzo (`Toolbar.tsx`), aprovechando el espacio vertical con tooltips descriptivos hacia la derecha y evitando cualquier congestión o solapamiento horizontal en pantallas medianas o estrechas.
 
 ---
 

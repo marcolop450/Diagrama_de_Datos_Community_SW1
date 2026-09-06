@@ -621,7 +621,7 @@ public class DiagramService {
         Relationship saved = relationshipRepository.save(rel);
 
         Map<String, Object> afterState = new HashMap<>();
-        afterState.put("type", saved.getType().name());
+        afterState.put("type", saved.getType());
         afterState.put("sourceClass", source.getName());
         afterState.put("targetClass", target.getName());
         afterState.put("sourceCardinality", saved.getSourceCardinality());
@@ -652,7 +652,7 @@ public class DiagramService {
                 .orElseThrow(() -> new ResourceNotFoundException("Target class not found"));
 
         Map<String, Object> beforeState = new HashMap<>();
-        beforeState.put("type", rel.getType().name());
+        beforeState.put("type", rel.getType());
         beforeState.put("sourceClass", rel.getSourceClass().getName());
         beforeState.put("targetClass", rel.getTargetClass().getName());
         beforeState.put("sourceCardinality", rel.getSourceCardinality());
@@ -670,7 +670,7 @@ public class DiagramService {
         Relationship saved = relationshipRepository.save(rel);
 
         Map<String, Object> afterState = new HashMap<>();
-        afterState.put("type", saved.getType().name());
+        afterState.put("type", saved.getType());
         afterState.put("sourceClass", source.getName());
         afterState.put("targetClass", target.getName());
         afterState.put("sourceCardinality", saved.getSourceCardinality());
@@ -696,7 +696,7 @@ public class DiagramService {
                 .orElseThrow(() -> new ResourceNotFoundException("Relationship not found in project"));
 
         Map<String, Object> beforeState = new HashMap<>();
-        beforeState.put("type", rel.getType().name());
+        beforeState.put("type", rel.getType());
         beforeState.put("sourceClass", rel.getSourceClass().getName());
         beforeState.put("targetClass", rel.getTargetClass().getName());
 

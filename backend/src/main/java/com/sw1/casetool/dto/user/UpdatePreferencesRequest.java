@@ -16,5 +16,6 @@ public class UpdatePreferencesRequest {
     private Boolean snapToGrid;
     private Integer autoSaveInterval;
     private Double defaultZoom;
+    private Boolean onboardingCompleted;
     private Map<String, Object> customSettings;
 }
