@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { api } from '../services/api';
+import { CanvasThemeId } from '../constants/canvasThemes';
 
 export interface UserPreferences {
   theme: 'dark';
@@ -7,6 +8,7 @@ export interface UserPreferences {
   snapToGrid: boolean;
   autoSaveInterval: number;
   defaultZoom: number;
+  canvasTheme?: CanvasThemeId;
   [key: string]: any;
 }
 
@@ -104,6 +106,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             snapToGrid: preferences?.snapToGrid ?? true,
             autoSaveInterval: preferences?.autoSaveInterval ?? 30,
             defaultZoom: preferences?.defaultZoom ?? 1.0,
+            canvasTheme: (preferences?.canvasTheme as CanvasThemeId) || 'dark',
           },
         };
 
@@ -156,6 +159,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             snapToGrid: preferences?.snapToGrid ?? true,
             autoSaveInterval: preferences?.autoSaveInterval ?? 30,
             defaultZoom: preferences?.defaultZoom ?? 1.0,
+            canvasTheme: (preferences?.canvasTheme as CanvasThemeId) || 'dark',
           },
         };
 

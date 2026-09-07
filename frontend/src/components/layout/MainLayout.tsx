@@ -7,14 +7,15 @@ import DiagramCanvas from '../canvas/DiagramCanvas';
 import PropertiesPanel from '../panels/PropertiesPanel';
 import CreateProjectModal from '../modals/CreateProjectModal';
 import { OnboardingSpotlight } from '../onboarding/OnboardingSpotlight';
-import { AuroraBackground } from '../common/AuroraBackground';
 import { useUiStore } from '../../stores/uiStore';
 import { useAuthStore } from '../../stores/authStore';
+import { useDiagramStore } from '../../stores/diagramStore';
 import { ReactFlowProvider } from '@xyflow/react';
 
 const MainLayout: React.FC = () => {
   const { sidebarOpen, toggleSidebar, propertiesPanelOpen, activeModal, openOnboarding } = useUiStore();
   const { user } = useAuthStore();
+  const { project, saveDiagram } = useDiagramStore();
 
   // Defense-in-depth: SUPER_ADMIN is a governance role and must never see or use the drawing canvas
   if (user?.role === 'SUPER_ADMIN') {
@@ -34,12 +35,24 @@ const MainLayout: React.FC = () => {
     }
   }, [user, openOnboarding]);
 
+  // Background Auto-Save based on user preferences interval
+  useEffect(() => {
+    const intervalSeconds = user?.preferences?.autoSaveInterval ?? 30;
+    if (!project?.id || intervalSeconds <= 0) return;
+
+    const intervalMs = intervalSeconds * 1000;
+    const autoSaveTimer = setInterval(() => {
+      saveDiagram().catch(() => {
+        // Silent background sync
+      });
+    }, intervalMs);
+
+    return () => clearInterval(autoSaveTimer);
+  }, [project?.id, user?.preferences?.autoSaveInterval, saveDiagram]);
+
   return (
     <ReactFlowProvider>
-      <div className="flex flex-col h-screen overflow-hidden bg-[#070A12] text-slate-100 relative select-none">
-        {/* Dynamic Canvas Aurora Background */}
-        <AuroraBackground opacity={0.45} />
-
+      <div className="flex flex-col h-screen overflow-hidden bg-slate-950 text-slate-100 relative select-none">
         <Header />
         
         <div className="flex flex-1 overflow-hidden relative z-10">

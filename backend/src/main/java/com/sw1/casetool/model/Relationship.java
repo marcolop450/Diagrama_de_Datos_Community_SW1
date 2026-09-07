@@ -5,6 +5,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import java.time.Instant;
 import java.util.UUID;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
@@ -19,15 +20,18 @@ public class Relationship {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id", nullable = false)
     private DiagramProject project;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "project", "attributes", "methods"})
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "source_class_id", nullable = false)
     private ClassNode sourceClass;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "project", "attributes", "methods"})
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "target_class_id", nullable = false)
     private ClassNode targetClass;
 

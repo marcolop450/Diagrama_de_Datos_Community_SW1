@@ -1,5 +1,7 @@
 import { EdgeProps, getSmoothStepPath, EdgeLabelRenderer, BaseEdge, Edge } from '@xyflow/react';
 import { RelationshipData } from '../../types/diagram';
+import { useAuthStore } from '../../stores/authStore';
+import { getCanvasTheme } from '../../constants/canvasThemes';
 
 type CustomEdgeProps = EdgeProps<Edge<RelationshipData>>;
 
@@ -15,6 +17,9 @@ export default function RelationshipEdge({
   selected,
   data,
 }: CustomEdgeProps) {
+  const { user } = useAuthStore();
+  const theme = getCanvasTheme(user?.preferences?.canvasTheme);
+
   const [edgePath, labelX, labelY] = getSmoothStepPath({
     sourceX,
     sourceY,
@@ -22,12 +27,29 @@ export default function RelationshipEdge({
     targetX,
     targetY,
     targetPosition,
-    borderRadius: 8
+    borderRadius: 6
   });
 
   const relData = data as RelationshipData | undefined;
-  const relType = relData?.type || 'association';
-  const isDashed = relType === 'implementation' || relType === 'dependency';
+  const relType = (relData?.type || 'association').toLowerCase();
+  const isDashed = relType === 'implementation' || relType === 'realization' || relType === 'dependency';
+
+  let markerStart: string | undefined;
+  let markerEnd: string | undefined;
+
+  if (relType === 'composition') {
+    markerStart = 'url(#uml-composition)';
+  } else if (relType === 'aggregation') {
+    markerStart = 'url(#uml-aggregation)';
+  }
+
+  if (relType === 'inheritance' || relType === 'generalization') {
+    markerEnd = 'url(#uml-generalization)';
+  } else if (relType === 'implementation' || relType === 'realization') {
+    markerEnd = 'url(#uml-realization)';
+  } else if (relType === 'dependency') {
+    markerEnd = 'url(#uml-dependency)';
+  }
 
   // Offset cardinalities slightly from endpoints
   const sourceCardX = sourceX + (targetX >= sourceX ? 24 : -24);
@@ -40,52 +62,60 @@ export default function RelationshipEdge({
       <BaseEdge 
         path={edgePath} 
         id={id} 
+        markerStart={markerStart}
+        markerEnd={markerEnd}
         style={{
           ...(style || {}),
-          strokeWidth: selected ? 2.5 : 1.8,
-          stroke: selected ? '#60A5FA' : '#64748B',
+          strokeWidth: selected ? 2.4 : 1.6,
+          stroke: selected ? theme.edgeStrokeSelected : theme.edgeStroke,
           strokeDasharray: isDashed ? '6,4' : 'none'
         }} 
       />
 
       <EdgeLabelRenderer>
-        {/* Relationship Name / Verb Label (Middle) */}
+        {/* UML 2.5 Association Label (Pure text along connection, never a box/card) */}
         {relData?.label && (
           <div
             style={{
               position: 'absolute',
               transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
               pointerEvents: 'all',
+              backgroundColor: theme.edgeLabelBg,
+              color: theme.edgeLabelText,
             }}
-            className="nodrag nopan px-2 py-0.5 bg-slate-900/95 border border-slate-700/80 rounded-md text-[11px] font-mono font-medium text-slate-200 shadow-md backdrop-blur-sm select-none"
+            className="nodrag nopan px-1 py-0.5 text-[11px] font-mono font-medium rounded-xs select-none cursor-pointer transition-colors shadow-xs"
           >
             {relData.label}
           </div>
         )}
 
-        {/* Source Cardinality Badge */}
+        {/* UML 2.5 Source Multiplicity / Cardinality (Text at endpoint, no card border) */}
         {relData?.sourceCardinality && (
           <div
             style={{
               position: 'absolute',
               transform: `translate(-50%, -50%) translate(${sourceCardX}px, ${sourceCardY}px)`,
               pointerEvents: 'none',
+              backgroundColor: theme.edgeLabelBg,
+              color: theme.edgeLabelText,
             }}
-            className="px-1.5 py-0.2 bg-slate-900/90 border border-slate-800 rounded text-[10px] font-mono font-semibold text-blue-300 select-none shadow-sm"
+            className="px-1 text-[11px] font-mono font-bold rounded-xs select-none shadow-xs"
           >
             {relData.sourceCardinality}
           </div>
         )}
 
-        {/* Target Cardinality Badge */}
+        {/* UML 2.5 Target Multiplicity / Cardinality (Text at endpoint, no card border) */}
         {relData?.targetCardinality && (
           <div
             style={{
               position: 'absolute',
               transform: `translate(-50%, -50%) translate(${targetCardX}px, ${targetCardY}px)`,
               pointerEvents: 'none',
+              backgroundColor: theme.edgeLabelBg,
+              color: theme.edgeLabelText,
             }}
-            className="px-1.5 py-0.2 bg-slate-900/90 border border-slate-800 rounded text-[10px] font-mono font-semibold text-indigo-300 select-none shadow-sm"
+            className="px-1 text-[11px] font-mono font-bold rounded-xs select-none shadow-xs"
           >
             {relData.targetCardinality}
           </div>

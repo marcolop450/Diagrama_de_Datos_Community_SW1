@@ -106,6 +106,7 @@ const Header: React.FC = () => {
             {/* Save Diagram Button */}
             <button 
               onClick={handleSave}
+              data-tour="header-save-button"
               className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold shadow-xs shadow-blue-500/20 transition-all active:scale-95 cursor-pointer shrink-0"
               title="Guardar cambios del diagrama"
             >

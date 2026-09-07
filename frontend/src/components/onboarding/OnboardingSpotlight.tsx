@@ -27,50 +27,72 @@ const STEPS: OnboardingStep[] = [
     description: 'Modela diagramas de clases UML completos con normalización relacional (1NF a 3NF), generación automatizada de Backend Spring Boot (Java 21) y esquemas DDL SQL para PostgreSQL 17.',
     placement: 'center',
     icon: 'Layers',
-    badge: 'Paso 1 de 5 · Introducción',
+    badge: 'Paso 1 de 7 · Introducción',
     actionHint: 'Navega con las flechas del teclado o los botones inferiores'
   },
   {
     id: 'toolbar',
     title: 'Barra de Herramientas UML',
     subtitle: 'Entidades, Interfaces y Clases Abstractas',
-    description: 'Haz clic en cualquier clase para armar la herramienta, y luego haz clic en el lienzo para colocarla. También dispones de herramientas de dictado por voz con IA.',
+    description: 'Haz clic en cualquier clase para armar la herramienta, y luego haz clic en el lienzo para colocarla rápidamente con alineación magnética.',
     targetSelector: '[data-tour="toolbar-classes"]',
     placement: 'right',
     icon: 'Box',
-    badge: 'Paso 2 de 5 · Creación',
+    badge: 'Paso 2 de 7 · Creación',
     actionHint: 'Herramientas de selección y colocación rápida'
   },
   {
     id: 'canvas-nodes',
     title: 'Lienzo y Edición de Nodos',
     subtitle: 'Atributos, tipos y visibilidad UML',
-    description: 'Arrastra y reorganiza clases en el canvas con snap to grid. Al hacer clic en una clase, se desplegará el panel de propiedades para configurar atributos (+, -, #, ~) y métodos.',
+    description: 'Arrastra y reorganiza clases con snap to grid. Haz clic en una clase para configurar atributos con modificadores (+, -, #, ~), tipos Java/SQL, clave primaria {PK} y operaciones.',
     placement: 'center',
     icon: 'Edit3',
-    badge: 'Paso 3 de 5 · Modelado',
+    badge: 'Paso 3 de 7 · Modelado',
     actionHint: 'Soporta zoom con rueda del ratón y paneo arrastrando el fondo'
   },
   {
     id: 'relationships',
-    title: 'Conexión de Relaciones',
-    subtitle: 'Cardinalidades y multiplicidades',
-    description: 'Conecta dos clases arrastrando desde los puntos de anclaje (handles). Podrás definir asociaciones, herencias, agregaciones o composiciones con cardinalidades (1..1, 1..*).',
+    title: 'Conexión de Relaciones y Multiplicidades',
+    subtitle: 'Cardinalidades OMG UML 2.5 a elección',
+    description: 'Conecta dos clases arrastrando desde los puntos de anclaje (handles). Podrás definir asociaciones, herencias, agregaciones o composiciones con preajustes de cardinalidad (1..1, 1..*, *..*).',
     placement: 'center',
     icon: 'GitFork',
-    badge: 'Paso 4 de 5 · Relaciones',
+    badge: 'Paso 4 de 7 · Relaciones',
     actionHint: 'Relaciones tipadas y validadas contra el metamodelo'
   },
   {
+    id: 'ai-tools',
+    title: 'Modelado Asistido por Inteligencia Artificial',
+    subtitle: 'Dictado por Voz y Digitalización de Pizarras',
+    description: 'Acelera el diseño arquitectónico utilizando entrada por voz (PLN) para modelar clases sin teclear, o digitaliza fotografías de bocetos en pizarra física mediante visión artificial.',
+    targetSelector: '[data-tour="toolbar-ai-tools"]',
+    placement: 'right',
+    icon: 'Sparkles',
+    badge: 'Paso 5 de 7 · Inteligencia Artificial',
+    actionHint: 'Prueba el micrófono o el digitalizador en la barra lateral'
+  },
+  {
+    id: 'cloud-save',
+    title: 'Guardado y Sincronización en la Nube',
+    subtitle: 'Persistencia continua en PostgreSQL 17',
+    description: 'Guarda tus cambios manualmente con el botón superior o confía en el autoguardado periódico configurado en tus Preferencias. Cada cambio queda registrado y versionado.',
+    targetSelector: '[data-tour="header-save-button"]',
+    placement: 'bottom',
+    icon: 'CheckCircle2',
+    badge: 'Paso 6 de 7 · Sincronización',
+    actionHint: 'Puedes ajustar la frecuencia de autoguardado en Configuración'
+  },
+  {
     id: 'case-tools',
-    title: 'Herramientas CASE y Trazabilidad',
-    subtitle: 'Historial, Backend Spring y Script SQL',
-    description: 'En la barra lateral del lienzo encontrarás las herramientas CASE: audita la trazabilidad inmutable de mutaciones, genera el backend Spring Boot (Java 21) y exporta los esquemas DDL SQL para PostgreSQL 17.',
+    title: 'Herramientas CASE: Backend, SQL y Trazabilidad',
+    subtitle: 'Spring Boot 4 Capas, PostgreSQL 17 y Auditoría',
+    description: 'En la barra lateral dispones de los aceleradores CASE: genera automáticamente el código Java 21 Backend Spring Boot en 4 capas (Controller, Service, Repository, Entity), exporta el script DDL SQL listo para PostgreSQL 17 y consulta la trazabilidad.',
     targetSelector: '[data-tour="toolbar-case-tools"]',
     placement: 'right',
     icon: 'Code2',
-    badge: 'Paso 5 de 5 · Productividad',
-    actionHint: 'Botones laterales: Historial, Código Spring Boot y Script PostgreSQL'
+    badge: 'Paso 7 de 7 · Ingeniería CASE',
+    actionHint: 'Accede a Historial, Backend Spring Boot y Script PostgreSQL 17'
   }
 ];
 
@@ -181,6 +203,8 @@ export const OnboardingSpotlight: React.FC = () => {
       case 'Edit3': return <Edit3 size={size} className={iconClass} />;
       case 'GitFork': return <GitFork size={size} className={iconClass} />;
       case 'Code2': return <Code2 size={size} className={iconClass} />;
+      case 'Sparkles': return <Sparkles size={size} className={iconClass} />;
+      case 'CheckCircle2': return <CheckCircle2 size={size} className={iconClass} />;
       default: return <HelpCircle size={size} className={iconClass} />;
     }
   };

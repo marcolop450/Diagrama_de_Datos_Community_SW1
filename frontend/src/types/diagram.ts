@@ -4,6 +4,8 @@ export interface ClassAttribute {
   type: string;
   visibility: 'public' | 'private' | 'protected' | 'package';
   isStatic: boolean;
+  isId?: boolean;
+  multiplicity?: string;
   defaultValue?: string;
 }
 

@@ -25,14 +25,14 @@ const sampleNodes: Node<ClassNodeData>[] = [
       stereotype: 'entity',
       isAbstract: false,
       attributes: [
-        { id: 'a1', name: 'id', type: 'Long', visibility: 'private', isStatic: false },
+        { id: 'a1', name: 'id', type: 'Long', visibility: 'private', isStatic: false, isId: true },
         { id: 'a2', name: 'nombre', type: 'String', visibility: 'private', isStatic: false },
         { id: 'a3', name: 'email', type: 'String', visibility: 'private', isStatic: false },
         { id: 'a4', name: 'registro', type: 'String', visibility: 'private', isStatic: false }
       ],
       methods: [
         { id: 'm1', name: 'inscribirMateria', returnType: 'boolean', visibility: 'public', isStatic: false, isAbstract: false, parameters: [{ name: 'materiaId', type: 'Long' }] },
-        { id: 'm2', name: 'calcularPromedio', returnType: 'double', visibility: 'public', isStatic: false, isAbstract: false, parameters: [] }
+        { id: 'm2', name: 'calcularPromedio', returnType: 'Double', visibility: 'public', isStatic: false, isAbstract: false, parameters: [] }
       ]
     }
   },
@@ -46,12 +46,12 @@ const sampleNodes: Node<ClassNodeData>[] = [
       stereotype: 'entity',
       isAbstract: false,
       attributes: [
-        { id: 'a5', name: 'id', type: 'Long', visibility: 'private', isStatic: false },
+        { id: 'a5', name: 'id', type: 'Long', visibility: 'private', isStatic: false, isId: true },
         { id: 'a6', name: 'nombre', type: 'String', visibility: 'private', isStatic: false },
         { id: 'a7', name: 'especialidad', type: 'String', visibility: 'private', isStatic: false }
       ],
       methods: [
-        { id: 'm3', name: 'asignarNota', returnType: 'void', visibility: 'public', isStatic: false, isAbstract: false, parameters: [{ name: 'estudianteId', type: 'Long' }, { name: 'nota', type: 'double' }] }
+        { id: 'm3', name: 'asignarNota', returnType: 'void', visibility: 'public', isStatic: false, isAbstract: false, parameters: [{ name: 'estudianteId', type: 'Long' }, { name: 'nota', type: 'Double' }] }
       ]
     }
   },
@@ -65,7 +65,7 @@ const sampleNodes: Node<ClassNodeData>[] = [
       stereotype: 'entity',
       isAbstract: false,
       attributes: [
-        { id: 'a8', name: 'id', type: 'Long', visibility: 'private', isStatic: false },
+        { id: 'a8', name: 'id', type: 'Long', visibility: 'private', isStatic: false, isId: true },
         { id: 'a9', name: 'sigla', type: 'String', visibility: 'private', isStatic: false },
         { id: 'a10', name: 'nombre', type: 'String', visibility: 'private', isStatic: false },
         { id: 'a11', name: 'creditos', type: 'Integer', visibility: 'private', isStatic: false }
@@ -85,7 +85,7 @@ const sampleNodes: Node<ClassNodeData>[] = [
       stereotype: 'entity',
       isAbstract: false,
       attributes: [
-        { id: 'a12', name: 'id', type: 'Long', visibility: 'private', isStatic: false },
+        { id: 'a12', name: 'id', type: 'Long', visibility: 'private', isStatic: false, isId: true },
         { id: 'a13', name: 'fecha', type: 'LocalDate', visibility: 'private', isStatic: false },
         { id: 'a14', name: 'notaFinal', type: 'Double', visibility: 'private', isStatic: false },
         { id: 'a15', name: 'estado', type: 'String', visibility: 'private', isStatic: false }
@@ -331,20 +331,55 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
 
         set({
           project: payload.project,
-          nodes: mappedNodes.length > 0 ? mappedNodes : sampleNodes,
-          edges: mappedEdges.length > 0 ? mappedEdges : sampleEdges,
+          nodes: mappedNodes,
+          edges: mappedEdges,
           selectedNode: null,
           selectedEdge: null
         });
       }
     } catch {
-      // Keep sample data if fetch failed
+      // Keep state if fetch failed
     }
   },
   
   saveDiagram: async () => {
     const { project, nodes, edges } = get();
-    if (!project) return;
-    console.log('Saving diagram to backend...', { project, nodes, edges });
+    if (!project?.id) return;
+
+    const payloadNodes = nodes.map((n) => ({
+      id: n.id,
+      name: n.data.name || 'Clase',
+      stereotype: n.data.stereotype || undefined,
+      isAbstract: !!(n.data.isAbstract || n.data.stereotype?.toLowerCase() === 'abstract'),
+      positionX: Math.round(n.position.x),
+      positionY: Math.round(n.position.y),
+      width: n.measured?.width || 240,
+      height: n.measured?.height || 180,
+      attributes: n.data.attributes || [],
+      methods: n.data.methods || []
+    }));
+
+    const payloadEdges = edges.map((e) => ({
+      id: e.id,
+      source: e.source,
+      target: e.target,
+      type: e.data?.type || 'association',
+      sourceCardinality: e.data?.sourceCardinality || '1',
+      targetCardinality: e.data?.targetCardinality || '1',
+      label: e.data?.label || '',
+      sourceRole: e.data?.sourceRole || '',
+      targetRole: e.data?.targetRole || ''
+    }));
+
+    const res = await api.syncDiagram(project.id, {
+      nodes: payloadNodes,
+      edges: payloadEdges
+    });
+
+    if (res?.success && res.data) {
+      set((state) => ({
+        project: res.data.project ? { ...state.project, ...res.data.project } : state.project
+      }));
+    }
   }
 }));

@@ -6,9 +6,11 @@ import com.sw1.casetool.model.ClassNode;
 import com.sw1.casetool.model.DiagramProject;
 import com.sw1.casetool.model.Relationship;
 import com.sw1.casetool.model.UserProfile;
+import com.sw1.casetool.model.DomainTemplate;
 import com.sw1.casetool.repository.ClassNodeRepository;
 import com.sw1.casetool.repository.DiagramHistoryRepository;
 import com.sw1.casetool.repository.DiagramProjectRepository;
+import com.sw1.casetool.repository.DomainTemplateRepository;
 import com.sw1.casetool.repository.RelationshipRepository;
 import com.sw1.casetool.repository.UserProfileRepository;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +18,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -30,6 +33,7 @@ public class DiagramService {
     private final AuditLogService auditLogService;
     private final DiagramHistoryService diagramHistoryService;
     private final DiagramHistoryRepository diagramHistoryRepository;
+    private final DomainTemplateRepository domainTemplateRepository;
 
     @Transactional
     public ProjectResponse createProject(CreateProjectRequest request, String userEmail, String ip, String userAgent) {
@@ -53,15 +57,141 @@ public class DiagramService {
 
         DiagramProject saved = projectRepository.save(project);
 
-        // Inmutable audit logging
+        int nodeCount = 0;
+        int relCount = 0;
+
         Map<String, Object> details = new HashMap<>();
         details.put("projectName", saved.getName());
         details.put("version", saved.getVersion());
         details.put("tags", saved.getTags());
 
+        Map<String, Object> historyAfterState = new HashMap<>();
+        historyAfterState.put("name", saved.getName());
+        historyAfterState.put("version", saved.getVersion());
+        historyAfterState.put("tags", saved.getTags());
+
+        // CU07: Scaffolding de diagramas iniciales desde Plantilla Base
+        String templateId = request.getTemplateId();
+        if (templateId != null && !templateId.trim().isEmpty() && !"TEMPLATE_BLANK".equalsIgnoreCase(templateId.trim())) {
+            Optional<DomainTemplate> optTemplate = domainTemplateRepository.findById(templateId.trim());
+            if (optTemplate.isPresent()) {
+                DomainTemplate template = optTemplate.get();
+                Map<String, Object> schema = template.getInitialSchema();
+                if (schema != null) {
+                    Map<String, ClassNode> templateIdToNodeMap = new HashMap<>();
+
+                    // 1. Scaffold ClassNodes
+                    Object rawNodes = schema.get("nodes");
+                    if (rawNodes instanceof List<?> nodeList) {
+                        for (Object rawNode : nodeList) {
+                            if (rawNode instanceof Map<?, ?> nodeMap) {
+                                String tId = nodeMap.get("id") != null ? nodeMap.get("id").toString() : UUID.randomUUID().toString();
+                                String name = nodeMap.get("name") != null ? nodeMap.get("name").toString() : "Clase";
+                                String stereotype = nodeMap.get("stereotype") != null ? nodeMap.get("stereotype").toString() : null;
+                                boolean isAbstract = Boolean.TRUE.equals(nodeMap.get("isAbstract"));
+
+                                double posX = 100.0;
+                                double posY = 100.0;
+                                if (nodeMap.get("position") instanceof Map<?, ?> posMap) {
+                                    if (posMap.get("x") instanceof Number numX) posX = numX.doubleValue();
+                                    if (posMap.get("y") instanceof Number numY) posY = numY.doubleValue();
+                                }
+
+                                List<Map<String, Object>> attributes = new ArrayList<>();
+                                if (nodeMap.get("attributes") instanceof List<?> attrList) {
+                                    for (Object a : attrList) {
+                                        if (a instanceof Map<?, ?> am) {
+                                            Map<String, Object> attrClean = new HashMap<>();
+                                            am.forEach((k, v) -> attrClean.put(k.toString(), v));
+                                            attributes.add(attrClean);
+                                        }
+                                    }
+                                }
+
+                                List<Map<String, Object>> methods = new ArrayList<>();
+                                if (nodeMap.get("methods") instanceof List<?> methList) {
+                                    for (Object m : methList) {
+                                        if (m instanceof Map<?, ?> mm) {
+                                            Map<String, Object> methClean = new HashMap<>();
+                                            mm.forEach((k, v) -> methClean.put(k.toString(), v));
+                                            methods.add(methClean);
+                                        }
+                                    }
+                                }
+
+                                ClassNode classNode = ClassNode.builder()
+                                        .project(saved)
+                                        .name(name)
+                                        .stereotype(stereotype)
+                                        .abstractClass(isAbstract)
+                                        .positionX(posX)
+                                        .positionY(posY)
+                                        .width(260.0)
+                                        .height(180.0)
+                                        .attributes(attributes)
+                                        .methods(methods)
+                                        .build();
+
+                                ClassNode savedNode = classNodeRepository.save(classNode);
+                                templateIdToNodeMap.put(tId, savedNode);
+                                nodeCount++;
+                            }
+                        }
+                    }
+
+                    // 2. Scaffold Relationships
+                    Object rawEdges = schema.get("edges");
+                    if (rawEdges instanceof List<?> edgeList) {
+                        for (Object rawEdge : edgeList) {
+                            if (rawEdge instanceof Map<?, ?> edgeMap) {
+                                String srcId = edgeMap.get("source") != null ? edgeMap.get("source").toString() : null;
+                                String tgtId = edgeMap.get("target") != null ? edgeMap.get("target").toString() : null;
+
+                                ClassNode srcNode = templateIdToNodeMap.get(srcId);
+                                ClassNode tgtNode = templateIdToNodeMap.get(tgtId);
+
+                                if (srcNode != null && tgtNode != null) {
+                                    String type = edgeMap.get("type") != null ? edgeMap.get("type").toString() : "association";
+                                    String srcCard = edgeMap.get("sourceCardinality") != null ? edgeMap.get("sourceCardinality").toString() : "1";
+                                    String tgtCard = edgeMap.get("targetCardinality") != null ? edgeMap.get("targetCardinality").toString() : "1";
+                                    String label = edgeMap.get("label") != null ? edgeMap.get("label").toString() : null;
+
+                                    Relationship rel = Relationship.builder()
+                                            .project(saved)
+                                            .sourceClass(srcNode)
+                                            .targetClass(tgtNode)
+                                            .type(type)
+                                            .sourceCardinality(srcCard)
+                                            .targetCardinality(tgtCard)
+                                            .label(label)
+                                            .build();
+
+                                    relationshipRepository.save(rel);
+                                    relCount++;
+                                }
+                            }
+                        }
+                    }
+
+                    details.put("templateId", template.getId());
+                    details.put("templateName", template.getName());
+                    details.put("nodesScaffolded", nodeCount);
+                    details.put("relationshipsScaffolded", relCount);
+
+                    historyAfterState.put("templateId", template.getId());
+                    historyAfterState.put("templateName", template.getName());
+                    historyAfterState.put("nodesScaffolded", nodeCount);
+                    historyAfterState.put("relationshipsScaffolded", relCount);
+                }
+            }
+        }
+
+        String action = nodeCount > 0 ? "PROJECT_CREATED_FROM_TEMPLATE" : "PROJECT_CREATED";
+
+        // Inmutable audit logging
         auditLogService.recordAction(
                 user.getId(),
-                "PROJECT_CREATED",
+                action,
                 "diagram_projects",
                 saved.getId(),
                 ip,
@@ -70,22 +200,17 @@ public class DiagramService {
         );
 
         // Diagram history tracking (CU05)
-        Map<String, Object> historyAfterState = new HashMap<>();
-        historyAfterState.put("name", saved.getName());
-        historyAfterState.put("version", saved.getVersion());
-        historyAfterState.put("tags", saved.getTags());
-
         diagramHistoryService.recordHistory(
                 saved,
                 user.getId(),
-                "PROJECT_CREATED",
+                action,
                 "PROJECT",
                 saved.getId(),
                 null,
                 historyAfterState
         );
 
-        return toProjectResponse(saved, 0, 0, user.getFullName());
+        return toProjectResponse(saved, nodeCount, relCount, user.getFullName());
     }
 
     @Transactional(readOnly = true)
@@ -594,6 +719,7 @@ public class DiagramService {
         classNodeRepository.delete(node);
     }
 
+    @Transactional(readOnly = true)
     public List<ClassNode> getClassNodesByProject(UUID projectId) {
         return classNodeRepository.findByProjectId(projectId);
     }
@@ -713,10 +839,12 @@ public class DiagramService {
         relationshipRepository.delete(rel);
     }
 
+    @Transactional(readOnly = true)
     public List<Relationship> getRelationshipsByProject(UUID projectId) {
         return relationshipRepository.findByProjectId(projectId);
     }
 
+    @Transactional(readOnly = true)
     public FullDiagramResponse getFullDiagram(UUID projectId) {
         DiagramProject project = getProject(projectId);
         List<ClassNode> classes = getClassNodesByProject(projectId);
@@ -726,6 +854,118 @@ public class DiagramService {
                 .project(project)
                 .classNodes(classes)
                 .relationships(relationships)
+                .build();
+    }
+
+    @Transactional
+    public FullDiagramResponse syncFullDiagram(UUID projectId, SyncDiagramRequest request, String userEmail) {
+        UserProfile user = resolveUser(userEmail);
+        DiagramProject project = getProject(projectId);
+        checkProjectOwnership(project, user);
+
+        Map<String, ClassNode> idToNodeMap = new HashMap<>();
+
+        // 1. Synchronize nodes
+        List<ClassNode> existingNodes = classNodeRepository.findByProjectId(projectId);
+        Map<String, ClassNode> existingNodeMap = existingNodes.stream()
+                .collect(Collectors.toMap(n -> n.getId().toString(), n -> n));
+
+        Set<UUID> keptNodeIds = new HashSet<>();
+
+        if (request.getNodes() != null) {
+            for (SyncDiagramRequest.SyncNodeItem item : request.getNodes()) {
+                ClassNode node = null;
+                if (item.getId() != null && existingNodeMap.containsKey(item.getId())) {
+                    node = existingNodeMap.get(item.getId());
+                } else {
+                    node = ClassNode.builder()
+                            .project(project)
+                            .build();
+                }
+
+                node.setName(item.getName() != null && !item.getName().trim().isEmpty() ? item.getName().trim() : "Clase");
+                node.setStereotype(item.getStereotype());
+                node.setAbstractClass(item.isAbstract());
+                node.setPositionX(item.getPositionX());
+                node.setPositionY(item.getPositionY());
+                node.setWidth(item.getWidth());
+                node.setHeight(item.getHeight());
+                node.setAttributes(item.getAttributes() != null ? item.getAttributes() : Collections.emptyList());
+                node.setMethods(item.getMethods() != null ? item.getMethods() : Collections.emptyList());
+
+                ClassNode savedNode = classNodeRepository.save(node);
+                keptNodeIds.add(savedNode.getId());
+
+                if (item.getId() != null) {
+                    idToNodeMap.put(item.getId(), savedNode);
+                }
+                idToNodeMap.put(savedNode.getId().toString(), savedNode);
+            }
+        }
+
+        // 2. Synchronize relationships
+        List<Relationship> existingRels = relationshipRepository.findByProjectId(projectId);
+        Map<String, Relationship> existingRelMap = existingRels.stream()
+                .collect(Collectors.toMap(r -> r.getId().toString(), r -> r));
+
+        Set<UUID> keptRelIds = new HashSet<>();
+
+        if (request.getEdges() != null) {
+            for (SyncDiagramRequest.SyncEdgeItem item : request.getEdges()) {
+                ClassNode sourceNode = idToNodeMap.get(item.getSource());
+                ClassNode targetNode = idToNodeMap.get(item.getTarget());
+
+                if (sourceNode == null || targetNode == null) {
+                    continue;
+                }
+
+                Relationship rel = null;
+                if (item.getId() != null && existingRelMap.containsKey(item.getId())) {
+                    rel = existingRelMap.get(item.getId());
+                } else {
+                    rel = Relationship.builder()
+                            .project(project)
+                            .build();
+                }
+
+                rel.setSourceClass(sourceNode);
+                rel.setTargetClass(targetNode);
+                rel.setType(item.getType() != null ? item.getType().toLowerCase() : "association");
+                rel.setSourceCardinality(item.getSourceCardinality());
+                rel.setTargetCardinality(item.getTargetCardinality());
+                rel.setLabel(item.getLabel());
+                rel.setSourceRole(item.getSourceRole());
+                rel.setTargetRole(item.getTargetRole());
+
+                Relationship savedRel = relationshipRepository.save(rel);
+                keptRelIds.add(savedRel.getId());
+            }
+        }
+
+        // 3. Remove deleted relationships first (cascade integrity)
+        for (Relationship r : existingRels) {
+            if (!keptRelIds.contains(r.getId())) {
+                relationshipRepository.delete(r);
+            }
+        }
+
+        // 4. Remove deleted nodes
+        for (ClassNode n : existingNodes) {
+            if (!keptNodeIds.contains(n.getId())) {
+                classNodeRepository.delete(n);
+            }
+        }
+
+        project.setUpdatedAt(Instant.now());
+        projectRepository.save(project);
+
+        List<ClassNode> finalClasses = classNodeRepository.findByProjectId(projectId);
+        List<Relationship> finalRelationships = relationshipRepository.findByProjectId(projectId);
+
+        return FullDiagramResponse.builder()
+                .project(project)
+                .classNodes(finalClasses)
+                .relationships(finalRelationships)
                 .build();
     }
 

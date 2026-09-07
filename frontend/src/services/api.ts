@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { DiagramProject, ClassNodeData, RelationshipData } from '../types/diagram';
+import { DomainTemplate } from '../types/template';
 import { AuditQueryParams } from '../types/audit';
 
 const API_BASE_URL = (import.meta.env?.VITE_API_URL || 'http://localhost:8080') + '/api';
@@ -70,6 +71,7 @@ export const api = {
     snapToGrid?: boolean;
     autoSaveInterval?: number;
     defaultZoom?: number;
+    canvasTheme?: 'dark' | 'light' | 'blue' | 'cream';
     onboardingCompleted?: boolean;
     customSettings?: Record<string, any>;
   }) => {
@@ -102,8 +104,18 @@ export const api = {
     const res = await apiClient.get(`/projects/${id}`);
     return res.data;
   },
-  createProject: async (data: Partial<DiagramProject>) => {
+  createProject: async (data: Partial<DiagramProject> & { templateId?: string }) => {
     const res = await apiClient.post('/projects', data);
+    return res.data;
+  },
+
+  // Plantillas Base de Dominio (CU07)
+  getTemplates: async (): Promise<{ success: boolean; message: string; data: DomainTemplate[] }> => {
+    const res = await apiClient.get('/templates');
+    return res.data;
+  },
+  getTemplateById: async (id: string): Promise<{ success: boolean; message: string; data: DomainTemplate }> => {
+    const res = await apiClient.get(`/templates/${id}`);
     return res.data;
   },
   updateProject: async (id: string, data: Partial<DiagramProject>) => {
@@ -144,6 +156,10 @@ export const api = {
   },
   deleteRelationship: async (projectId: string, relId: string) => {
     const res = await apiClient.delete(`/projects/${projectId}/relationships/${relId}`);
+    return res.data;
+  },
+  syncDiagram: async (projectId: string, data: { nodes: any[]; edges: any[] }) => {
+    const res = await apiClient.put(`/projects/${projectId}/sync`, data);
     return res.data;
   },
 

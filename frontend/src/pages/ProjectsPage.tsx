@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ProjectHistoryModal } from '../components/history/ProjectHistoryModal';
+import CreateProjectModal from '../components/modals/CreateProjectModal';
 
 export const ProjectsPage: React.FC = () => {
   const { user } = useAuthStore();
@@ -43,13 +44,8 @@ export const ProjectsPage: React.FC = () => {
   const [selectedTag, setSelectedTag] = useState('ALL');
   const [activeTab, setActiveTab] = useState<'active' | 'trash'>('active');
 
-  // Modals State (CU03)
+  // Modals State
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [newProjectName, setNewProjectName] = useState('');
-  const [newProjectDesc, setNewProjectDesc] = useState('');
-  const [newProjectVersion, setNewProjectVersion] = useState('v1.0.0');
-  const [newProjectTags, setNewProjectTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState('');
 
   const [cloneModalProject, setCloneModalProject] = useState<DiagramProject | null>(null);
   const [cloneName, setCloneName] = useState('');
@@ -117,42 +113,6 @@ export const ProjectsPage: React.FC = () => {
     loadDiagram(id);
     navigate(`/editor/${id}`);
     toast.success(`Cargando proyecto: ${name}`);
-  };
-
-  // Create Project
-  const handleCreateProject = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newProjectName.trim()) {
-      toast.error('El nombre del proyecto es obligatorio');
-      return;
-    }
-
-    try {
-      setSubmittingAction(true);
-      const res = await api.createProject({
-        name: newProjectName.trim(),
-        description: newProjectDesc.trim(),
-        version: newProjectVersion.trim() || 'v1.0.0',
-        tags: newProjectTags
-      });
-
-      toast.success('Proyecto creado con éxito');
-      setIsCreateModalOpen(false);
-      setNewProjectName('');
-      setNewProjectDesc('');
-      setNewProjectVersion('v1.0.0');
-      setNewProjectTags([]);
-
-      await loadProjects();
-
-      if (res?.data?.id) {
-        handleOpenProject(res.data.id, res.data.name);
-      }
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Error al crear el proyecto');
-    } finally {
-      setSubmittingAction(false);
-    }
   };
 
   // Edit Project
@@ -252,17 +212,6 @@ export const ProjectsPage: React.FC = () => {
   };
 
   // Tags helpers
-  const handleAddTag = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && tagInput.trim()) {
-      e.preventDefault();
-      const clean = tagInput.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
-      if (clean && !newProjectTags.includes(clean)) {
-        setNewProjectTags([...newProjectTags, clean]);
-      }
-      setTagInput('');
-    }
-  };
-
   const handleAddEditTag = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && editTagInput.trim()) {
       e.preventDefault();
@@ -676,118 +625,12 @@ export const ProjectsPage: React.FC = () => {
           </div>
         )}
 
-        {/* MODAL 1: Crear Proyecto (CU03) */}
-        {isCreateModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xs p-4">
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-5 shadow-2xl">
-              <div className="flex justify-between items-center pb-3 border-b border-slate-800 mb-4">
-                <div className="flex items-center gap-2">
-                  <FolderPlus size={18} className="text-blue-400" />
-                  <h2 className="text-sm font-bold text-slate-100">Nuevo Proyecto UML</h2>
-                </div>
-                <button 
-                  onClick={() => setIsCreateModalOpen(false)}
-                  className="p-1 text-slate-400 hover:text-slate-200 rounded-lg cursor-pointer"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-
-              <form onSubmit={handleCreateProject} className="flex flex-col gap-3.5">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Nombre del Proyecto *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Ej. Sistema Bancario Transaccional"
-                    value={newProjectName}
-                    onChange={(e) => setNewProjectName(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 text-slate-100 placeholder:text-slate-500 focus:border-blue-500 rounded-xl px-3 py-2 text-xs focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Descripción
-                  </label>
-                  <textarea
-                    rows={2}
-                    placeholder="Objetivo y alcance del modelo UML..."
-                    value={newProjectDesc}
-                    onChange={(e) => setNewProjectDesc(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 text-slate-100 placeholder:text-slate-500 focus:border-blue-500 rounded-xl px-3 py-2 text-xs focus:outline-none resize-none"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">
-                      Versión Semántica
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="v1.0.0"
-                      value={newProjectVersion}
-                      onChange={(e) => setNewProjectVersion(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-800 text-slate-100 placeholder:text-slate-500 focus:border-blue-500 rounded-xl px-3 py-2 text-xs focus:outline-none font-mono"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">
-                      Etiquetas (Tags)
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Escribe y presiona Enter"
-                      value={tagInput}
-                      onChange={(e) => setTagInput(e.target.value)}
-                      onKeyDown={handleAddTag}
-                      className="w-full bg-slate-950 border border-slate-800 text-slate-100 placeholder:text-slate-500 focus:border-blue-500 rounded-xl px-3 py-2 text-xs focus:outline-none font-mono"
-                    />
-                  </div>
-                </div>
-
-                {newProjectTags.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 p-2 bg-slate-950/60 border border-slate-800/80 rounded-xl">
-                    {newProjectTags.map(t => (
-                      <span key={t} className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-blue-950/60 border border-blue-800/60 text-blue-300">
-                        #{t}
-                        <button
-                          type="button"
-                          onClick={() => setNewProjectTags(newProjectTags.filter(x => x !== t))}
-                          className="hover:text-rose-400 cursor-pointer"
-                        >
-                          <X size={10} />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                <div className="flex justify-end gap-2 pt-3 border-t border-slate-800 mt-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsCreateModalOpen(false)}
-                    className="px-3.5 py-1.5 text-xs font-semibold text-slate-400 hover:text-slate-200 cursor-pointer"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={submittingAction}
-                    className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold shadow-xs disabled:opacity-50 cursor-pointer"
-                  >
-                    {submittingAction ? <RefreshCw size={13} className="animate-spin" /> : <Check size={13} />}
-                    <span>Crear Proyecto</span>
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
+        {/* MODAL 1: Crear Proyecto desde Plantilla Base */}
+        <CreateProjectModal 
+          isOpen={isCreateModalOpen} 
+          onClose={() => setIsCreateModalOpen(false)} 
+          onSuccess={loadProjects} 
+        />
 
         {/* MODAL 2: Editar Metadatos (CU03) */}
         {editModalProject && (

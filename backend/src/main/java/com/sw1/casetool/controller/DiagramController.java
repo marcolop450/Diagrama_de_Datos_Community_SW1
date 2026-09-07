@@ -222,4 +222,15 @@ public class DiagramController {
     public ResponseEntity<ApiResponse<FullDiagramResponse>> getFullDiagram(@PathVariable UUID projectId) {
         return ResponseEntity.ok(ApiResponse.success("Diagrama completo obtenido", diagramService.getFullDiagram(projectId)));
     }
+
+    @PutMapping("/{projectId}/sync")
+    @Operation(summary = "Sincronización y persistencia atómica completa del diagrama (CU03 / Autoguardado)")
+    public ResponseEntity<ApiResponse<FullDiagramResponse>> syncFullDiagram(
+            @PathVariable UUID projectId,
+            @RequestBody SyncDiagramRequest request,
+            @AuthenticationPrincipal String userEmail
+    ) {
+        FullDiagramResponse synced = diagramService.syncFullDiagram(projectId, request, userEmail);
+        return ResponseEntity.ok(ApiResponse.success("Diagrama guardado y sincronizado exitosamente", synced));
+    }
 }

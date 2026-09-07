@@ -8,9 +8,11 @@ import com.sw1.casetool.model.ClassNode;
 import com.sw1.casetool.model.DiagramProject;
 import com.sw1.casetool.model.Relationship;
 import com.sw1.casetool.model.UserProfile;
+import com.sw1.casetool.model.DomainTemplate;
 import com.sw1.casetool.repository.ClassNodeRepository;
 import com.sw1.casetool.repository.DiagramHistoryRepository;
 import com.sw1.casetool.repository.DiagramProjectRepository;
+import com.sw1.casetool.repository.DomainTemplateRepository;
 import com.sw1.casetool.repository.RelationshipRepository;
 import com.sw1.casetool.repository.UserProfileRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,6 +52,9 @@ public class DiagramServiceTest {
 
     @Mock
     private DiagramHistoryRepository diagramHistoryRepository;
+
+    @Mock
+    private DomainTemplateRepository domainTemplateRepository;
 
     @InjectMocks
     private DiagramService diagramService;
@@ -351,5 +356,55 @@ public class DiagramServiceTest {
 
         assertTrue(ex.getMessage().contains("El Administrador solo puede supervisar y restaurar"));
         verify(projectRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("CU07-T1: Crear proyecto desde plantilla base realiza scaffolding de clases y relaciones")
+    void testCreateProject_FromTemplate() {
+        CreateProjectRequest request = CreateProjectRequest.builder()
+                .name("Proyecto Clinico")
+                .description("Modelo desde plantilla clinica")
+                .templateId("TEMPLATE_CLINICA")
+                .build();
+
+        when(userProfileRepository.findByEmailIgnoreCase(mockUser.getEmail()))
+                .thenReturn(Optional.of(mockUser));
+        when(projectRepository.save(any(DiagramProject.class)))
+                .thenReturn(mockProject);
+
+        Map<String, Object> schema = new HashMap<>();
+        schema.put("nodes", List.of(
+                Map.of("id", "c1", "name", "Paciente", "attributes", List.of(), "methods", List.of()),
+                Map.of("id", "c2", "name", "Medico", "attributes", List.of(), "methods", List.of())
+        ));
+        schema.put("edges", List.of(
+                Map.of("source", "c1", "target", "c2", "type", "association", "sourceCardinality", "1", "targetCardinality", "1..*", "label", "atiende")
+        ));
+
+        DomainTemplate template = DomainTemplate.builder()
+                .id("TEMPLATE_CLINICA")
+                .name("Sistema Clínico")
+                .category("Salud")
+                .initialSchema(schema)
+                .build();
+
+        when(domainTemplateRepository.findById("TEMPLATE_CLINICA"))
+                .thenReturn(Optional.of(template));
+
+        ClassNode node1 = ClassNode.builder().id(UUID.randomUUID()).name("Paciente").build();
+        ClassNode node2 = ClassNode.builder().id(UUID.randomUUID()).name("Medico").build();
+        when(classNodeRepository.save(any(ClassNode.class))).thenReturn(node1, node2);
+        when(relationshipRepository.save(any(Relationship.class))).thenAnswer(i -> i.getArgument(0));
+
+        ProjectResponse response = diagramService.createProject(request, mockUser.getEmail(), "127.0.0.1", "JUnit");
+
+        assertNotNull(response);
+        assertEquals(mockProject.getName(), response.getName());
+        assertEquals(2, response.getNodeCount());
+        assertEquals(1, response.getRelationshipCount());
+
+        verify(classNodeRepository, times(2)).save(any(ClassNode.class));
+        verify(relationshipRepository, times(1)).save(any(Relationship.class));
+        verify(auditLogService, times(1)).recordAction(eq(userId), eq("PROJECT_CREATED_FROM_TEMPLATE"), eq("diagram_projects"), eq(projectId), any(), any(), any());
     }
 }

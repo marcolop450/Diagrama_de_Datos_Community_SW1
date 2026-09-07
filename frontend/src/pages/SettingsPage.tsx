@@ -17,8 +17,11 @@ import {
   Trash2, 
   X, 
   RefreshCw,
-  CheckCircle2
+  CheckCircle2,
+  Palette,
+  Check
 } from 'lucide-react';
+import { CANVAS_THEMES, CanvasThemeId } from '../constants/canvasThemes';
 
 export const SettingsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -47,6 +50,7 @@ export const SettingsPage: React.FC = () => {
   const [snapEnabled, setSnapEnabled] = useState(currentPrefs.snapToGrid ?? true);
   const [autoSave, setAutoSave] = useState<number>(currentPrefs.autoSaveInterval ?? 30);
   const [defaultZoom, setDefaultZoom] = useState<number>(currentPrefs.defaultZoom ?? 1.0);
+  const [canvasTheme, setCanvasTheme] = useState<CanvasThemeId>((currentPrefs.canvasTheme as CanvasThemeId) || 'dark');
 
   // Security Form State
   const [currentPassword, setCurrentPassword] = useState('');
@@ -79,6 +83,9 @@ export const SettingsPage: React.FC = () => {
         setSnapEnabled(user.preferences.snapToGrid ?? true);
         setAutoSave(user.preferences.autoSaveInterval ?? 30);
         setDefaultZoom(user.preferences.defaultZoom ?? 1.0);
+        if (user.preferences.canvasTheme) {
+          setCanvasTheme(user.preferences.canvasTheme as CanvasThemeId);
+        }
       }
     }
   }, [user]);
@@ -130,6 +137,7 @@ export const SettingsPage: React.FC = () => {
         snapToGrid: snapEnabled,
         autoSaveInterval: autoSave,
         defaultZoom: defaultZoom,
+        canvasTheme: canvasTheme,
       };
 
       const res = await api.updatePreferences(payload);
@@ -386,15 +394,23 @@ export const SettingsPage: React.FC = () => {
                   <h4 className="text-xs font-semibold text-white">Cuadrícula del Lienzo</h4>
                   <p className="text-[11px] text-slate-400 mt-0.5">Muestra la rejilla milimétrica en el fondo de trabajo.</p>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    checked={gridEnabled} 
-                    onChange={(e) => setGridEnabled(e.target.checked)} 
-                    className="sr-only peer" 
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={gridEnabled}
+                  onClick={() => setGridEnabled(!gridEnabled)}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    gridEnabled ? 'bg-blue-600' : 'bg-slate-800'
+                  }`}
+                  title={gridEnabled ? 'Desactivar cuadrícula' : 'Activar cuadrícula'}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${
+                      gridEnabled ? 'translate-x-5' : 'translate-x-0'
+                    }`}
                   />
-                  <div className="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
+                </button>
               </div>
 
               <div className="pt-4 flex items-center justify-between">
@@ -402,15 +418,23 @@ export const SettingsPage: React.FC = () => {
                   <h4 className="text-xs font-semibold text-white">Ajuste Magnético a la Cuadrícula</h4>
                   <p className="text-[11px] text-slate-400 mt-0.5">Alinea automáticamente las clases UML al moverlas.</p>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    checked={snapEnabled} 
-                    onChange={(e) => setSnapEnabled(e.target.checked)} 
-                    className="sr-only peer" 
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={snapEnabled}
+                  onClick={() => setSnapEnabled(!snapEnabled)}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    snapEnabled ? 'bg-blue-600' : 'bg-slate-800'
+                  }`}
+                  title={snapEnabled ? 'Desactivar ajuste magnético' : 'Activar ajuste magnético'}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${
+                      snapEnabled ? 'translate-x-5' : 'translate-x-0'
+                    }`}
                   />
-                  <div className="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
+                </button>
               </div>
 
               <div className="pt-4 flex items-center justify-between">
@@ -445,6 +469,112 @@ export const SettingsPage: React.FC = () => {
                   <option value={1.25}>125%</option>
                   <option value={1.5}>150%</option>
                 </select>
+              </div>
+            </div>
+
+            {/* 4 Selectable Canvas Themes (Oscuro, Claro, Azulado, Crema) */}
+            <div className="pt-4 border-t border-slate-800/80">
+              <div className="flex items-center gap-2 mb-1.5">
+                <Palette size={16} className="text-blue-400" />
+                <h3 className="text-xs font-bold text-white">Tema Visual del Lienzo CASE</h3>
+              </div>
+              <p className="text-[11px] text-slate-400 mb-4">
+                Personaliza la apariencia estética y de contraste del diagramador UML (Oscuro, Claro, Azulado y Crema).
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                {Object.values(CANVAS_THEMES).map((theme) => {
+                  const isSelected = canvasTheme === theme.id;
+                  return (
+                    <div
+                      key={theme.id}
+                      onClick={() => {
+                        setCanvasTheme(theme.id);
+                        updateUserProfile({
+                          preferences: {
+                            ...(user?.preferences || {
+                              theme: 'dark',
+                              grid: gridEnabled,
+                              snapToGrid: snapEnabled,
+                              autoSaveInterval: autoSave,
+                              defaultZoom: defaultZoom,
+                            }),
+                            canvasTheme: theme.id,
+                          },
+                        });
+                      }}
+                      className={`group relative p-3.5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between select-none ${
+                        isSelected
+                          ? 'border-blue-500 bg-slate-950 ring-2 ring-blue-500/30 shadow-lg shadow-blue-900/20'
+                          : 'border-slate-800 bg-slate-950/40 hover:border-slate-700 hover:bg-slate-950/70'
+                      }`}
+                    >
+                      {/* Theme preview swatch */}
+                      <div 
+                        className="w-full h-18 rounded-xl border mb-3 relative overflow-hidden flex items-center justify-center p-2 shadow-inner"
+                        style={{ backgroundColor: theme.canvasBg, borderColor: theme.preview.border }}
+                      >
+                        {/* Simulated Grid Lines in Preview */}
+                        <div 
+                          className="absolute inset-0 opacity-40 pointer-events-none" 
+                          style={{
+                            backgroundImage: `linear-gradient(to right, ${theme.gridMinor} 1px, transparent 1px), linear-gradient(to bottom, ${theme.gridMinor} 1px, transparent 1px)`,
+                            backgroundSize: '12px 12px'
+                          }}
+                        />
+
+                        {/* Mini Node Simulation */}
+                        <div 
+                          className="w-28 rounded-xs border shadow-md flex flex-col overflow-hidden text-[8px] font-mono relative z-10"
+                          style={{ backgroundColor: theme.nodeBg, borderColor: theme.nodeBorder }}
+                        >
+                          <div 
+                            className="px-1.5 py-0.5 border-b font-bold truncate text-center"
+                            style={{ backgroundColor: theme.nodeHeaderBg, color: theme.nodeText, borderColor: theme.divider }}
+                          >
+                            Usuario
+                          </div>
+                          <div 
+                            className="px-1.5 py-0.5 truncate flex items-center justify-between"
+                            style={{ backgroundColor: theme.attrBg, color: theme.nodeTextMuted }}
+                          >
+                            <span>+ id: Long</span>
+                            <span 
+                              className="px-0.5 text-[6px] rounded-xs font-bold"
+                              style={{ backgroundColor: theme.pkBg, color: theme.pkText }}
+                            >
+                              PK
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Selected Checkmark Badge */}
+                        {isSelected && (
+                          <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-md z-20">
+                            <Check size={11} strokeWidth={3} />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Name & Description */}
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <span className={`text-xs font-bold ${isSelected ? 'text-blue-400' : 'text-white'}`}>
+                            {theme.name}
+                          </span>
+                          {isSelected && (
+                            <span className="text-[10px] uppercase font-mono px-1.5 py-0.2 bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-md font-semibold">
+                              Activo
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-slate-400 mt-1 leading-snug">
+                          {theme.description}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 

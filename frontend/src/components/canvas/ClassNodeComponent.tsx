@@ -1,39 +1,23 @@
 import { memo } from 'react';
 import { Handle, Position, NodeProps, Node } from '@xyflow/react';
 import { ClassNodeData, ClassAttribute, ClassMethod } from '../../types/diagram';
-import { Box, Layers, Component } from 'lucide-react';
 import { useUiStore } from '../../stores/uiStore';
 import { useDiagramStore } from '../../stores/diagramStore';
+import { useAuthStore } from '../../stores/authStore';
+import { getCanvasTheme } from '../../constants/canvasThemes';
 
-const getVisibilityBadge = (visibility: string) => {
+const getVisibilitySymbol = (visibility: string) => {
   switch (visibility) {
     case 'public':
-      return <span className="text-emerald-400 font-bold w-3.5 inline-block select-none">+</span>;
+      return <span className="text-emerald-400 font-bold w-3 inline-block select-none">+</span>;
     case 'private':
-      return <span className="text-rose-400 font-bold w-3.5 inline-block select-none">-</span>;
+      return <span className="text-rose-400 font-bold w-3 inline-block select-none">-</span>;
     case 'protected':
-      return <span className="text-amber-400 font-bold w-3.5 inline-block select-none">#</span>;
+      return <span className="text-amber-400 font-bold w-3 inline-block select-none">#</span>;
     case 'package':
-      return <span className="text-sky-400 font-bold w-3.5 inline-block select-none">~</span>;
+      return <span className="text-sky-400 font-bold w-3 inline-block select-none">~</span>;
     default:
-      return <span className="text-emerald-400 font-bold w-3.5 inline-block select-none">+</span>;
-  }
-};
-
-const getStereotypeHeaderStyle = (stereotype?: string, isAbstract?: boolean) => {
-  if (isAbstract) return 'from-amber-950/70 to-slate-900 border-amber-800/40 text-amber-300';
-  switch (stereotype?.toLowerCase()) {
-    case 'interface':
-      return 'from-indigo-950/70 to-slate-900 border-indigo-800/40 text-indigo-300';
-    case 'service':
-      return 'from-emerald-950/70 to-slate-900 border-emerald-800/40 text-emerald-300';
-    case 'controller':
-      return 'from-purple-950/70 to-slate-900 border-purple-800/40 text-purple-300';
-    case 'repository':
-      return 'from-cyan-950/70 to-slate-900 border-cyan-800/40 text-cyan-300';
-    case 'entity':
-    default:
-      return 'from-blue-950/70 to-slate-900 border-blue-800/40 text-blue-300';
+      return <span className="text-emerald-400 font-bold w-3 inline-block select-none">+</span>;
   }
 };
 
@@ -42,8 +26,9 @@ type CustomNodeProps = NodeProps<Node<ClassNodeData>>;
 const ClassNodeComponent = ({ data, selected }: CustomNodeProps) => {
   const { setSelectedNode } = useDiagramStore();
   const { setPropertiesPanelOpen } = useUiStore();
+  const { user } = useAuthStore();
+  const theme = getCanvasTheme(user?.preferences?.canvasTheme);
 
-  const isInterface = data.stereotype?.toLowerCase() === 'interface';
   const isAbstract = data.isAbstract || data.stereotype?.toLowerCase() === 'abstract';
   const attributes: ClassAttribute[] = data.attributes || [];
   const methods: ClassMethod[] = data.methods || [];
@@ -54,114 +39,172 @@ const ClassNodeComponent = ({ data, selected }: CustomNodeProps) => {
   };
 
   return (
-    <div className="relative group" onDoubleClick={handleDoubleClick}>
-      {/* 4 Connection Magnetic Handles */}
+    <div 
+      className="relative group cursor-pointer rounded-sm border min-w-[240px] max-w-[360px] font-mono text-xs select-none transition-all duration-150"
+      style={{
+        backgroundColor: theme.nodeBg,
+        borderColor: selected ? theme.nodeBorderSelected : theme.nodeBorder,
+        boxShadow: selected ? theme.nodeShadowSelected : '0 4px 14px rgba(0, 0, 0, 0.25)',
+      }}
+      onDoubleClick={handleDoubleClick}
+    >
+      {/* 4 Connection Magnetic Handles (UML Ports - precisely centered, zero hover displacement) */}
       <Handle 
         type="target" 
         position={Position.Top} 
         id="top" 
-        className="!w-3 !h-3 !bg-blue-500 !border-2 !border-slate-950 hover:!bg-blue-400 !transition-all" 
+        style={{ 
+          top: 0, 
+          left: '50%', 
+          transform: 'translate(-50%, -50%)',
+          backgroundColor: theme.handleBg,
+          borderColor: theme.handleBorder 
+        }}
+        className="!w-2.5 !h-2.5 !border-2 !rounded-full opacity-0 group-hover:opacity-100 hover:!ring-4 hover:!ring-blue-400/40 transition-all duration-150 shadow-md z-20 cursor-crosshair" 
       />
       <Handle 
         type="source" 
         position={Position.Bottom} 
         id="bottom" 
-        className="!w-3 !h-3 !bg-indigo-500 !border-2 !border-slate-950 hover:!bg-indigo-400 !transition-all" 
+        style={{ 
+          bottom: 0, 
+          left: '50%', 
+          transform: 'translate(-50%, 50%)',
+          backgroundColor: theme.handleBg,
+          borderColor: theme.handleBorder 
+        }}
+        className="!w-2.5 !h-2.5 !border-2 !rounded-full opacity-0 group-hover:opacity-100 hover:!ring-4 hover:!ring-blue-400/40 transition-all duration-150 shadow-md z-20 cursor-crosshair" 
       />
       <Handle 
         type="target" 
         position={Position.Left} 
         id="left" 
-        className="!w-3 !h-3 !bg-blue-500 !border-2 !border-slate-950 hover:!bg-blue-400 !transition-all" 
+        style={{ 
+          top: '50%', 
+          left: 0, 
+          transform: 'translate(-50%, -50%)',
+          backgroundColor: theme.handleBg,
+          borderColor: theme.handleBorder 
+        }}
+        className="!w-2.5 !h-2.5 !border-2 !rounded-full opacity-0 group-hover:opacity-100 hover:!ring-4 hover:!ring-blue-400/40 transition-all duration-150 shadow-md z-20 cursor-crosshair" 
       />
       <Handle 
         type="source" 
         position={Position.Right} 
         id="right" 
-        className="!w-3 !h-3 !bg-indigo-500 !border-2 !border-slate-950 hover:!bg-indigo-400 !transition-all" 
+        style={{ 
+          top: '50%', 
+          right: 0, 
+          transform: 'translate(50%, -50%)',
+          backgroundColor: theme.handleBg,
+          borderColor: theme.handleBorder 
+        }}
+        className="!w-2.5 !h-2.5 !border-2 !rounded-full opacity-0 group-hover:opacity-100 hover:!ring-4 hover:!ring-blue-400/40 transition-all duration-150 shadow-md z-20 cursor-crosshair" 
       />
 
-      {/* UML Class Card Container */}
+      {/* Compartment 1: UML Header (Stereotype + Class Name) */}
       <div 
-        className={`
-          bg-slate-900/98 backdrop-blur-lg rounded-xl border shadow-2xl min-w-[240px] max-w-[340px] 
-          font-mono text-xs overflow-hidden card-hover-effect animate-fade-in-up select-none
-          ${selected 
-            ? 'border-blue-400 ring-2 ring-blue-400/50 shadow-blue-500/30 scale-[1.02]' 
-            : 'border-slate-700/80 hover:border-slate-500 hover:shadow-slate-900/60'
-          }
-        `}
+        className="pt-4 pb-2.5 px-4 border-b flex flex-col items-center justify-center text-center transition-colors"
+        style={{
+          backgroundColor: theme.nodeHeaderBg,
+          borderColor: theme.divider,
+        }}
       >
-        {/* Compartment 1: UML Header */}
-        <div className={`p-2.5 bg-gradient-to-b ${getStereotypeHeaderStyle(data.stereotype, isAbstract)} border-b border-slate-700/80 text-center`}>
-          {data.stereotype && (
-            <div className="mb-1 flex justify-center">
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-sans font-semibold uppercase tracking-wider rounded border border-current bg-slate-950/40">
-                {isInterface && <Component size={10} />}
-                {isAbstract && <Layers size={10} />}
-                {!isInterface && !isAbstract && <Box size={10} />}
-                &lt;&lt;{data.stereotype}&gt;&gt;
-              </span>
+        {data.stereotype && (
+          <div 
+            className="text-[10px] font-mono tracking-normal mb-0.5 select-none text-center font-semibold"
+            style={{ color: theme.nodeStereotypeText }}
+          >
+            &laquo;{data.stereotype}&raquo;
+          </div>
+        )}
+
+        <h3 
+          className={`font-sans font-bold text-[13px] tracking-tight truncate text-center w-full ${isAbstract ? 'italic' : ''}`}
+          style={{ color: theme.nodeText }}
+        >
+          {data.name || 'ClaseSinNombre'}
+        </h3>
+      </div>
+
+      {/* Compartment 2: UML Attributes (Vis + Name : Type {PK}) */}
+      <div 
+        className="px-3 py-2 border-b space-y-1 min-h-[32px] transition-colors"
+        style={{
+          backgroundColor: theme.attrBg,
+          borderColor: theme.divider,
+        }}
+      >
+        {attributes.length === 0 ? (
+          <div className="text-[10px] italic py-0.5" style={{ color: theme.nodeTextMuted }}>
+            sin atributos
+          </div>
+        ) : (
+          attributes.map((attr: ClassAttribute) => (
+            <div 
+              key={attr.id} 
+              className={`flex items-center text-[11px] leading-tight ${attr.isStatic ? 'underline font-semibold' : ''}`}
+              style={{ color: theme.nodeText }}
+            >
+              {getVisibilitySymbol(attr.visibility)}
+              <span className="font-medium ml-1" style={{ color: theme.nodeText }}>{attr.name}</span>
+              <span className="mx-1" style={{ color: theme.nodeTextMuted }}>:</span>
+              <span className="font-medium" style={{ color: theme.nodeStereotypeText }}>{attr.type}</span>
+              {attr.isId && (
+                <span 
+                  className="ml-1.5 px-1 py-0.2 text-[9px] font-bold rounded-xs border shadow-xs"
+                  style={{ 
+                    backgroundColor: theme.pkBg, 
+                    color: theme.pkText, 
+                    borderColor: theme.pkBorder 
+                  }}
+                >
+                  &#123;PK&#125;
+                </span>
+              )}
             </div>
-          )}
+          ))
+        )}
+      </div>
 
-          <h3 className={`font-bold text-white text-sm tracking-wide ${isAbstract ? 'italic text-amber-200' : ''}`}>
-            {data.name || 'ClaseSinNombre'}
-          </h3>
-        </div>
-
-        {/* Compartment 2: UML Attributes */}
-        <div className="p-2.5 border-b border-slate-800/80 space-y-1 bg-slate-950/50 min-h-[36px]">
-          {attributes.length === 0 ? (
-            <div className="text-[11px] text-slate-400 italic">sin atributos</div>
-          ) : (
-            attributes.map((attr: ClassAttribute) => (
-              <div 
-                key={attr.id} 
-                className={`flex items-center text-[11px] leading-relaxed text-slate-200 ${attr.isStatic ? 'underline decoration-slate-400 font-semibold' : ''}`}
-              >
-                {getVisibilityBadge(attr.visibility)}
-                <span className="font-semibold text-slate-100 ml-1">{attr.name}</span>
-                <span className="text-slate-400 mx-1">:</span>
-                <span className="text-blue-300 font-medium">{attr.type}</span>
+      {/* Compartment 3: UML Operations/Methods */}
+      <div 
+        className="px-3 py-2 space-y-1 min-h-[32px] transition-colors"
+        style={{ backgroundColor: theme.methodsBg }}
+      >
+        {methods.length === 0 ? (
+          <div className="text-[10px] italic py-0.5" style={{ color: theme.nodeTextMuted }}>
+            sin operaciones
+          </div>
+        ) : (
+          methods.map((method: ClassMethod) => (
+            <div 
+              key={method.id} 
+              className={`flex items-start text-[11px] leading-tight ${
+                method.isStatic ? 'underline' : ''
+              } ${method.isAbstract ? 'italic' : ''}`}
+              style={{ color: theme.nodeText }}
+            >
+              {getVisibilitySymbol(method.visibility)}
+              <div className="ml-1 min-w-0 flex-1 truncate">
+                <span className="font-medium" style={{ color: theme.nodeText }}>{method.name}</span>
+                <span style={{ color: theme.nodeTextMuted }}>(</span>
+                <span>
+                  {method.parameters?.map((p: { name: string; type: string }, i: number) => (
+                    <span key={i}>
+                      {i > 0 && ', '}
+                      <span style={{ color: theme.nodeText }}>{p.name}</span>
+                      <span style={{ color: theme.nodeTextMuted }}>:</span>
+                      <span style={{ color: theme.nodeStereotypeText }}>{p.type}</span>
+                    </span>
+                  ))}
+                </span>
+                <span style={{ color: theme.nodeTextMuted }}>):</span>
+                <span className="font-medium ml-1" style={{ color: theme.nodeStereotypeText }}>{method.returnType}</span>
               </div>
-            ))
-          )}
-        </div>
-
-        {/* Compartment 3: UML Methods */}
-        <div className="p-2.5 space-y-1 bg-slate-950/80 min-h-[36px]">
-          {methods.length === 0 ? (
-            <div className="text-[11px] text-slate-400 italic">sin operaciones</div>
-          ) : (
-            methods.map((method: ClassMethod) => (
-              <div 
-                key={method.id} 
-                className={`flex items-start text-[11px] leading-relaxed text-slate-200 ${
-                  method.isStatic ? 'underline decoration-slate-400' : ''
-                } ${method.isAbstract ? 'italic text-amber-200' : ''}`}
-              >
-                {getVisibilityBadge(method.visibility)}
-                <div className="ml-1 min-w-0 flex-1">
-                  <span className="font-semibold text-white">{method.name}</span>
-                  <span className="text-slate-400">(</span>
-                  <span className="text-slate-300">
-                    {method.parameters?.map((p: { name: string; type: string }, i: number) => (
-                      <span key={i}>
-                        {i > 0 && ', '}
-                        <span className="text-slate-200">{p.name}</span>
-                        <span className="text-slate-400">:</span>
-                        <span className="text-blue-300">{p.type}</span>
-                      </span>
-                    ))}
-                  </span>
-                  <span className="text-slate-400">):</span>
-                  <span className="text-emerald-300 font-medium ml-1">{method.returnType}</span>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

@@ -10,9 +10,9 @@
 ## 1. Enfoque de Desarrollo y Estado Real de los Casos de Uso (CU)
 
 El desarrollo del sistema se ejecuta **estrictamente Caso de Uso por Caso de Uso (CU por CU)** bajo el Proceso Unificado de Desarrollo de Software (PUDS).
-* **Realizados Correctamente y Validados:** Exclusivamente hasta el **CU06**.
-* **Todo lo posterior a CU06:** Eran maquetas/demos no definitivas que deben ser desarrolladas formalmente desde cero paso a paso.
-* **Foco Inmediato Siguiente:** **CU07** (Crear Proyecto desde Plantilla Base).
+* **Realizados Correctamente y Validados:** Exclusivamente hasta el **CU07**.
+* **Todo lo posterior a CU07:** Eran maquetas/demos no definitivas que deben ser desarrolladas formalmente desde cero paso a paso.
+* **Foco Inmediato Siguiente:** **CU08** (Modelar Clases UML: Tipos y Visibilidad).
 
 ### Matriz de Estado de Casos de Uso por Ciclos
 
@@ -25,7 +25,7 @@ El desarrollo del sistema se ejecuta **estrictamente Caso de Uso por Caso de Uso
 | **CU04** | Auditar Bitácora Global y Eventos de Seguridad | Ciclo 1 | `A1: Super Admin` | **Implementado** | Registro inmutable de eventos en `audit_logs` con IP, timestamp, enriquecimiento de usuarios, paginación (20/pág), filtros y exportación CSV/JSON. |
 | **CU05** | Consultar Historial y Trazabilidad | Ciclo 1 | `A3: Colaborador` / `A2: Arquitecto` | **Implementado** | Timeline cronológico de mutaciones (`diagram_history`) con diff antes/después, enriquecimiento de autores, papelera de reciclaje con restauración reversible y purga definitiva (hard delete) en cascada física. |
 | **CU06** | Ejecutar Tutorial Onboarding (< 2 min) | Ciclo 1 | `A3: Colaborador` / `A2: Arquitecto` | **Implementado** | Guía interactiva paso a paso para adopción rápida del editor y herramientas CASE (< 120s), spotlight no invasivo, gatillado automático/manual ("Guía Rápida") y persistencia en `user_profiles.preferences`. |
-| **CU07** | Crear Proyecto desde Plantilla Base | Ciclo 1 | `A2: Arquitecto` | **Pendiente** | Scaffolding de diagramas iniciales basados en patrones de diseño GoF y arquitecturas base. |
+| **CU07** | Crear Proyecto desde Plantilla Base | Ciclo 1 | `A2: Arquitecto` | **Implementado** | Catálogo interactivo de plantillas de dominio (Académico, Hospitalario, Facturación y Blanco), scaffolding profundo transaccional de nodos y relaciones OMG UML 2.5, remapeo consistente de IDs y trazabilidad en bitácora e historial. |
 | **CU08** | Modelar Clases UML (Tipos y Visibilidad) | Ciclo 1 | `A2: Arquitecto` / `A3: Colaborador` | **Pendiente** | Lienzo `/editor` interactivo: creación/edición de clases, atributos, métodos y visibilidades (+, -, #, ~). |
 | **CU09** | Conectar Relaciones y Cardinalidades | Ciclo 1 | `A2: Arquitecto` / `A3: Colaborador` | **Pendiente** | Trazado de asociaciones, agregaciones, composiciones, herencias y dependencias con multiplicidades. |
 | **CU10** | Validar Normalización Lógica (1NF a 3NF) | Ciclo 1 | `A2: Arquitecto` / `A3: Colaborador` | **Pendiente** | Motor heurístico de auditoría de normalización para alertar atributos compuestos, transitivos o redundantes. |

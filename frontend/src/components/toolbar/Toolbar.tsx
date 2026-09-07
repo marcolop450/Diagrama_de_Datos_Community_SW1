@@ -121,27 +121,29 @@ export const Toolbar: React.FC = () => {
       <div className="w-7 h-px bg-slate-800 my-1" />
 
       {/* AI Tools */}
-      <button
-        onClick={handleVoiceCommand}
-        className="p-2.5 rounded-xl text-slate-400 hover:text-purple-400 hover:bg-slate-900 transition-all group relative cursor-pointer"
-        title="Dictar y colocar con IA"
-      >
-        <Mic size={17} />
-        <span className="absolute left-full ml-2 px-2.5 py-1 bg-slate-900 text-slate-200 text-[11px] font-medium rounded-md shadow-xl border border-slate-800 whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
-          Dictar y colocar automáticamente (IA)
-        </span>
-      </button>
+      <div data-tour="toolbar-ai-tools" className="flex flex-col items-center gap-1.5">
+        <button
+          onClick={handleVoiceCommand}
+          className="p-2.5 rounded-xl text-slate-400 hover:text-purple-400 hover:bg-slate-900 transition-all group relative cursor-pointer"
+          title="Dictar y colocar con IA"
+        >
+          <Mic size={17} />
+          <span className="absolute left-full ml-2 px-2.5 py-1 bg-slate-900 text-slate-200 text-[11px] font-medium rounded-md shadow-xl border border-slate-800 whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
+            Dictar y colocar automáticamente (IA)
+          </span>
+        </button>
 
-      <button
-        onClick={handlePhotoImport}
-        className="p-2.5 rounded-xl text-slate-400 hover:text-emerald-400 hover:bg-slate-900 transition-all group relative cursor-pointer"
-        title="Foto de Pizarra a Diagrama"
-      >
-        <ImageIcon size={17} />
-        <span className="absolute left-full ml-2 px-2.5 py-1 bg-slate-900 text-slate-200 text-[11px] font-medium rounded-md shadow-xl border border-slate-800 whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
-          Reconocer Foto de Pizarra (IA)
-        </span>
-      </button>
+        <button
+          onClick={handlePhotoImport}
+          className="p-2.5 rounded-xl text-slate-400 hover:text-emerald-400 hover:bg-slate-900 transition-all group relative cursor-pointer"
+          title="Foto de Pizarra a Diagrama"
+        >
+          <ImageIcon size={17} />
+          <span className="absolute left-full ml-2 px-2.5 py-1 bg-slate-900 text-slate-200 text-[11px] font-medium rounded-md shadow-xl border border-slate-800 whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
+            Reconocer Foto de Pizarra (IA)
+          </span>
+        </button>
+      </div>
 
       {/* Divider */}
       <div className="w-7 h-px bg-slate-800 my-1" />

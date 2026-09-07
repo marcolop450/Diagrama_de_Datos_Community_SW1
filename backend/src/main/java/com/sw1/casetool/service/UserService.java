@@ -82,6 +82,9 @@ public class UserService {
         if (request.getDefaultZoom() != null) {
             currentPrefs.put("defaultZoom", request.getDefaultZoom());
         }
+        if (request.getCanvasTheme() != null) {
+            currentPrefs.put("canvasTheme", request.getCanvasTheme());
+        }
         if (request.getOnboardingCompleted() != null) {
             currentPrefs.put("onboardingCompleted", request.getOnboardingCompleted());
         }

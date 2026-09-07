@@ -29,5 +29,7 @@ public class CreateProjectRequest {
 
     private UUID ownerId;
 
+    private String templateId;
+
     private Map<String, Object> metadata;
 }

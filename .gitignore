@@ -34,3 +34,7 @@ logs/
 
 # Maven
 .mvn/wrapper/maven-wrapper.jar
+
+# Scratch / Temporary
+scratch/
+
