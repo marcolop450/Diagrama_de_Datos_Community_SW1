@@ -13,6 +13,8 @@ import java.util.UUID;
 public interface ClassNodeRepository extends JpaRepository<ClassNode, UUID> {
     List<ClassNode> findByProjectId(UUID projectId);
     long countByProjectId(UUID projectId);
+    boolean existsByProjectIdAndNameIgnoreCase(UUID projectId, String name);
+    boolean existsByProjectIdAndNameIgnoreCaseAndIdNot(UUID projectId, String name, UUID id);
 
     @Modifying
     @Query("DELETE FROM ClassNode c WHERE c.project.id = :projectId")

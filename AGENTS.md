@@ -10,9 +10,9 @@
 ## 1. Enfoque de Desarrollo y Estado Real de los Casos de Uso (CU)
 
 El desarrollo del sistema se ejecuta **estrictamente Caso de Uso por Caso de Uso (CU por CU)** bajo el Proceso Unificado de Desarrollo de Software (PUDS).
-* **Realizados Correctamente y Validados:** Exclusivamente hasta el **CU07**.
-* **Todo lo posterior a CU07:** Eran maquetas/demos no definitivas que deben ser desarrolladas formalmente desde cero paso a paso.
-* **Foco Inmediato Siguiente:** **CU08** (Modelar Clases UML: Tipos y Visibilidad).
+* **Realizados Correctamente y Validados:** Exclusivamente hasta el **CU08**.
+* **Todo lo posterior a CU08:** Eran maquetas/demos no definitivas que deben ser desarrolladas formalmente desde cero paso a paso.
+* **Foco Inmediato Siguiente:** **CU09** (Conectar Relaciones y Cardinalidades).
 
 ### Matriz de Estado de Casos de Uso por Ciclos
 
@@ -26,7 +26,7 @@ El desarrollo del sistema se ejecuta **estrictamente Caso de Uso por Caso de Uso
 | **CU05** | Consultar Historial y Trazabilidad | Ciclo 1 | `A3: Colaborador` / `A2: Arquitecto` | **Implementado** | Timeline cronológico de mutaciones (`diagram_history`) con diff antes/después, enriquecimiento de autores, papelera de reciclaje con restauración reversible y purga definitiva (hard delete) en cascada física. |
 | **CU06** | Ejecutar Tutorial Onboarding (< 2 min) | Ciclo 1 | `A3: Colaborador` / `A2: Arquitecto` | **Implementado** | Guía interactiva paso a paso para adopción rápida del editor y herramientas CASE (< 120s), spotlight no invasivo, gatillado automático/manual ("Guía Rápida") y persistencia en `user_profiles.preferences`. |
 | **CU07** | Crear Proyecto desde Plantilla Base | Ciclo 1 | `A2: Arquitecto` | **Implementado** | Catálogo interactivo de plantillas de dominio (Académico, Hospitalario, Facturación y Blanco), scaffolding profundo transaccional de nodos y relaciones OMG UML 2.5, remapeo consistente de IDs y trazabilidad en bitácora e historial. |
-| **CU08** | Modelar Clases UML (Tipos y Visibilidad) | Ciclo 1 | `A2: Arquitecto` / `A3: Colaborador` | **Pendiente** | Lienzo `/editor` interactivo: creación/edición de clases, atributos, métodos y visibilidades (+, -, #, ~). |
+| **CU08** | Modelar Clases UML (Tipos y Visibilidad) | Ciclo 1 | `A2: Arquitecto` / `A3: Colaborador` | **Implementado** | Modelado canónico OMG UML 2.5 (3 compartimentos, visibilidades `+`, `-`, `#`, `~`, estereotipos con guillemets, cursiva abstract, subrayado static, badge `{PK}`, catálogo Java 21 / PostgreSQL 17, firmas con parámetros tipados `(p: Type)`), validación de unicidad de nombre en frontend/backend (`E1: Nombre Duplicado`), clonación atómica profunda (`cloneClassNode`) con offset `(+48, +48)` y trazabilidad completa. |
 | **CU09** | Conectar Relaciones y Cardinalidades | Ciclo 1 | `A2: Arquitecto` / `A3: Colaborador` | **Pendiente** | Trazado de asociaciones, agregaciones, composiciones, herencias y dependencias con multiplicidades. |
 | **CU10** | Validar Normalización Lógica (1NF a 3NF) | Ciclo 1 | `A2: Arquitecto` / `A3: Colaborador` | **Pendiente** | Motor heurístico de auditoría de normalización para alertar atributos compuestos, transitivos o redundantes. |
 | **CU11** | Exportar Modelo y Documentación Técnica | Ciclo 2 | `A2: Arquitecto` / `A3: Colaborador` | **Pendiente** | 4 formatos: OMG XMI 2.1 (ArchiTec/StarUML), PNG alta resolución, PDF técnico ejecutivo y Excel (.xlsx) con tipo de dato SQL/JPA por columna. |
@@ -101,7 +101,9 @@ El desarrollo del sistema se ejecuta **estrictamente Caso de Uso por Caso de Uso
 3. **Cero Redundancia de Navegación:**
    * El botón "Volver al Dashboard" reside únicamente en el Header principal para todas las subpáginas (`/admin/users`, `/settings`, `/editor`).
    * Píldora de usuario unificada (avatar + nombre + settings) sin controles duplicados.
-4. **Identidad CASE Profesional:** Sin nomenclaturas académicas ni etiquetas tipo `(CU01)` visibles para el usuario final en la interfaz.
+4. **Identidad CASE Profesional y Prohibición Estricta de Sobrecontexto en Paréntesis:**
+   * Sin nomenclaturas académicas, códigos de caso de uso ni referencias normativas entre paréntesis visibles para el usuario final en la interfaz (ej. PROHIBIDO: `(CU01)`, `(Clonar CU08)`, `(ISO/IEC 19505)`).
+   * Los textos de botones, etiquetas, modales y tooltips deben ser limpios, directos y profesionales (ej. 'Duplicar Clase', 'Es Clase Abstracta', 'Clonar Proyecto'). Queda estrictamente prohibido contaminar las etiquetas visuales con sobrecontexto técnico interno.
 5. **Separación y Espaciado de Layout (Respeto de Límites):**
    * Todo contenedor principal de página debe poseer padding generoso (`p-4 sm:p-6 lg:p-8 pb-20`).
    * Queda estrictamente prohibido que el contenido quede pegado al `Sidebar` lateral izquierdo o al borde derecho de la pantalla.

@@ -29,8 +29,10 @@ const Header: React.FC = () => {
     try {
       await saveDiagram();
       toast.success('Diagrama guardado con éxito');
-    } catch {
-      toast.error('Error al guardar el diagrama');
+    } catch (err: any) {
+      console.error('Error al guardar el diagrama:', err);
+      const errMsg = err.response?.data?.message || err.message || 'Error al guardar el diagrama';
+      toast.error(errMsg);
     }
   };
 

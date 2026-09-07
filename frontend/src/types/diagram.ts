@@ -9,6 +9,13 @@ export interface ClassAttribute {
   defaultValue?: string;
 }
 
+export interface MethodParameter {
+  id?: string;
+  name: string;
+  type: string;
+  defaultValue?: string;
+}
+
 export interface ClassMethod {
   id: string;
   name: string;
@@ -16,7 +23,7 @@ export interface ClassMethod {
   visibility: 'public' | 'private' | 'protected' | 'package';
   isStatic: boolean;
   isAbstract: boolean;
-  parameters: { name: string; type: string }[];
+  parameters: MethodParameter[];
 }
 
 export interface ClassNodeData extends Record<string, unknown> {

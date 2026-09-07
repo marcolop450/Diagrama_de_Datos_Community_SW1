@@ -6,14 +6,16 @@ import {
   Plus, 
   Sliders,
   Key,
-  Sparkles
+  Sparkles,
+  Copy,
+  AlertCircle
 } from 'lucide-react';
 import { ClassAttribute, ClassMethod } from '../../types/diagram';
 import toast from 'react-hot-toast';
 
 const CARDINALITY_OPTIONS = ['1', '0..1', '1..*', '0..*', '*'];
-const COMMON_TYPES = ['Long', 'String', 'Integer', 'Boolean', 'BigDecimal', 'LocalDate'];
-const COMMON_RETURN_TYPES = ['void', 'String', 'Long', 'Boolean', 'Integer', 'List<T>'];
+const COMMON_TYPES = ['Long', 'Integer', 'Double', 'BigDecimal', 'String', 'Boolean', 'LocalDate', 'LocalDateTime', 'UUID', 'byte[]'];
+const COMMON_RETURN_TYPES = ['void', 'String', 'Long', 'Integer', 'Double', 'Boolean', 'UUID', 'List<T>', 'Optional<T>'];
 
 const PropertiesPanel: React.FC = () => {
   const { 
@@ -21,6 +23,8 @@ const PropertiesPanel: React.FC = () => {
     selectedEdge, 
     updateClassNode, 
     deleteClassNode, 
+    cloneClassNode,
+    isClassNameTaken,
     updateRelationship, 
     deleteRelationship, 
     setSelectedNode,
@@ -122,6 +126,32 @@ const PropertiesPanel: React.FC = () => {
     updateClassNode(selectedNode.id, { methods: updated });
   };
 
+  const handleAddParameter = (methodId: string) => {
+    if (!selectedNode) return;
+    const targetMethod = selectedNode.data.methods?.find(m => m.id === methodId);
+    if (!targetMethod) return;
+    const currentParams = targetMethod.parameters || [];
+    const newParam = { name: `p${currentParams.length + 1}`, type: 'String' };
+    handleUpdateMethod(methodId, { parameters: [...currentParams, newParam] });
+  };
+
+  const handleUpdateParameter = (methodId: string, paramIndex: number, patch: { name?: string; type?: string }) => {
+    if (!selectedNode) return;
+    const targetMethod = selectedNode.data.methods?.find(m => m.id === methodId);
+    if (!targetMethod) return;
+    const currentParams = [...(targetMethod.parameters || [])];
+    currentParams[paramIndex] = { ...currentParams[paramIndex], ...patch };
+    handleUpdateMethod(methodId, { parameters: currentParams });
+  };
+
+  const handleRemoveParameter = (methodId: string, paramIndex: number) => {
+    if (!selectedNode) return;
+    const targetMethod = selectedNode.data.methods?.find(m => m.id === methodId);
+    if (!targetMethod) return;
+    const currentParams = (targetMethod.parameters || []).filter((_, idx) => idx !== paramIndex);
+    handleUpdateMethod(methodId, { parameters: currentParams });
+  };
+
   // Handle Relationship Changes
   const handleEdgeTypeChange = (type: any) => {
     if (!selectedEdge) return;
@@ -210,8 +240,20 @@ const PropertiesPanel: React.FC = () => {
                     type="text" 
                     value={selectedNode.data.name} 
                     onChange={(e) => handleNodeNameChange(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-800 focus:border-blue-500 rounded-lg px-3 py-2 text-xs font-mono text-slate-100 focus:outline-none transition-colors"
+                    className={`w-full bg-slate-900 border rounded-lg px-3 py-2 text-xs font-mono text-slate-100 focus:outline-none transition-colors ${
+                      isClassNameTaken(selectedNode.data.name, selectedNode.id)
+                        ? 'border-amber-500/80 focus:border-amber-400 ring-1 ring-amber-500/30'
+                        : 'border-slate-800 focus:border-blue-500'
+                    }`}
                   />
+                  {isClassNameTaken(selectedNode.data.name, selectedNode.id) && (
+                    <div className="mt-2 flex items-start gap-2 p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-300 text-[11px] leading-snug">
+                      <AlertCircle size={14} className="shrink-0 mt-0.5 text-amber-400" />
+                      <div>
+                        <span className="font-semibold">Conflicto de unicidad (E1):</span> Ya existe otra clase con el nombre "{selectedNode.data.name}" en este proyecto. Los nombres de clase deben ser únicos.
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -224,11 +266,12 @@ const PropertiesPanel: React.FC = () => {
                     className="w-full bg-slate-900 border border-slate-800 focus:border-blue-500 rounded-lg px-3 py-2 text-xs font-sans text-slate-200 focus:outline-none transition-colors"
                   >
                     <option value="">(Ninguno)</option>
-                    <option value="entity">entity (Entidad JPA)</option>
-                    <option value="interface">interface (Interfaz)</option>
-                    <option value="service">service (Servicio Spring)</option>
-                    <option value="controller">controller (REST Controller)</option>
-                    <option value="repository">repository (Repositorio)</option>
+                    <option value="entity">&laquo;entity&raquo; (Entidad JPA)</option>
+                    <option value="interface">&laquo;interface&raquo; (Interfaz)</option>
+                    <option value="service">&laquo;service&raquo; (Servicio Spring)</option>
+                    <option value="controller">&laquo;controller&raquo; (REST Controller)</option>
+                    <option value="repository">&laquo;repository&raquo; (Repositorio)</option>
+                    <option value="abstract">&laquo;abstract&raquo; (Clase Base Abstracta)</option>
                   </select>
                 </div>
 
@@ -242,6 +285,20 @@ const PropertiesPanel: React.FC = () => {
                     />
                     <span className="text-xs text-slate-300 font-medium">Es Clase Abstracta</span>
                   </label>
+                </div>
+
+                <div className="pt-3 border-t border-slate-800/80">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await cloneClassNode(selectedNode.id);
+                      toast.success('Clase duplicada exitosamente');
+                    }}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-slate-900 hover:bg-slate-850 text-slate-200 hover:text-white border border-slate-700/80 hover:border-slate-600 rounded-lg text-xs font-semibold transition-all active:scale-98 cursor-pointer shadow-xs"
+                  >
+                    <Copy size={13} className="text-blue-400" />
+                    <span>Duplicar Clase</span>
+                  </button>
                 </div>
               </div>
             )}
@@ -324,6 +381,20 @@ const PropertiesPanel: React.FC = () => {
                           >
                             <Key size={10} className={attr.isId ? 'text-amber-400' : 'text-slate-500'} />
                             <span>PK</span>
+                          </button>
+
+                          {/* Static Toggle Button */}
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateAttribute(attr.id, { isStatic: !attr.isStatic })}
+                            className={`px-2 py-1 rounded-lg text-[10px] font-mono font-semibold border transition-all cursor-pointer shrink-0 ${
+                              attr.isStatic
+                                ? 'bg-purple-500/20 border-purple-500/50 text-purple-300 ring-1 ring-purple-400/40 shadow-xs'
+                                : 'bg-slate-950 border-slate-800 text-slate-500 hover:text-slate-300 hover:border-slate-700'
+                            }`}
+                            title={attr.isStatic ? 'Atributo estático (subrayado OMG UML 2.5)' : 'Marcar como estático (UML)'}
+                          >
+                            <span className="underline">_S_</span>
                           </button>
 
                           {/* Delete Button */}
@@ -440,6 +511,34 @@ const PropertiesPanel: React.FC = () => {
                             placeholder="nombreMetodo"
                           />
 
+                          {/* Static Toggle Button */}
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateMethod(method.id, { isStatic: !method.isStatic })}
+                            className={`px-2 py-1 rounded-lg text-[10px] font-mono font-semibold border transition-all cursor-pointer shrink-0 ${
+                              method.isStatic
+                                ? 'bg-purple-500/20 border-purple-500/50 text-purple-300 ring-1 ring-purple-400/40 shadow-xs'
+                                : 'bg-slate-950 border-slate-800 text-slate-500 hover:text-slate-300 hover:border-slate-700'
+                            }`}
+                            title={method.isStatic ? 'Método estático (subrayado OMG UML 2.5)' : 'Marcar como estático'}
+                          >
+                            <span className="underline">_S_</span>
+                          </button>
+
+                          {/* Abstract Toggle Button */}
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateMethod(method.id, { isAbstract: !method.isAbstract })}
+                            className={`px-2 py-1 rounded-lg text-[10px] font-mono font-semibold border transition-all cursor-pointer shrink-0 ${
+                              method.isAbstract
+                                ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 ring-1 ring-amber-400/40 shadow-xs'
+                                : 'bg-slate-950 border-slate-800 text-slate-500 hover:text-slate-300 hover:border-slate-700'
+                            }`}
+                            title={method.isAbstract ? 'Método abstracto (cursiva OMG UML 2.5)' : 'Marcar como abstracto'}
+                          >
+                            <span className="italic">_A_</span>
+                          </button>
+
                           {/* Delete Button */}
                           <button 
                             type="button"
@@ -481,6 +580,53 @@ const PropertiesPanel: React.FC = () => {
                               </button>
                             ))}
                           </div>
+                        </div>
+
+                        {/* Row 3: Parameter Manager */}
+                        <div className="pt-2 border-t border-slate-800/80 space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] text-slate-400 uppercase font-mono tracking-wider">
+                              Parámetros ({method.parameters?.length || 0}):
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleAddParameter(method.id)}
+                              className="text-[10px] text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+                            >
+                              <Plus size={11} /> Añadir parámetro
+                            </button>
+                          </div>
+                          {method.parameters && method.parameters.length > 0 && (
+                            <div className="space-y-1.5 pl-1">
+                              {method.parameters.map((param, pIdx) => (
+                                <div key={pIdx} className="flex items-center gap-1.5">
+                                  <input
+                                    type="text"
+                                    value={param.name}
+                                    onChange={(e) => handleUpdateParameter(method.id, pIdx, { name: e.target.value })}
+                                    placeholder="nombre"
+                                    className="w-24 bg-slate-950 border border-slate-700/80 focus:border-blue-500 rounded px-1.5 py-0.5 text-[11px] font-mono text-slate-200 placeholder:text-slate-600 focus:outline-none transition-colors"
+                                  />
+                                  <span className="text-slate-500 text-xs">:</span>
+                                  <input
+                                    type="text"
+                                    value={param.type}
+                                    onChange={(e) => handleUpdateParameter(method.id, pIdx, { type: e.target.value })}
+                                    placeholder="tipo"
+                                    className="flex-1 min-w-0 bg-slate-950 border border-slate-700/80 focus:border-blue-500 rounded px-1.5 py-0.5 text-[11px] font-mono text-sky-300 placeholder:text-slate-600 focus:outline-none transition-colors"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveParameter(method.id, pIdx)}
+                                    className="p-1 text-slate-500 hover:text-rose-400 hover:bg-rose-950/30 rounded transition-colors cursor-pointer shrink-0"
+                                    title="Eliminar parámetro"
+                                  >
+                                    <X size={12} />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))

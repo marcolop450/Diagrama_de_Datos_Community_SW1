@@ -1,5 +1,6 @@
 package com.sw1.casetool.service;
 
+import com.sw1.casetool.dto.ClassNodeRequest;
 import com.sw1.casetool.dto.CloneProjectRequest;
 import com.sw1.casetool.dto.CreateProjectRequest;
 import com.sw1.casetool.dto.ProjectResponse;
@@ -406,5 +407,131 @@ public class DiagramServiceTest {
         verify(classNodeRepository, times(2)).save(any(ClassNode.class));
         verify(relationshipRepository, times(1)).save(any(Relationship.class));
         verify(auditLogService, times(1)).recordAction(eq(userId), eq("PROJECT_CREATED_FROM_TEMPLATE"), eq("diagram_projects"), eq(projectId), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("CU08-T1: Debe agregar clase UML con visibilidades, atributos, métodos y registrar historial")
+    void testAddClassNode_Success() {
+        ClassNodeRequest request = new ClassNodeRequest();
+        request.setName("Usuario");
+        request.setStereotype("entity");
+        request.setAbstractClass(false);
+        request.setPositionX(100);
+        request.setPositionY(120);
+        request.setWidth(220);
+        request.setHeight(180);
+        request.setAttributes(List.of(
+                Map.of("name", "id", "type", "UUID", "visibility", "private", "isPrimaryKey", true),
+                Map.of("name", "email", "type", "String", "visibility", "private", "isPrimaryKey", false)
+        ));
+        request.setMethods(List.of(
+                Map.of("name", "autenticar", "returnType", "boolean", "visibility", "public", "parameters", List.of(
+                        Map.of("name", "token", "type", "String")
+                ))
+        ));
+
+        when(classNodeRepository.existsByProjectIdAndNameIgnoreCase(projectId, "Usuario")).thenReturn(false);
+        when(projectRepository.findByIdAndIsDeletedFalse(projectId)).thenReturn(Optional.of(mockProject));
+        when(classNodeRepository.save(any(ClassNode.class))).thenAnswer(i -> {
+            ClassNode c = i.getArgument(0);
+            c.setId(UUID.randomUUID());
+            return c;
+        });
+
+        ClassNode saved = diagramService.addClassNode(projectId, request);
+
+        assertNotNull(saved);
+        assertEquals("Usuario", saved.getName());
+        assertEquals("entity", saved.getStereotype());
+        assertEquals(2, saved.getAttributes().size());
+        assertEquals(1, saved.getMethods().size());
+
+        verify(classNodeRepository).save(any(ClassNode.class));
+        verify(diagramHistoryService).recordHistory(eq(mockProject), eq(userId), eq("NODE_CREATED"), eq("CLASS_NODE"), any(), isNull(), any());
+    }
+
+    @Test
+    @DisplayName("CU08-T2: Debe lanzar IllegalArgumentException si el nombre de la clase ya existe en el proyecto (E1)")
+    void testAddClassNode_DuplicateName_ThrowsException() {
+        ClassNodeRequest request = new ClassNodeRequest();
+        request.setName("Usuario");
+
+        when(classNodeRepository.existsByProjectIdAndNameIgnoreCase(projectId, "Usuario")).thenReturn(true);
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+                diagramService.addClassNode(projectId, request)
+        );
+
+        assertTrue(ex.getMessage().contains("Ya existe una clase con el nombre 'Usuario'"));
+        verify(classNodeRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("CU08-T3: Debe lanzar IllegalArgumentException si al actualizar se usa el nombre de otra clase (E1)")
+    void testUpdateClassNode_DuplicateName_ThrowsException() {
+        UUID classId = UUID.randomUUID();
+        ClassNode existing = ClassNode.builder()
+                .id(classId)
+                .project(mockProject)
+                .name("Persona")
+                .build();
+
+        ClassNodeRequest request = new ClassNodeRequest();
+        request.setName("Cliente"); // Nombre que ya usa otra clase
+
+        when(classNodeRepository.findById(classId)).thenReturn(Optional.of(existing));
+        when(classNodeRepository.existsByProjectIdAndNameIgnoreCaseAndIdNot(projectId, "Cliente", classId)).thenReturn(true);
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+                diagramService.updateClassNode(projectId, classId, request)
+        );
+
+        assertTrue(ex.getMessage().contains("Ya existe otra clase con el nombre 'Cliente'"));
+        verify(classNodeRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("CU08-T4: Debe clonar clase con sufijo 'Copia', desplazamiento (+48, +48) y nuevos IDs de miembros")
+    void testCloneClassNode_Success() {
+        UUID originalId = UUID.randomUUID();
+        ClassNode original = ClassNode.builder()
+                .id(originalId)
+                .project(mockProject)
+                .name("Factura")
+                .stereotype("entity")
+                .abstractClass(false)
+                .positionX(200)
+                .positionY(150)
+                .width(220)
+                .height(180)
+                .attributes(new ArrayList<>(List.of(
+                        new HashMap<>(Map.of("id", "a1", "name", "total", "type", "BigDecimal", "visibility", "private"))
+                )))
+                .methods(new ArrayList<>(List.of(
+                        new HashMap<>(Map.of("id", "m1", "name", "calcularTotal", "returnType", "void", "visibility", "public"))
+                )))
+                .build();
+
+        when(classNodeRepository.findById(originalId)).thenReturn(Optional.of(original));
+        when(classNodeRepository.existsByProjectIdAndNameIgnoreCase(projectId, "FacturaCopia")).thenReturn(false);
+        when(classNodeRepository.save(any(ClassNode.class))).thenAnswer(i -> {
+            ClassNode c = i.getArgument(0);
+            c.setId(UUID.randomUUID());
+            return c;
+        });
+
+        ClassNode cloned = diagramService.cloneClassNode(projectId, originalId);
+
+        assertNotNull(cloned);
+        assertEquals("FacturaCopia", cloned.getName());
+        assertEquals(248, cloned.getPositionX());
+        assertEquals(198, cloned.getPositionY());
+        assertEquals(1, cloned.getAttributes().size());
+        assertNotEquals("a1", cloned.getAttributes().get(0).get("id"));
+        assertEquals(1, cloned.getMethods().size());
+        assertNotEquals("m1", cloned.getMethods().get(0).get("id"));
+
+        verify(classNodeRepository).save(any(ClassNode.class));
+        verify(diagramHistoryService).recordHistory(eq(mockProject), eq(userId), eq("NODE_CLONED"), eq("CLASS_NODE"), any(), any(), any());
     }
 }

@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { AlertTriangle } from 'lucide-react';
 import { Handle, Position, NodeProps, Node } from '@xyflow/react';
 import { ClassNodeData, ClassAttribute, ClassMethod } from '../../types/diagram';
 import { useUiStore } from '../../stores/uiStore';
@@ -24,11 +25,12 @@ const getVisibilitySymbol = (visibility: string) => {
 type CustomNodeProps = NodeProps<Node<ClassNodeData>>;
 
 const ClassNodeComponent = ({ data, selected }: CustomNodeProps) => {
-  const { setSelectedNode } = useDiagramStore();
+  const { setSelectedNode, isClassNameTaken } = useDiagramStore();
   const { setPropertiesPanelOpen } = useUiStore();
   const { user } = useAuthStore();
   const theme = getCanvasTheme(user?.preferences?.canvasTheme);
 
+  const isDuplicateName = isClassNameTaken(data.name, data.id);
   const isAbstract = data.isAbstract || data.stereotype?.toLowerCase() === 'abstract';
   const attributes: ClassAttribute[] = data.attributes || [];
   const methods: ClassMethod[] = data.methods || [];
@@ -119,12 +121,22 @@ const ClassNodeComponent = ({ data, selected }: CustomNodeProps) => {
           </div>
         )}
 
-        <h3 
-          className={`font-sans font-bold text-[13px] tracking-tight truncate text-center w-full ${isAbstract ? 'italic' : ''}`}
-          style={{ color: theme.nodeText }}
-        >
-          {data.name || 'ClaseSinNombre'}
-        </h3>
+        <div className="flex items-center justify-center gap-1.5 w-full">
+          <h3 
+            className={`font-sans font-bold text-[13px] tracking-tight truncate text-center ${isAbstract ? 'italic' : ''}`}
+            style={{ color: theme.nodeText }}
+          >
+            {data.name || 'ClaseSinNombre'}
+          </h3>
+          {isDuplicateName && (
+            <span 
+              className="inline-flex items-center text-amber-400 shrink-0" 
+              title="Nombre duplicado: Ya existe otra clase con este nombre en el proyecto (E1)"
+            >
+              <AlertTriangle size={13} />
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Compartment 2: UML Attributes (Vis + Name : Type {PK}) */}

@@ -144,6 +144,10 @@ export const api = {
     const res = await apiClient.delete(`/projects/${projectId}/classes/${classId}`);
     return res.data;
   },
+  cloneClassNode: async (projectId: string, classId: string) => {
+    const res = await apiClient.post(`/projects/${projectId}/classes/${classId}/clone`);
+    return res.data;
+  },
 
   // Relationships
   addRelationship: async (projectId: string, rel: Partial<RelationshipData>) => {

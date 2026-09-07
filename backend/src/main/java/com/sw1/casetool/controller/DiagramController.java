@@ -178,6 +178,15 @@ public class DiagramController {
         return ResponseEntity.ok(ApiResponse.success("Clase eliminada exitosamente", null));
     }
 
+    @PostMapping("/{projectId}/classes/{classId}/clone")
+    @Operation(summary = "Clonar un nodo de clase con sus atributos y métodos (CU08)")
+    public ResponseEntity<ApiResponse<ClassNode>> cloneClassNode(
+            @PathVariable UUID projectId,
+            @PathVariable UUID classId
+    ) {
+        return new ResponseEntity<>(ApiResponse.success("Clase clonada exitosamente", diagramService.cloneClassNode(projectId, classId)), HttpStatus.CREATED);
+    }
+
     // --- Relaciones UML ---
 
     @PostMapping("/{projectId}/relationships")

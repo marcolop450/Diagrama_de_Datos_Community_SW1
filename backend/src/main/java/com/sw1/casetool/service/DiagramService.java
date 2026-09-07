@@ -616,10 +616,18 @@ public class DiagramService {
 
     @Transactional
     public ClassNode addClassNode(UUID projectId, ClassNodeRequest request) {
+        if (request.getName() == null || request.getName().trim().isEmpty()) {
+            throw new IllegalArgumentException("El nombre de la clase no puede estar vacío");
+        }
+        String className = request.getName().trim();
+        if (classNodeRepository.existsByProjectIdAndNameIgnoreCase(projectId, className)) {
+            throw new IllegalArgumentException("Ya existe una clase con el nombre '" + className + "' en este proyecto.");
+        }
+
         DiagramProject project = getProject(projectId);
         ClassNode node = ClassNode.builder()
                 .project(project)
-                .name(request.getName())
+                .name(className)
                 .stereotype(request.getStereotype())
                 .abstractClass(request.isAbstractClass())
                 .positionX(request.getPositionX())
@@ -657,6 +665,14 @@ public class DiagramService {
                 .filter(c -> c.getProject().getId().equals(projectId))
                 .orElseThrow(() -> new ResourceNotFoundException("Class node not found in project"));
 
+        if (request.getName() == null || request.getName().trim().isEmpty()) {
+            throw new IllegalArgumentException("El nombre de la clase no puede estar vacío");
+        }
+        String className = request.getName().trim();
+        if (classNodeRepository.existsByProjectIdAndNameIgnoreCaseAndIdNot(projectId, className, classId)) {
+            throw new IllegalArgumentException("Ya existe otra clase con el nombre '" + className + "' en este proyecto.");
+        }
+
         Map<String, Object> beforeState = new HashMap<>();
         beforeState.put("name", node.getName());
         beforeState.put("stereotype", node.getStereotype());
@@ -664,7 +680,7 @@ public class DiagramService {
         beforeState.put("attributesCount", node.getAttributes() != null ? node.getAttributes().size() : 0);
         beforeState.put("methodsCount", node.getMethods() != null ? node.getMethods().size() : 0);
 
-        node.setName(request.getName());
+        node.setName(className);
         node.setStereotype(request.getStereotype());
         node.setAbstractClass(request.isAbstractClass());
         node.setPositionX(request.getPositionX());
@@ -697,10 +713,85 @@ public class DiagramService {
     }
 
     @Transactional
+    public ClassNode cloneClassNode(UUID projectId, UUID classId) {
+        ClassNode original = classNodeRepository.findById(classId)
+                .filter(c -> c.getProject().getId().equals(projectId))
+                .orElseThrow(() -> new ResourceNotFoundException("Class node not found in project: " + classId));
+
+        String baseName = original.getName();
+        String candidateName = baseName + "Copia";
+        int counter = 1;
+        while (classNodeRepository.existsByProjectIdAndNameIgnoreCase(projectId, candidateName)) {
+            candidateName = baseName + "Copia" + counter;
+            counter++;
+        }
+
+        List<Map<String, Object>> clonedAttrs = new ArrayList<>();
+        if (original.getAttributes() != null) {
+            for (Map<String, Object> attr : original.getAttributes()) {
+                Map<String, Object> copy = new HashMap<>(attr);
+                copy.put("id", "a-" + System.currentTimeMillis() + "-" + UUID.randomUUID().toString().substring(0, 5));
+                clonedAttrs.add(copy);
+            }
+        }
+
+        List<Map<String, Object>> clonedMethods = new ArrayList<>();
+        if (original.getMethods() != null) {
+            for (Map<String, Object> method : original.getMethods()) {
+                Map<String, Object> copy = new HashMap<>(method);
+                copy.put("id", "m-" + System.currentTimeMillis() + "-" + UUID.randomUUID().toString().substring(0, 5));
+                clonedMethods.add(copy);
+            }
+        }
+
+        ClassNode cloned = ClassNode.builder()
+                .project(original.getProject())
+                .name(candidateName)
+                .stereotype(original.getStereotype())
+                .abstractClass(original.isAbstractClass())
+                .positionX(original.getPositionX() + 48)
+                .positionY(original.getPositionY() + 48)
+                .width(original.getWidth())
+                .height(original.getHeight())
+                .attributes(clonedAttrs)
+                .methods(clonedMethods)
+                .build();
+
+        ClassNode saved = classNodeRepository.save(cloned);
+
+        Map<String, Object> afterState = new HashMap<>();
+        afterState.put("name", saved.getName());
+        afterState.put("stereotype", saved.getStereotype());
+        afterState.put("clonedFromId", original.getId());
+        afterState.put("attributesCount", clonedAttrs.size());
+        afterState.put("methodsCount", clonedMethods.size());
+
+        diagramHistoryService.recordHistory(
+                original.getProject(),
+                original.getProject().getOwnerId(),
+                "NODE_CLONED",
+                "CLASS_NODE",
+                saved.getId(),
+                Map.of("sourceNodeId", original.getId(), "sourceNodeName", original.getName()),
+                afterState
+        );
+
+        return saved;
+    }
+
+    @Transactional
     public void deleteClassNode(UUID projectId, UUID classId) {
         ClassNode node = classNodeRepository.findById(classId)
                 .filter(c -> c.getProject().getId().equals(projectId))
                 .orElseThrow(() -> new ResourceNotFoundException("Class node not found in project"));
+
+        // Delete any relationships connected to this node
+        List<Relationship> connectedRels = relationshipRepository.findByProjectId(projectId).stream()
+                .filter(r -> r.getSourceClass().getId().equals(classId) || r.getTargetClass().getId().equals(classId))
+                .toList();
+        for (Relationship r : connectedRels) {
+            relationshipRepository.delete(r);
+        }
 
         Map<String, Object> beforeState = new HashMap<>();
         beforeState.put("name", node.getName());
@@ -948,6 +1039,7 @@ public class DiagramService {
                 relationshipRepository.delete(r);
             }
         }
+        relationshipRepository.flush();
 
         // 4. Remove deleted nodes
         for (ClassNode n : existingNodes) {
@@ -955,9 +1047,21 @@ public class DiagramService {
                 classNodeRepository.delete(n);
             }
         }
+        classNodeRepository.flush();
 
         project.setUpdatedAt(Instant.now());
         projectRepository.save(project);
+
+        // Diagram history tracking (CU05)
+        diagramHistoryService.recordHistory(
+                project,
+                user.getId(),
+                "PROJECT_UPDATED",
+                "PROJECT",
+                project.getId(),
+                Map.of("nodes", existingNodes.size(), "relationships", existingRels.size()),
+                Map.of("nodes", keptNodeIds.size(), "relationships", keptRelIds.size())
+        );
 
         List<ClassNode> finalClasses = classNodeRepository.findByProjectId(projectId);
         List<Relationship> finalRelationships = relationshipRepository.findByProjectId(projectId);

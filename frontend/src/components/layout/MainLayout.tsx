@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useParams } from 'react-router-dom';
 import Header from './Header';
 import Sidebar from './Sidebar';
 import Toolbar from '../toolbar/Toolbar';
@@ -13,9 +13,17 @@ import { useDiagramStore } from '../../stores/diagramStore';
 import { ReactFlowProvider } from '@xyflow/react';
 
 const MainLayout: React.FC = () => {
+  const { id } = useParams<{ id?: string }>();
   const { sidebarOpen, toggleSidebar, propertiesPanelOpen, activeModal, openOnboarding } = useUiStore();
   const { user } = useAuthStore();
-  const { project, saveDiagram } = useDiagramStore();
+  const { project, loadDiagram, saveDiagram } = useDiagramStore();
+
+  // Load project diagram if URL has an explicit project id and differs from active state
+  useEffect(() => {
+    if (id && id !== 'sample-project-id' && project?.id !== id) {
+      loadDiagram(id);
+    }
+  }, [id, project?.id, loadDiagram]);
 
   // Defense-in-depth: SUPER_ADMIN is a governance role and must never see or use the drawing canvas
   if (user?.role === 'SUPER_ADMIN') {

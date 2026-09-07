@@ -13,6 +13,11 @@ import {
 import { DiagramProject, ClassNodeData, RelationshipData } from '../types/diagram';
 import { api } from '../services/api';
 
+const isUUID = (str?: string | null): boolean => {
+  if (!str) return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+};
+
 // Initial sample data for immediate visual experience
 const sampleNodes: Node<ClassNodeData>[] = [
   {
@@ -163,6 +168,8 @@ interface DiagramState {
   createNewClass: (name?: string, stereotype?: string, isAbstract?: boolean, position?: { x: number; y: number }) => void;
   updateClassNode: (id: string, data: Partial<ClassNodeData>) => void;
   deleteClassNode: (id: string) => void;
+  cloneClassNode: (id: string) => Promise<void>;
+  isClassNameTaken: (name: string, excludeId?: string) => boolean;
   
   addRelationship: (edge: Edge<RelationshipData>) => void;
   updateRelationship: (id: string, data: Partial<RelationshipData>) => void;
@@ -216,6 +223,14 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
     set({ edges: addEdge(newEdge, get().edges) as Edge<RelationshipData>[] });
   },
 
+  isClassNameTaken: (name: string, excludeId?: string) => {
+    if (!name || !name.trim()) return false;
+    const lower = name.trim().toLowerCase();
+    return get().nodes.some(
+      (n) => n.id !== excludeId && (n.data?.name || '').trim().toLowerCase() === lower
+    );
+  },
+
   addClassNode: (node) => set((state) => ({ nodes: [...state.nodes, node] })),
   
   createNewClass: (name = 'NuevaClase', stereotype = 'entity', isAbstract = false, position?: { x: number; y: number }) => {
@@ -224,17 +239,23 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
     const posX = position ? position.x : (100 + (currentCount % 3) * 260);
     const posY = position ? position.y : (120 + Math.floor(currentCount / 3) * 220);
 
+    let finalName = name || `Clase${currentCount + 1}`;
+    let counter = 1;
+    while (get().isClassNameTaken(finalName)) {
+      finalName = `${name || 'Clase'}${counter++}`;
+    }
+
     const newNode: Node<ClassNodeData> = {
       id: newId,
       type: 'classNode',
       position: { x: posX, y: posY },
       data: {
         id: newId,
-        name: name || `Clase${currentCount + 1}`,
+        name: finalName,
         stereotype: stereotype || undefined,
         isAbstract: !!isAbstract,
         attributes: [
-          { id: `a-${Date.now()}-1`, name: 'id', type: 'Long', visibility: 'private', isStatic: false }
+          { id: `a-${Date.now()}-1`, name: 'id', type: 'Long', visibility: 'private', isStatic: false, isId: true }
         ],
         methods: [
           { id: `m-${Date.now()}-1`, name: 'getId', returnType: 'Long', visibility: 'public', isStatic: false, isAbstract: false, parameters: [] }
@@ -243,6 +264,88 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
     };
 
     set((state) => ({ 
+      nodes: [...state.nodes, newNode],
+      selectedNode: newNode,
+      selectedEdge: null
+    }));
+  },
+
+  cloneClassNode: async (id: string) => {
+    const { project, nodes } = get();
+    const sourceNode = nodes.find((n) => n.id === id);
+    if (!sourceNode) return;
+
+    // Try backend API first if valid project exists
+    if (project?.id && project.id !== 'sample-project-id') {
+      try {
+        const res = await api.cloneClassNode(project.id, id);
+        if (res?.success && res.data) {
+          const cn = res.data;
+          const newNode: Node<ClassNodeData> = {
+            id: cn.id,
+            type: 'classNode',
+            position: {
+              x: cn.positionX || (sourceNode.position.x + 48),
+              y: cn.positionY || (sourceNode.position.y + 48)
+            },
+            data: {
+              id: cn.id,
+              name: cn.name,
+              stereotype: cn.stereotype,
+              isAbstract: cn.abstractClass || cn.isAbstract || false,
+              attributes: cn.attributes || [],
+              methods: cn.methods || []
+            }
+          };
+          set((state) => ({
+            nodes: [...state.nodes, newNode],
+            selectedNode: newNode,
+            selectedEdge: null
+          }));
+          return;
+        }
+      } catch (err: any) {
+        console.error('Clonado via API no completado, usando copia reactiva local:', err);
+      }
+    }
+
+    // Local clone fallback with clean offset and fresh IDs
+    const baseName = sourceNode.data.name || 'Clase';
+    let candidateName = `${baseName}Copia`;
+    let counter = 1;
+    while (get().isClassNameTaken(candidateName)) {
+      candidateName = `${baseName}Copia${counter++}`;
+    }
+
+    const newId = `c-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+    const clonedAttributes = (sourceNode.data.attributes || []).map((attr) => ({
+      ...attr,
+      id: `a-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`
+    }));
+    const clonedMethods = (sourceNode.data.methods || []).map((m) => ({
+      ...m,
+      id: `m-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      parameters: (m.parameters || []).map((p) => ({ ...p }))
+    }));
+
+    const newNode: Node<ClassNodeData> = {
+      id: newId,
+      type: 'classNode',
+      position: {
+        x: sourceNode.position.x + 48,
+        y: sourceNode.position.y + 48
+      },
+      data: {
+        id: newId,
+        name: candidateName,
+        stereotype: sourceNode.data.stereotype,
+        isAbstract: !!sourceNode.data.isAbstract,
+        attributes: clonedAttributes,
+        methods: clonedMethods
+      }
+    };
+
+    set((state) => ({
       nodes: [...state.nodes, newNode],
       selectedNode: newNode,
       selectedEdge: null
@@ -344,7 +447,30 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
   
   saveDiagram: async () => {
     const { project, nodes, edges } = get();
-    if (!project?.id) return;
+    let currentProject = project;
+
+    // If current project is missing or not a persisted UUID (e.g. sample-project-id), auto-create in backend
+    if (!currentProject?.id || !isUUID(currentProject.id)) {
+      const projectName = (currentProject?.name && currentProject.name !== 'sample-project-id')
+        ? currentProject.name
+        : 'Mi Modelo UML';
+
+      const createRes = await api.createProject({
+        name: projectName,
+        description: currentProject?.description || 'Modelo de clases UML creado en el editor CASE',
+        version: currentProject?.version || 'v1.0.0',
+        tags: currentProject?.tags || ['uml', 'spring-boot']
+      });
+
+      if (createRes?.data && createRes.data.id) {
+        const savedProject = createRes.data;
+        currentProject = savedProject;
+        set({ project: savedProject });
+        window.history.replaceState(null, '', `/editor/${savedProject.id}`);
+      } else {
+        throw new Error('No se pudo inicializar el proyecto en la base de datos');
+      }
+    }
 
     const payloadNodes = nodes.map((n) => ({
       id: n.id,
@@ -371,14 +497,51 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       targetRole: e.data?.targetRole || ''
     }));
 
-    const res = await api.syncDiagram(project.id, {
+    if (!currentProject?.id) {
+      throw new Error('No hay un proyecto activo para guardar');
+    }
+
+    const res = await api.syncDiagram(currentProject.id, {
       nodes: payloadNodes,
       edges: payloadEdges
     });
 
     if (res?.success && res.data) {
+      const payload = res.data;
+      const mappedNodes: Node<ClassNodeData>[] = (payload.classNodes || []).map((cn: any) => ({
+        id: cn.id,
+        type: 'classNode',
+        position: { x: cn.positionX || 100, y: cn.positionY || 100 },
+        data: {
+          id: cn.id,
+          name: cn.name,
+          stereotype: cn.stereotype,
+          isAbstract: cn.abstractClass || cn.isAbstract || false,
+          attributes: cn.attributes || [],
+          methods: cn.methods || []
+        }
+      }));
+
+      const mappedEdges: Edge<RelationshipData>[] = (payload.relationships || []).map((rel: any) => ({
+        id: rel.id,
+        source: rel.sourceClass?.id || rel.sourceClassId,
+        target: rel.targetClass?.id || rel.targetClassId,
+        type: 'umlEdge',
+        data: {
+          id: rel.id,
+          type: rel.type || 'association',
+          sourceCardinality: rel.sourceCardinality || '1',
+          targetCardinality: rel.targetCardinality || '1',
+          label: rel.label,
+          sourceRole: rel.sourceRole,
+          targetRole: rel.targetRole
+        }
+      }));
+
       set((state) => ({
-        project: res.data.project ? { ...state.project, ...res.data.project } : state.project
+        project: payload.project ? { ...state.project, ...payload.project } : (state.project || currentProject),
+        nodes: mappedNodes.length > 0 ? mappedNodes : state.nodes,
+        edges: mappedEdges.length > 0 ? mappedEdges : state.edges
       }));
     }
   }
