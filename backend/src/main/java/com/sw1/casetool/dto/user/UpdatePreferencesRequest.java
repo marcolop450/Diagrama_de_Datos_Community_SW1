@@ -16,7 +16,9 @@ public class UpdatePreferencesRequest {
     private Boolean snapToGrid;
     private Integer autoSaveInterval;
     private Double defaultZoom;
-    private String canvasTheme; // "dark", "light", "blue", "cream"
+    private String canvasTheme; // "warm-titanium", "obsidian-graphite", "dark", "light", "blue", "cream"
+    private String appPalette; // "warm-titanium" or "obsidian-graphite"
+    private Boolean autoSaveEnabled;
     private Boolean onboardingCompleted;
     private Map<String, Object> customSettings;
 }

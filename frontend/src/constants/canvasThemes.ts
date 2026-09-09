@@ -1,4 +1,4 @@
-﻿export type CanvasThemeId = 'dark' | 'light' | 'blue' | 'cream';
+export type CanvasThemeId = 'warm-titanium' | 'obsidian-graphite' | 'dark' | 'light' | 'blue' | 'cream';
 
 export interface CanvasThemeConfig {
   id: CanvasThemeId;
@@ -39,6 +39,80 @@ export interface CanvasThemeConfig {
 }
 
 export const CANVAS_THEMES: Record<CanvasThemeId, CanvasThemeConfig> = {
+  'warm-titanium': {
+    id: 'warm-titanium',
+    name: 'Titanio Cálido (Carbon & Amber)',
+    description: 'Paleta cálida de alto rendimiento IHC con base antracita y acentos ámbar dorado.',
+    preview: {
+      bg: '#18181b',
+      card: '#27272a',
+      accent: '#f59e0b',
+      border: '#3f3f46',
+    },
+    canvasBg: '#18181b',
+    gridMinor: 'rgba(63, 63, 70, 0.45)',
+    gridMajor: 'rgba(82, 82, 91, 0.7)',
+    nodeBg: '#202024',
+    nodeHeaderBg: '#27272a',
+    nodeBorder: '#3f3f46',
+    nodeBorderHover: '#71717a',
+    nodeBorderSelected: '#f59e0b',
+    nodeShadowSelected: '0 0 0 2px rgba(245, 158, 11, 0.4), 0 10px 25px -5px rgba(24, 24, 27, 0.8)',
+    nodeText: '#fafafa',
+    nodeTextMuted: '#a1a1aa',
+    nodeStereotypeText: '#fbbf24',
+    attrBg: 'rgba(24, 24, 27, 0.75)',
+    methodsBg: '#202024',
+    divider: 'rgba(63, 63, 70, 0.85)',
+    pkBg: 'rgba(217, 119, 6, 0.25)',
+    pkText: '#fef3c7',
+    pkBorder: 'rgba(245, 158, 11, 0.6)',
+    edgeStroke: '#a1a1aa',
+    edgeStrokeSelected: '#f59e0b',
+    edgeLabelBg: 'rgba(24, 24, 27, 0.9)',
+    edgeLabelText: '#f4f4f5',
+    edgeMarkerFill: '#18181b',
+    edgeMarkerStroke: '#a1a1aa',
+    handleBg: '#f59e0b',
+    handleBorder: '#18181b',
+  },
+  'obsidian-graphite': {
+    id: 'obsidian-graphite',
+    name: 'Grafito Obsidiana (Deep Obsidian)',
+    description: 'Paleta sobria inspirada en Linear y JetBrains con base grafito y acentos añil eléctrico.',
+    preview: {
+      bg: '#121316',
+      card: '#1a1d24',
+      accent: '#6366f1',
+      border: '#2b2f3a',
+    },
+    canvasBg: '#121316',
+    gridMinor: 'rgba(43, 47, 58, 0.45)',
+    gridMajor: 'rgba(67, 72, 88, 0.7)',
+    nodeBg: '#181a20',
+    nodeHeaderBg: '#22252e',
+    nodeBorder: '#2b2f3a',
+    nodeBorderHover: '#6366f1',
+    nodeBorderSelected: '#818cf8',
+    nodeShadowSelected: '0 0 0 2px rgba(99, 102, 241, 0.45), 0 10px 25px -5px rgba(18, 19, 22, 0.8)',
+    nodeText: '#f8fafc',
+    nodeTextMuted: '#94a3b8',
+    nodeStereotypeText: '#a5b4fc',
+    attrBg: 'rgba(18, 19, 22, 0.75)',
+    methodsBg: '#181a20',
+    divider: 'rgba(43, 47, 58, 0.85)',
+    pkBg: 'rgba(99, 102, 241, 0.25)',
+    pkText: '#e0e7ff',
+    pkBorder: 'rgba(99, 102, 241, 0.6)',
+    edgeStroke: '#94a3b8',
+    edgeStrokeSelected: '#818cf8',
+    edgeLabelBg: 'rgba(18, 19, 22, 0.9)',
+    edgeLabelText: '#cbd5e1',
+    edgeMarkerFill: '#121316',
+    edgeMarkerStroke: '#94a3b8',
+    handleBg: '#6366f1',
+    handleBorder: '#121316',
+  },
   dark: {
     id: 'dark',
     name: 'Oscuro (Pure Slate)',
@@ -193,5 +267,66 @@ export const getCanvasTheme = (themeId?: string): CanvasThemeConfig => {
   if (themeId && themeId in CANVAS_THEMES) {
     return CANVAS_THEMES[themeId as CanvasThemeId];
   }
-  return CANVAS_THEMES.dark;
+  return CANVAS_THEMES['warm-titanium'];
+};
+
+export type AppPaletteId = 'warm-titanium' | 'obsidian-graphite';
+
+export interface AppPaletteConfig {
+  id: AppPaletteId;
+  name: string;
+  description: string;
+  bgBase: string;
+  surfaceCard: string;
+  surfaceBorder: string;
+  accent: string;
+  accentGlow: string;
+  auroraColors: {
+    color1: string;
+    color2: string;
+    color3: string;
+    color4: string;
+  };
+}
+
+export const APP_PALETTES: Record<AppPaletteId, AppPaletteConfig> = {
+  'warm-titanium': {
+    id: 'warm-titanium',
+    name: 'Titanio Cálido',
+    description: 'Carbón antracita con acentos ámbar dorado, bronce y calidez orgánica.',
+    bgBase: '#18181b',
+    surfaceCard: '#27272a',
+    surfaceBorder: '#3f3f46',
+    accent: '#f59e0b',
+    accentGlow: 'rgba(245, 158, 11, 0.35)',
+    auroraColors: {
+      color1: '245, 158, 11',
+      color2: '217, 119, 6',
+      color3: '251, 146, 60',
+      color4: '139, 92, 246',
+    }
+  },
+  'obsidian-graphite': {
+    id: 'obsidian-graphite',
+    name: 'Grafito Obsidiana',
+    description: 'Grafito neutro inspirado en Linear y JetBrains con acentos índigo y zafiro.',
+    bgBase: '#121316',
+    surfaceCard: '#1a1d24',
+    surfaceBorder: '#2b2f3a',
+    accent: '#6366f1',
+    accentGlow: 'rgba(99, 102, 241, 0.35)',
+    auroraColors: {
+      color1: '99, 102, 241',
+      color2: '139, 92, 246',
+      color3: '6, 182, 212',
+      color4: '236, 72, 153',
+    }
+  }
+};
+
+export const getAppPalette = (paletteId?: string): AppPaletteConfig => {
+  if (paletteId && paletteId in APP_PALETTES) {
+    return APP_PALETTES[paletteId as AppPaletteId];
+  }
+  return APP_PALETTES['warm-titanium'];
 };

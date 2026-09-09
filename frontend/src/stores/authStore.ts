@@ -1,14 +1,17 @@
 import { create } from 'zustand';
 import { api } from '../services/api';
-import { CanvasThemeId } from '../constants/canvasThemes';
+import { CanvasThemeId, AppPaletteId } from '../constants/canvasThemes';
 
 export interface UserPreferences {
-  theme: 'dark';
-  grid: boolean;
-  snapToGrid: boolean;
-  autoSaveInterval: number;
-  defaultZoom: number;
-  canvasTheme?: CanvasThemeId;
+  theme?: 'dark' | 'light';
+  grid?: boolean;
+  snapToGrid?: boolean;
+  autoSaveEnabled?: boolean;
+  autoSaveInterval?: number;
+  defaultZoom?: number;
+  canvasTheme?: CanvasThemeId | string;
+  appPalette?: AppPaletteId | string;
+  onboardingCompleted?: boolean;
   [key: string]: any;
 }
 
@@ -101,14 +104,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           subscriptionExpiresAt,
           avatarUrl,
           preferences: {
+            ...(preferences || {}),
             theme: 'dark',
             grid: preferences?.grid ?? true,
             snapToGrid: preferences?.snapToGrid ?? true,
+            autoSaveEnabled: preferences?.autoSaveEnabled ?? true,
             autoSaveInterval: preferences?.autoSaveInterval ?? 30,
             defaultZoom: preferences?.defaultZoom ?? 1.0,
-            canvasTheme: (preferences?.canvasTheme as CanvasThemeId) || 'dark',
+            canvasTheme: (preferences?.canvasTheme as CanvasThemeId) || 'warm-titanium',
+            appPalette: (preferences?.appPalette as AppPaletteId) || (localStorage.getItem('case_app_palette') as AppPaletteId) || 'warm-titanium',
           },
         };
+
+        const activePalette = userSession.preferences?.appPalette || 'warm-titanium';
+        document.documentElement.setAttribute('data-palette', activePalette);
+        localStorage.setItem('case_app_palette', activePalette);
 
         // Store in volatile sessionStorage
         sessionStorage.setItem(TOKEN_KEY, token);
@@ -154,14 +164,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           subscriptionExpiresAt,
           avatarUrl,
           preferences: {
+            ...(preferences || {}),
             theme: 'dark',
             grid: preferences?.grid ?? true,
             snapToGrid: preferences?.snapToGrid ?? true,
+            autoSaveEnabled: preferences?.autoSaveEnabled ?? true,
             autoSaveInterval: preferences?.autoSaveInterval ?? 30,
             defaultZoom: preferences?.defaultZoom ?? 1.0,
-            canvasTheme: (preferences?.canvasTheme as CanvasThemeId) || 'dark',
+            canvasTheme: (preferences?.canvasTheme as CanvasThemeId) || 'warm-titanium',
+            appPalette: (preferences?.appPalette as AppPaletteId) || (localStorage.getItem('case_app_palette') as AppPaletteId) || 'warm-titanium',
           },
         };
+
+        const activePalette = userSession.preferences?.appPalette || 'warm-titanium';
+        document.documentElement.setAttribute('data-palette', activePalette);
+        localStorage.setItem('case_app_palette', activePalette);
 
         sessionStorage.setItem(TOKEN_KEY, token);
         sessionStorage.setItem(USER_KEY, JSON.stringify(userSession));
@@ -199,7 +216,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   updateUserProfile: (updated: Partial<UserSession>) => {
     const currentUser = get().user;
     if (!currentUser) return;
-    const newUser = { ...currentUser, ...updated };
+    const mergedPreferences = updated.preferences
+      ? { ...(currentUser.preferences || {}), ...updated.preferences }
+      : currentUser.preferences;
+    const newUser: UserSession = {
+      ...currentUser,
+      ...updated,
+      preferences: mergedPreferences,
+    };
     sessionStorage.setItem(USER_KEY, JSON.stringify(newUser));
     set({ user: newUser });
   },

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Navigate, useParams } from 'react-router-dom';
+import { Navigate, useParams, useNavigate } from 'react-router-dom';
 import Header from './Header';
 import Sidebar from './Sidebar';
 import Toolbar from '../toolbar/Toolbar';
@@ -11,19 +11,47 @@ import { useUiStore } from '../../stores/uiStore';
 import { useAuthStore } from '../../stores/authStore';
 import { useDiagramStore } from '../../stores/diagramStore';
 import { ReactFlowProvider } from '@xyflow/react';
+import toast from 'react-hot-toast';
+
+const isUUID = (str?: string | null): boolean => {
+  if (!str) return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+};
 
 const MainLayout: React.FC = () => {
   const { id } = useParams<{ id?: string }>();
+  const navigate = useNavigate();
   const { sidebarOpen, toggleSidebar, propertiesPanelOpen, activeModal, openOnboarding } = useUiStore();
   const { user } = useAuthStore();
-  const { project, loadDiagram, saveDiagram } = useDiagramStore();
+  const { project, loadDiagram, saveDiagram, resetDiagram } = useDiagramStore();
 
-  // Load project diagram if URL has an explicit project id and differs from active state
+  // Remember last opened project or restore if entering /editor
   useEffect(() => {
-    if (id && id !== 'sample-project-id' && project?.id !== id) {
-      loadDiagram(id);
+    if (id) {
+      if (isUUID(id)) {
+        if (project?.id !== id) {
+          loadDiagram(id).catch((err: any) => {
+            const errMsg = err?.response?.data?.message || 'El proyecto no existe o fue eliminado';
+            toast.error(errMsg);
+            resetDiagram();
+            navigate('/editor', { replace: true });
+          });
+        }
+      } else {
+        resetDiagram();
+        navigate('/editor', { replace: true });
+      }
+    } else {
+      // Direct access to /editor without project ID: check last opened project
+      const lastProjectId = localStorage.getItem('case_last_project_id');
+      if (lastProjectId && isUUID(lastProjectId)) {
+        navigate(`/editor/${lastProjectId}`, { replace: true });
+      } else if (project !== null) {
+        // If no last project is recorded, ensure canvas stays cleanly empty
+        resetDiagram();
+      }
     }
-  }, [id, project?.id, loadDiagram]);
+  }, [id, project?.id, loadDiagram, resetDiagram, navigate]);
 
   // Defense-in-depth: SUPER_ADMIN is a governance role and must never see or use the drawing canvas
   if (user?.role === 'SUPER_ADMIN') {
@@ -43,10 +71,14 @@ const MainLayout: React.FC = () => {
     }
   }, [user, openOnboarding]);
 
-  // Background Auto-Save based on user preferences interval
+  // Background Auto-Save based on user preferences (strictly only when autoSaveEnabled is true and active UUID project)
   useEffect(() => {
+    const isAutoSaveActive = user?.preferences?.autoSaveEnabled !== false;
     const intervalSeconds = user?.preferences?.autoSaveInterval ?? 30;
-    if (!project?.id || intervalSeconds <= 0) return;
+    
+    if (!isAutoSaveActive || !project?.id || !isUUID(project.id) || intervalSeconds <= 0) {
+      return;
+    }
 
     const intervalMs = intervalSeconds * 1000;
     const autoSaveTimer = setInterval(() => {
@@ -56,26 +88,29 @@ const MainLayout: React.FC = () => {
     }, intervalMs);
 
     return () => clearInterval(autoSaveTimer);
-  }, [project?.id, user?.preferences?.autoSaveInterval, saveDiagram]);
+  }, [project?.id, user?.preferences?.autoSaveEnabled, user?.preferences?.autoSaveInterval, saveDiagram]);
 
   return (
     <ReactFlowProvider>
-      <div className="flex flex-col h-screen overflow-hidden bg-slate-950 text-slate-100 relative select-none">
+      <div 
+        className="flex flex-col h-screen overflow-hidden relative select-none transition-colors duration-200"
+        style={{ backgroundColor: 'var(--bg-base)', color: 'var(--text-main)' }}
+      >
         <Header />
         
         <div className="flex flex-1 overflow-hidden relative z-10">
-          {/* Mobile Backdrop for Sidebar with Fade */}
+          {/* Mobile Backdrop for Sidebar with Fade - strictly below 56px Header */}
           <div 
-            className={`fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-40 md:hidden transition-opacity duration-300 ease-in-out ${
+            className={`fixed top-14 bottom-0 inset-x-0 bg-slate-950/70 backdrop-blur-xs z-30 md:hidden transition-opacity duration-300 ease-in-out ${
               sidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
             }`}
             onClick={toggleSidebar}
           />
 
-          {/* Responsive Smooth-Animated Sidebar Drawer */}
+          {/* Responsive Smooth-Animated Sidebar Drawer (positioned strictly below navbar) */}
           <aside 
             className={`
-              fixed md:relative inset-y-0 left-0 z-50 md:z-20 h-full shrink-0 flex flex-col
+              fixed top-14 bottom-0 left-0 z-40 md:relative md:top-0 md:h-full md:z-20 shrink-0 flex flex-col
               transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden
               ${sidebarOpen 
                 ? 'w-64 translate-x-0 opacity-100' 

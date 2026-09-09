@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import AppLayout from '../components/layout/AppLayout';
 import { api } from '../services/api';
 import { AuditLog, AuditMetrics, AuditQueryParams } from '../types/audit';
@@ -191,6 +192,42 @@ export const AdminAuditPage: React.FC = () => {
 
   const formatActionLabel = (action: string): string => {
     switch (action) {
+      case 'NORMALIZATION_AUDITED':
+        return 'Auditoría de Normalización';
+      case 'PROJECT_CREATED':
+        return 'Proyecto Creado';
+      case 'PROJECT_CREATED_FROM_TEMPLATE':
+        return 'Proyecto Creado de Plantilla';
+      case 'PROJECT_UPDATED':
+        return 'Proyecto Actualizado';
+      case 'PROJECT_DELETED':
+        return 'Proyecto en Papelera';
+      case 'PROJECT_RESTORED':
+        return 'Proyecto Restaurado';
+      case 'PROJECT_PURGED':
+        return 'Proyecto Purgado Definitivamente';
+      case 'PROJECT_CLONED':
+        return 'Proyecto Clonado';
+      case 'CLASS_CREATED':
+      case 'CLASS_NODE_CREATED':
+        return 'Clase UML Creada';
+      case 'CLASS_UPDATED':
+      case 'CLASS_NODE_UPDATED':
+        return 'Clase UML Modificada';
+      case 'CLASS_DELETED':
+      case 'CLASS_NODE_DELETED':
+        return 'Clase UML Eliminada';
+      case 'RELATIONSHIP_CREATED':
+        return 'Relación Conectada';
+      case 'RELATIONSHIP_UPDATED':
+        return 'Relación Modificada';
+      case 'RELATIONSHIP_DELETED':
+        return 'Relación Eliminada';
+      case 'DIAGRAM_SYNCED':
+        return 'Diagrama Sincronizado';
+      case 'AUTH_LOGIN_SUCCESS':
+      case 'USER_LOGIN':
+        return 'Inicio de Sesión';
       case 'AUTH_LOGIN_FAILED':
         return 'Fallo de Autenticación';
       case 'USER_REGISTERED':
@@ -203,33 +240,63 @@ export const AdminAuditPage: React.FC = () => {
         return 'Usuario Suspendido';
       case 'USER_SELF_DELETED':
         return 'Cuenta Desactivada';
-      case 'PROJECT_CREATED':
-        return 'Proyecto Creado';
-      case 'PROJECT_UPDATED':
-        return 'Proyecto Actualizado';
-      case 'PROJECT_DELETED':
-        return 'Proyecto Eliminado';
-      case 'PROJECT_CLONED':
-        return 'Proyecto Clonado';
+      case 'PASSWORD_CHANGED':
+        return 'Contraseña Actualizada';
+      case 'PROFILE_UPDATED':
+        return 'Perfil Actualizado';
       default:
-        return action;
+        return action
+          .toLowerCase()
+          .replace(/_/g, ' ')
+          .replace(/\b\w/g, (c) => c.toUpperCase());
+    }
+  };
+
+  const formatEntityNameSpanish = (entityName?: string) => {
+    if (!entityName) return '-';
+    switch (entityName.toLowerCase()) {
+      case 'projects':
+      case 'project':
+        return 'Proyecto';
+      case 'diagram_classes':
+      case 'classes':
+      case 'class':
+      case 'class_node':
+        return 'Clase UML';
+      case 'relationships':
+      case 'relationship':
+        return 'Relación';
+      case 'user_profiles':
+      case 'users':
+      case 'user':
+        return 'Usuario';
+      case 'security':
+        return 'Seguridad';
+      case 'normalization':
+        return 'Normalización';
+      default:
+        return entityName;
     }
   };
 
   const getActionBadgeClass = (action: string) => {
-    if (action.includes('FAILED') || action.includes('DELETE')) {
-      return 'bg-rose-500/10 text-rose-400 border-rose-500/30';
+    const act = action.toUpperCase();
+    if (act.includes('FAILED') || act.includes('DELETE') || act.includes('PURGE')) {
+      return 'bg-rose-500/15 text-rose-400 border-rose-500/30';
     }
-    if (action.includes('ROLE') || action.includes('STATUS')) {
-      return 'bg-purple-500/10 text-purple-400 border-purple-500/30';
+    if (act.includes('RESTORE') || act.includes('CLONE')) {
+      return 'bg-purple-500/15 text-purple-300 border-purple-500/30';
     }
-    if (action.includes('LOGIN') || action.includes('REGISTER') || action.includes('CREATE')) {
-      return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
+    if (act.includes('NORMALIZATION')) {
+      return 'bg-amber-500/15 text-amber-300 border-amber-500/30';
     }
-    if (action.includes('CLONE')) {
-      return 'bg-blue-500/10 text-blue-400 border-blue-500/30';
+    if (act.includes('ROLE') || act.includes('STATUS')) {
+      return 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30';
     }
-    return 'bg-slate-800 text-slate-300 border-slate-700';
+    if (act.includes('LOGIN') || act.includes('REGISTER') || act.includes('CREATE')) {
+      return 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30';
+    }
+    return 'bg-blue-500/15 text-blue-300 border-blue-500/30';
   };
 
   const formatDate = (isoString: string) => {
@@ -258,11 +325,11 @@ export const AdminAuditPage: React.FC = () => {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-800/80 pb-5">
             <div>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-purple-600/20 border border-purple-500/40 flex items-center justify-center text-purple-400 shadow-lg shadow-purple-950/40">
-                  <History size={22} />
+                <div className="w-9 h-9 rounded-lg bg-purple-600/20 border border-purple-500/40 flex items-center justify-center text-purple-400 shadow-xs">
+                  <History size={20} />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+                  <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
                     Bitácora Global de Auditoría
                   </h1>
                   <p className="text-xs text-slate-400 mt-0.5">
@@ -276,12 +343,12 @@ export const AdminAuditPage: React.FC = () => {
             <div className="flex items-center gap-3 flex-wrap">
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 text-xs font-mono">
                 <Lock size={13} className="shrink-0" />
-                <span>Inmutabilidad Relacional Activa (PostgreSQL Rules)</span>
+                <span>Inmutabilidad Relacional Activa • PostgreSQL</span>
               </div>
               <button
                 onClick={handleRefresh}
                 disabled={refreshing}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/80 transition-all text-xs font-semibold cursor-pointer shadow-sm"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-slate-900 hover:bg-slate-850 text-slate-300 hover:text-white border border-slate-700/80 transition-all text-xs font-semibold cursor-pointer shadow-xs"
                 title="Sincronizar eventos"
               >
                 <RefreshCw size={13} className={refreshing ? 'animate-spin' : ''} />
@@ -291,84 +358,84 @@ export const AdminAuditPage: React.FC = () => {
           </div>
 
           {/* Metric KPI Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 shadow-sm backdrop-blur-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <div className="bg-slate-900/50 border border-slate-800/90 rounded-lg p-3.5 shadow-xs hover:border-slate-700/60 transition-colors">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-slate-400">Total Eventos Registrados</span>
-                <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
-                  <Activity size={16} />
+                <span className="text-xs font-medium text-slate-400">Total Eventos</span>
+                <div className="w-7 h-7 rounded-md bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+                  <Activity size={14} />
                 </div>
               </div>
-              <div className="mt-3">
+              <div className="mt-2">
                 <span className="text-2xl font-bold font-mono text-white">
                   {metrics ? (metrics.totalLogs ?? metrics.totalEvents ?? 0) : '...'}
                 </span>
-                <p className="text-[11px] text-slate-400 mt-1">Registros persistentes</p>
+                <p className="text-[10px] text-slate-500 mt-0.5">Registros persistentes</p>
               </div>
             </div>
 
-            <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 shadow-sm backdrop-blur-sm">
+            <div className="bg-slate-900/50 border border-slate-800/90 rounded-lg p-3.5 shadow-xs hover:border-slate-700/60 transition-colors">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-slate-400">Actividad Últimas 24h</span>
-                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-                  <Clock size={16} />
+                <span className="text-xs font-medium text-slate-400">Actividad 24h</span>
+                <div className="w-7 h-7 rounded-md bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                  <Clock size={14} />
                 </div>
               </div>
-              <div className="mt-3">
+              <div className="mt-2">
                 <span className="text-2xl font-bold font-mono text-white">
                   {metrics ? (metrics.logsLast24Hours ?? metrics.events24h ?? 0) : '...'}
                 </span>
-                <p className="text-[11px] text-emerald-400/90 mt-1">Flujo operacional reciente</p>
+                <p className="text-[10px] text-emerald-400/90 mt-0.5">Operaciones recientes</p>
               </div>
             </div>
 
-            <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 shadow-sm backdrop-blur-sm">
+            <div className="bg-slate-900/50 border border-slate-800/90 rounded-lg p-3.5 shadow-xs hover:border-slate-700/60 transition-colors">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-slate-400">Eventos de Seguridad Críticos</span>
-                <div className="w-8 h-8 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
-                  <ShieldAlert size={16} />
+                <span className="text-xs font-medium text-slate-400">Eventos de Seguridad</span>
+                <div className="w-7 h-7 rounded-md bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+                  <ShieldAlert size={14} />
                 </div>
               </div>
-              <div className="mt-3">
+              <div className="mt-2">
                 <span className="text-2xl font-bold font-mono text-rose-400">
                   {metrics ? (metrics.securityEventsCount ?? metrics.securityEvents ?? 0) : '...'}
                 </span>
-                <p className="text-[11px] text-rose-400/80 mt-1">Autenticación / Roles / Bajas</p>
+                <p className="text-[10px] text-rose-400/80 mt-0.5">Autenticación y roles</p>
               </div>
             </div>
 
-            <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 shadow-sm backdrop-blur-sm">
+            <div className="bg-slate-900/50 border border-slate-800/90 rounded-lg p-3.5 shadow-xs hover:border-slate-700/60 transition-colors">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-slate-400">Usuarios Auditados Activos</span>
-                <div className="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
-                  <ShieldCheck size={16} />
+                <span className="text-xs font-medium text-slate-400">Usuarios Auditados</span>
+                <div className="w-7 h-7 rounded-md bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+                  <ShieldCheck size={14} />
                 </div>
               </div>
-              <div className="mt-3">
+              <div className="mt-2">
                 <span className="text-2xl font-bold font-mono text-purple-400">
                   {metrics ? (metrics.activeAuditedUsers ?? metrics.activeUsers ?? 0) : '...'}
                 </span>
-                <p className="text-[11px] text-purple-400/80 mt-1">Sujetos con actividad</p>
+                <p className="text-[10px] text-purple-400/80 mt-0.5">Sujetos con actividad</p>
               </div>
             </div>
           </div>
 
           {/* Filtering & Export Controls Bar */}
-          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 space-y-4 shadow-md backdrop-blur-md">
+          <div className="bg-slate-900/50 border border-slate-800 rounded-lg p-3.5 space-y-3 shadow-xs">
             
             {/* Upper control row: Time Presets & Export Actions */}
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/70 pb-3">
               {/* Date Presets */}
-              <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+              <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-md border border-slate-800">
                 <span className="text-[11px] text-slate-400 px-2 font-medium flex items-center gap-1.5">
                   <Calendar size={13} />
                   Periodo:
                 </span>
                 <button
                   onClick={() => handleTimePresetChange('24h')}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+                  className={`px-2 py-1 rounded text-xs font-medium transition-colors cursor-pointer ${
                     timePreset === '24h' 
-                      ? 'bg-purple-600 text-white font-semibold shadow-sm' 
+                      ? 'bg-purple-600 text-white font-semibold shadow-xs' 
                       : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
                   }`}
                 >
@@ -376,9 +443,9 @@ export const AdminAuditPage: React.FC = () => {
                 </button>
                 <button
                   onClick={() => handleTimePresetChange('7d')}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+                  className={`px-2 py-1 rounded text-xs font-medium transition-colors cursor-pointer ${
                     timePreset === '7d' 
-                      ? 'bg-purple-600 text-white font-semibold shadow-sm' 
+                      ? 'bg-purple-600 text-white font-semibold shadow-xs' 
                       : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
                   }`}
                 >
@@ -386,9 +453,9 @@ export const AdminAuditPage: React.FC = () => {
                 </button>
                 <button
                   onClick={() => handleTimePresetChange('30d')}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+                  className={`px-2 py-1 rounded text-xs font-medium transition-colors cursor-pointer ${
                     timePreset === '30d' 
-                      ? 'bg-purple-600 text-white font-semibold shadow-sm' 
+                      ? 'bg-purple-600 text-white font-semibold shadow-xs' 
                       : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
                   }`}
                 >
@@ -396,9 +463,9 @@ export const AdminAuditPage: React.FC = () => {
                 </button>
                 <button
                   onClick={() => handleTimePresetChange('all')}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+                  className={`px-2 py-1 rounded text-xs font-medium transition-colors cursor-pointer ${
                     timePreset === 'all' 
-                      ? 'bg-purple-600 text-white font-semibold shadow-sm' 
+                      ? 'bg-purple-600 text-white font-semibold shadow-xs' 
                       : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
                   }`}
                 >
@@ -410,33 +477,33 @@ export const AdminAuditPage: React.FC = () => {
               <div className="flex items-center gap-2">
                 <span className="text-[11px] text-slate-400 font-medium mr-1 flex items-center gap-1">
                   <Download size={13} />
-                  Descargar:
+                  Exportar:
                 </span>
                 <button
                   onClick={() => handleExport('xlsx')}
                   disabled={exporting}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/50 text-emerald-400 border border-emerald-500/40 hover:border-emerald-500/80 text-xs font-semibold transition-all cursor-pointer disabled:opacity-50 shadow-sm"
-                  title="Exportar archivo Excel (.xlsx) con formato y diseño profesional"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-emerald-950/40 hover:bg-emerald-900/50 text-emerald-400 border border-emerald-500/40 hover:border-emerald-500/80 text-xs font-semibold transition-all cursor-pointer disabled:opacity-50 shadow-xs"
+                  title="Exportar archivo Excel (.xlsx)"
                 >
-                  <FileSpreadsheet size={14} />
+                  <FileSpreadsheet size={13} />
                   <span>Excel (.xlsx)</span>
                 </button>
                 <button
                   onClick={() => handleExport('csv')}
                   disabled={exporting}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 hover:border-slate-500 text-xs font-medium transition-all cursor-pointer disabled:opacity-50"
-                  title="Exportar archivo CSV con codificación UTF-8 BOM"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 hover:border-slate-500 text-xs font-medium transition-all cursor-pointer disabled:opacity-50"
+                  title="Exportar archivo CSV"
                 >
-                  <FileSpreadsheet size={14} />
+                  <FileSpreadsheet size={13} />
                   <span>CSV</span>
                 </button>
                 <button
                   onClick={() => handleExport('json')}
                   disabled={exporting}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-blue-400 border border-blue-500/30 hover:border-blue-500/60 text-xs font-medium transition-all cursor-pointer disabled:opacity-50"
-                  title="Exportar archivo JSON estructurado con registros filtrados"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-slate-950 hover:bg-slate-800 text-blue-400 border border-blue-500/30 hover:border-blue-500/60 text-xs font-medium transition-all cursor-pointer disabled:opacity-50"
+                  title="Exportar archivo JSON"
                 >
-                  <FileCode size={14} />
+                  <FileCode size={13} />
                   <span>JSON</span>
                 </button>
               </div>
@@ -446,13 +513,13 @@ export const AdminAuditPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
               {/* Search Bar */}
               <form onSubmit={handleSearchSubmit} className="md:col-span-4 relative">
-                <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Buscar por usuario, email o IP..."
-                  className="w-full pl-9 pr-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-purple-500/60 transition-colors"
+                  className="w-full pl-9 pr-3 py-1.5 bg-slate-950 border border-slate-800 rounded-md text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-purple-500/60 transition-colors"
                 />
               </form>
 
@@ -461,23 +528,27 @@ export const AdminAuditPage: React.FC = () => {
                 <select
                   value={actionType}
                   onChange={(e) => setActionType(e.target.value)}
-                  className="w-full py-2 px-3 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-purple-500/60 transition-colors cursor-pointer"
+                  className="w-full py-1.5 px-3 bg-slate-950 border border-slate-800 rounded-md text-xs text-slate-200 focus:outline-none focus:border-purple-500/60 transition-colors cursor-pointer"
                 >
                   <option value="">Todas las Acciones</option>
+                  <option value="NORMALIZATION_AUDITED">Auditoría de Normalización</option>
+                  <option value="PROJECT_CREATED">Creación de Proyecto</option>
+                  <option value="PROJECT_CREATED_FROM_TEMPLATE">Creación desde Plantilla</option>
+                  <option value="PROJECT_UPDATED">Actualización de Proyecto</option>
+                  <option value="PROJECT_DELETED">Envío a Papelera</option>
+                  <option value="PROJECT_RESTORED">Restauración de Proyecto</option>
+                  <option value="PROJECT_PURGED">Purga Definitiva de Proyecto</option>
+                  <option value="PROJECT_CLONED">Clonación de Proyecto</option>
                   <option value="AUTH_LOGIN_FAILED">Fallo de Autenticación</option>
                   <option value="USER_REGISTERED">Registro de Usuario</option>
-                  <option value="USER_ROLE_CHANGED">Modificación de Rol (RBAC)</option>
+                  <option value="USER_ROLE_CHANGED">Modificación de Rol</option>
                   <option value="USER_STATUS">Modificación de Estado de Usuario</option>
-                  <option value="PROJECT_CREATED">Creación de Proyecto</option>
-                  <option value="PROJECT_UPDATED">Actualización de Proyecto</option>
-                  <option value="PROJECT_DELETED">Eliminación de Proyecto</option>
-                  <option value="PROJECT_CLONED">Clonación de Proyecto</option>
                 </select>
               </div>
 
               {/* Date pickers for fine range */}
               <div className="md:col-span-5 flex items-center gap-2">
-                <div className="flex-1 flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1.5">
+                <div className="flex-1 flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-md px-2.5 py-1.5">
                   <span className="text-[10px] text-slate-400 font-mono">Desde:</span>
                   <input
                     type="date"
@@ -489,7 +560,7 @@ export const AdminAuditPage: React.FC = () => {
                     className="w-full bg-transparent text-xs text-slate-300 focus:outline-none cursor-pointer"
                   />
                 </div>
-                <div className="flex-1 flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1.5">
+                <div className="flex-1 flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-md px-2.5 py-1.5">
                   <span className="text-[10px] text-slate-400 font-mono">Hasta:</span>
                   <input
                     type="date"
@@ -507,7 +578,7 @@ export const AdminAuditPage: React.FC = () => {
           </div>
 
           {/* Audit Logs Table with 20 items default */}
-          <div className="bg-slate-900/60 border border-slate-800 rounded-2xl overflow-hidden shadow-lg backdrop-blur-sm">
+          <div className="bg-slate-900/50 border border-slate-800 rounded-lg overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
@@ -578,7 +649,7 @@ export const AdminAuditPage: React.FC = () => {
                         {/* Entity */}
                         <td className="py-3 px-4 whitespace-nowrap">
                           <div className="font-mono text-[11px] text-slate-300">
-                            <span>{log.entityName || '-'}</span>
+                            <span className="font-semibold text-slate-200">{formatEntityNameSpanish(log.entityName)}</span>
                             {log.entityId && (
                               <span className="text-[10px] text-slate-500 ml-1.5" title={log.entityId}>
                                 [{log.entityId.substring(0, 8)}...]
@@ -633,7 +704,7 @@ export const AdminAuditPage: React.FC = () => {
                 <button
                   onClick={() => fetchAuditData(page - 1)}
                   disabled={page <= 0 || loading}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer text-xs"
                 >
                   <ChevronLeft size={14} />
                   <span>Anterior</span>
@@ -641,7 +712,7 @@ export const AdminAuditPage: React.FC = () => {
                 <button
                   onClick={() => fetchAuditData(page + 1)}
                   disabled={page >= totalPages - 1 || loading}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer text-xs"
                 >
                   <span>Siguiente</span>
                   <ChevronRight size={14} />
@@ -654,12 +725,12 @@ export const AdminAuditPage: React.FC = () => {
       </div>
 
       {/* Payload Inspection Modal */}
-      {selectedLog && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl relative">
+      {selectedLog && createPortal(
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-slate-900 border border-slate-800 rounded-lg max-w-2xl w-full p-5 sm:p-6 space-y-4 shadow-2xl relative">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                <div className="w-8 h-8 rounded-md bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-400">
                   <FileCode size={16} />
                 </div>
                 <div>
@@ -669,14 +740,14 @@ export const AdminAuditPage: React.FC = () => {
               </div>
               <button
                 onClick={() => setSelectedLog(null)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                className="p-1.5 rounded-md text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
               >
                 <X size={16} />
               </button>
             </div>
 
             {/* Metadata Summary */}
-            <div className="grid grid-cols-2 gap-3 bg-slate-950/80 p-3 rounded-xl border border-slate-800 text-xs font-mono">
+            <div className="grid grid-cols-2 gap-3 bg-slate-950/80 p-3 rounded-md border border-slate-800 text-xs font-mono">
               <div>
                 <span className="text-slate-500 block text-[10px]">ACCIÓN:</span>
                 <span className="text-purple-300 font-semibold">{formatActionLabel(selectedLog.actionType)}</span>
@@ -698,7 +769,7 @@ export const AdminAuditPage: React.FC = () => {
             {/* Details JSON Viewer */}
             <div className="space-y-1.5">
               <div className="flex justify-between items-center">
-                <span className="text-xs font-medium text-slate-400">Cuerpo del Evento (JSON / Details):</span>
+                <span className="text-xs font-medium text-slate-400">Cuerpo del Evento (JSON):</span>
                 <button
                   onClick={copyPayloadToClipboard}
                   className="flex items-center gap-1 text-[11px] text-purple-400 hover:text-purple-300 transition-colors cursor-pointer"
@@ -707,7 +778,7 @@ export const AdminAuditPage: React.FC = () => {
                   <span>{copiedPayload ? 'Copiado' : 'Copiar JSON'}</span>
                 </button>
               </div>
-              <pre className="p-4 bg-slate-950 rounded-xl border border-slate-800 text-[11px] font-mono text-emerald-400/90 overflow-x-auto max-h-60 leading-relaxed select-all">
+              <pre className="p-3.5 bg-slate-950 rounded-md border border-slate-800 text-[11px] font-mono text-emerald-400/90 overflow-x-auto max-h-60 leading-relaxed select-all">
                 {typeof selectedLog.details === 'object' 
                   ? JSON.stringify(selectedLog.details, null, 2) 
                   : (selectedLog.details || '{\n  "info": "Sin payload adicional"\n}')}
@@ -718,13 +789,14 @@ export const AdminAuditPage: React.FC = () => {
             <div className="flex justify-end pt-2 border-t border-slate-800">
               <button
                 onClick={() => setSelectedLog(null)}
-                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition-colors cursor-pointer"
+                className="px-3.5 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition-colors cursor-pointer"
               >
                 Cerrar
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </AppLayout>
   );

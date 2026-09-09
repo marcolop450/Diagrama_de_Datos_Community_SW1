@@ -16,11 +16,17 @@ import { useAuthStore } from './stores/authStore';
 import { CursorSpotlight } from './components/common/CursorSpotlight';
 
 function App() {
-  const { initialize } = useAuthStore();
+  const { user, initialize } = useAuthStore();
+  const palette = user?.preferences?.appPalette || (localStorage.getItem('case_app_palette') as any) || 'warm-titanium';
 
   useEffect(() => {
     initialize();
   }, [initialize]);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-palette', palette);
+    localStorage.setItem('case_app_palette', palette);
+  }, [palette]);
 
   return (
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>

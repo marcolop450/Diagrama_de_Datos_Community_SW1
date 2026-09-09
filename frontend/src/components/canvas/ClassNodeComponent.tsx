@@ -50,11 +50,12 @@ const ClassNodeComponent = ({ data, selected }: CustomNodeProps) => {
       }}
       onDoubleClick={handleDoubleClick}
     >
-      {/* 4 Connection Magnetic Handles (UML Ports - precisely centered, zero hover displacement) */}
+      {/* 4 Connection Magnetic Handles (UML Ports - precisely centered, full bidirectional connectivity) */}
       <Handle 
-        type="target" 
+        type="source" 
         position={Position.Top} 
         id="top" 
+        isConnectable={true}
         style={{ 
           top: 0, 
           left: '50%', 
@@ -62,12 +63,13 @@ const ClassNodeComponent = ({ data, selected }: CustomNodeProps) => {
           backgroundColor: theme.handleBg,
           borderColor: theme.handleBorder 
         }}
-        className="!w-2.5 !h-2.5 !border-2 !rounded-full opacity-0 group-hover:opacity-100 hover:!ring-4 hover:!ring-blue-400/40 transition-all duration-150 shadow-md z-20 cursor-crosshair" 
+        className="!w-3 !h-3 !border-2 !rounded-full opacity-0 group-hover:opacity-100 hover:!ring-4 hover:!ring-blue-400/50 transition-all duration-150 shadow-md z-20 cursor-crosshair" 
       />
       <Handle 
         type="source" 
         position={Position.Bottom} 
         id="bottom" 
+        isConnectable={true}
         style={{ 
           bottom: 0, 
           left: '50%', 
@@ -75,12 +77,13 @@ const ClassNodeComponent = ({ data, selected }: CustomNodeProps) => {
           backgroundColor: theme.handleBg,
           borderColor: theme.handleBorder 
         }}
-        className="!w-2.5 !h-2.5 !border-2 !rounded-full opacity-0 group-hover:opacity-100 hover:!ring-4 hover:!ring-blue-400/40 transition-all duration-150 shadow-md z-20 cursor-crosshair" 
+        className="!w-3 !h-3 !border-2 !rounded-full opacity-0 group-hover:opacity-100 hover:!ring-4 hover:!ring-blue-400/50 transition-all duration-150 shadow-md z-20 cursor-crosshair" 
       />
       <Handle 
-        type="target" 
+        type="source" 
         position={Position.Left} 
         id="left" 
+        isConnectable={true}
         style={{ 
           top: '50%', 
           left: 0, 
@@ -88,12 +91,13 @@ const ClassNodeComponent = ({ data, selected }: CustomNodeProps) => {
           backgroundColor: theme.handleBg,
           borderColor: theme.handleBorder 
         }}
-        className="!w-2.5 !h-2.5 !border-2 !rounded-full opacity-0 group-hover:opacity-100 hover:!ring-4 hover:!ring-blue-400/40 transition-all duration-150 shadow-md z-20 cursor-crosshair" 
+        className="!w-3 !h-3 !border-2 !rounded-full opacity-0 group-hover:opacity-100 hover:!ring-4 hover:!ring-blue-400/50 transition-all duration-150 shadow-md z-20 cursor-crosshair" 
       />
       <Handle 
         type="source" 
         position={Position.Right} 
         id="right" 
+        isConnectable={true}
         style={{ 
           top: '50%', 
           right: 0, 
@@ -101,7 +105,7 @@ const ClassNodeComponent = ({ data, selected }: CustomNodeProps) => {
           backgroundColor: theme.handleBg,
           borderColor: theme.handleBorder 
         }}
-        className="!w-2.5 !h-2.5 !border-2 !rounded-full opacity-0 group-hover:opacity-100 hover:!ring-4 hover:!ring-blue-400/40 transition-all duration-150 shadow-md z-20 cursor-crosshair" 
+        className="!w-3 !h-3 !border-2 !rounded-full opacity-0 group-hover:opacity-100 hover:!ring-4 hover:!ring-blue-400/50 transition-all duration-150 shadow-md z-20 cursor-crosshair" 
       />
 
       {/* Compartment 1: UML Header (Stereotype + Class Name) */}
@@ -131,7 +135,7 @@ const ClassNodeComponent = ({ data, selected }: CustomNodeProps) => {
           {isDuplicateName && (
             <span 
               className="inline-flex items-center text-amber-400 shrink-0" 
-              title="Nombre duplicado: Ya existe otra clase con este nombre en el proyecto (E1)"
+              title="Nombre duplicado: Ya existe otra clase con este nombre en el proyecto"
             >
               <AlertTriangle size={13} />
             </span>

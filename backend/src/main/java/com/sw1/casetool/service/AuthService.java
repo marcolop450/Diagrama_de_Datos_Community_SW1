@@ -36,7 +36,10 @@ public class AuthService {
         prefs.put("grid", true);
         prefs.put("snapToGrid", true);
         prefs.put("autoSaveInterval", 30);
+        prefs.put("autoSaveEnabled", true);
         prefs.put("defaultZoom", 1.0);
+        prefs.put("canvasTheme", "warm-titanium");
+        prefs.put("appPalette", "warm-titanium");
         return prefs;
     }
 

@@ -100,17 +100,17 @@ export const DashboardPage: React.FC = () => {
     <AppLayout>
       <div className="max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6 pb-20">
         {/* Welcome Header */}
-        <div className="relative overflow-hidden bg-gradient-to-r from-slate-900/90 via-slate-900/60 to-slate-950/90 border border-slate-800 rounded-3xl p-6 md:p-8 backdrop-blur-md shadow-xl">
-          <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div className="relative overflow-hidden bg-slate-900/80 border border-slate-800 rounded-xl p-5 md:p-7 shadow-xs">
+          <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-5">
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                  {isSuperAdmin ? <Crown size={13} className="text-purple-400" /> : <Sparkles size={13} />}
-                  Espacio: {role}
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[11px] font-mono font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                  {isSuperAdmin ? <Crown size={12} className="text-purple-400" /> : <Sparkles size={12} />}
+                  Rol: {role}
                 </span>
                 <span className="text-xs text-slate-500 font-mono">CASE Tool v1.0</span>
               </div>
-              <h1 className="text-2xl md:text-3xl font-bold text-slate-100 tracking-tight">
+              <h1 className="text-xl md:text-2xl font-bold text-slate-100 tracking-tight">
                 {isSuperAdmin 
                   ? 'Panel de Gobernanza y Supervisión Global'
                   : isColaborador 
@@ -126,30 +126,30 @@ export const DashboardPage: React.FC = () => {
               </p>
             </div>
 
-            <div className="flex items-center gap-3 shrink-0">
+            <div className="flex items-center gap-2.5 shrink-0">
               <button
                 onClick={handleRefresh}
                 disabled={refreshing}
-                className="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-400 hover:text-slate-200 transition-all cursor-pointer shadow-xs active:scale-95"
+                className="p-2 rounded-md bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-400 hover:text-slate-200 transition-all cursor-pointer shadow-xs active:scale-95"
                 title="Actualizar resumen"
               >
-                <RefreshCw size={15} className={refreshing ? 'animate-spin text-blue-400' : ''} />
+                <RefreshCw size={14} className={refreshing ? 'animate-spin text-blue-400' : ''} />
               </button>
 
               {!isSuperAdmin ? (
                 <Link
                   to="/editor"
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-md shadow-blue-500/25 transition-all active:scale-95 cursor-pointer"
+                  className="flex items-center gap-2 px-3.5 py-2 rounded-md text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 shadow-xs shadow-blue-500/20 transition-all active:scale-95 cursor-pointer"
                 >
-                  <Layers size={15} />
+                  <Layers size={14} />
                   <span>Abrir Lienzo CASE</span>
                 </Link>
               ) : (
                 <Link
                   to="/admin/audit"
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-md shadow-purple-500/25 transition-all active:scale-95 cursor-pointer"
+                  className="flex items-center gap-2 px-3.5 py-2 rounded-md text-xs font-semibold text-white bg-purple-600 hover:bg-purple-500 shadow-xs shadow-purple-500/20 transition-all active:scale-95 cursor-pointer"
                 >
-                  <History size={15} />
+                  <History size={14} />
                   <span>Ver Bitácora Forense</span>
                 </Link>
               )}
@@ -163,15 +163,15 @@ export const DashboardPage: React.FC = () => {
         {isSuperAdmin && (
           <>
             {/* KPI Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
               <Link 
                 to="/admin/users"
-                className="bg-slate-900/40 hover:bg-slate-900/70 border border-slate-800/80 hover:border-purple-500/40 rounded-2xl p-4.5 flex flex-col justify-between transition-all group shadow-sm"
+                className="bg-slate-900/50 hover:bg-slate-900/80 border border-slate-800/80 hover:border-purple-500/40 rounded-lg p-4 flex flex-col justify-between transition-all group shadow-xs"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-slate-400">Usuarios Registrados</span>
-                  <div className="w-8 h-8 rounded-lg bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-400">
-                    <Users size={16} />
+                  <span className="text-xs font-medium text-slate-400">Usuarios Registrados</span>
+                  <div className="w-7 h-7 rounded bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                    <Users size={15} />
                   </div>
                 </div>
                 <div className="flex items-baseline justify-between mt-1">
@@ -182,7 +182,7 @@ export const DashboardPage: React.FC = () => {
                     {metrics?.totalActiveUsers ?? 0} activos
                   </span>
                 </div>
-                <div className="mt-3 pt-2.5 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-500 group-hover:text-purple-300 transition-colors">
+                <div className="mt-3 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-500 group-hover:text-purple-300 transition-colors">
                   <span>Gestionar roles y cuentas</span>
                   <ChevronRight size={13} />
                 </div>
@@ -190,12 +190,12 @@ export const DashboardPage: React.FC = () => {
 
               <Link 
                 to="/admin/projects"
-                className="bg-slate-900/40 hover:bg-slate-900/70 border border-slate-800/80 hover:border-purple-500/40 rounded-2xl p-4.5 flex flex-col justify-between transition-all group shadow-sm"
+                className="bg-slate-900/50 hover:bg-slate-900/80 border border-slate-800/80 hover:border-purple-500/40 rounded-lg p-4 flex flex-col justify-between transition-all group shadow-xs"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-slate-400">Modelos en Plataforma</span>
-                  <div className="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
-                    <FolderKanban size={16} />
+                  <span className="text-xs font-medium text-slate-400">Modelos en Plataforma</span>
+                  <div className="w-7 h-7 rounded bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
+                    <FolderKanban size={15} />
                   </div>
                 </div>
                 <div className="flex items-baseline justify-between mt-1">
@@ -206,7 +206,7 @@ export const DashboardPage: React.FC = () => {
                     Activos
                   </span>
                 </div>
-                <div className="mt-3 pt-2.5 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-500 group-hover:text-blue-300 transition-colors">
+                <div className="mt-3 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-500 group-hover:text-blue-300 transition-colors">
                   <span>Supervisar todos los proyectos</span>
                   <ChevronRight size={13} />
                 </div>
@@ -214,23 +214,23 @@ export const DashboardPage: React.FC = () => {
 
               <Link 
                 to="/admin/audit"
-                className="bg-slate-900/40 hover:bg-slate-900/70 border border-slate-800/80 hover:border-purple-500/40 rounded-2xl p-4.5 flex flex-col justify-between transition-all group shadow-sm"
+                className="bg-slate-900/50 hover:bg-slate-900/80 border border-slate-800/80 hover:border-purple-500/40 rounded-lg p-4 flex flex-col justify-between transition-all group shadow-xs"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-slate-400">Bitácora Forense</span>
-                  <div className="w-8 h-8 rounded-lg bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
-                    <ShieldCheck size={16} />
+                  <span className="text-xs font-medium text-slate-400">Bitácora Forense</span>
+                  <div className="w-7 h-7 rounded bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+                    <ShieldCheck size={15} />
                   </div>
                 </div>
                 <div className="flex items-baseline justify-between mt-1">
-                  <span className="text-2xl font-bold text-slate-100 font-mono">
+                  <span className="text-xl font-bold text-slate-100 font-mono">
                     Inmutable
                   </span>
                   <span className="text-[11px] text-indigo-400 font-medium">
                     PostgreSQL
                   </span>
                 </div>
-                <div className="mt-3 pt-2.5 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-500 group-hover:text-indigo-300 transition-colors">
+                <div className="mt-3 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-500 group-hover:text-indigo-300 transition-colors">
                   <span>Consultar eventos y exportar</span>
                   <ChevronRight size={13} />
                 </div>
@@ -238,12 +238,12 @@ export const DashboardPage: React.FC = () => {
 
               <Link 
                 to="/admin/projects"
-                className="bg-slate-900/40 hover:bg-slate-900/70 border border-slate-800/80 hover:border-purple-500/40 rounded-2xl p-4.5 flex flex-col justify-between transition-all group shadow-sm"
+                className="bg-slate-900/50 hover:bg-slate-900/80 border border-slate-800/80 hover:border-purple-500/40 rounded-lg p-4 flex flex-col justify-between transition-all group shadow-xs"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-slate-400">Papelera del Sistema</span>
-                  <div className="w-8 h-8 rounded-lg bg-rose-600/20 border border-rose-500/30 flex items-center justify-center text-rose-400">
-                    <RotateCcw size={16} />
+                  <span className="text-xs font-medium text-slate-400">Papelera del Sistema</span>
+                  <div className="w-7 h-7 rounded bg-rose-600/20 border border-rose-500/30 flex items-center justify-center text-rose-400">
+                    <RotateCcw size={15} />
                   </div>
                 </div>
                 <div className="flex items-baseline justify-between mt-1">
@@ -254,7 +254,7 @@ export const DashboardPage: React.FC = () => {
                     Recuperables
                   </span>
                 </div>
-                <div className="mt-3 pt-2.5 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-500 group-hover:text-rose-300 transition-colors">
+                <div className="mt-3 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-500 group-hover:text-rose-300 transition-colors">
                   <span>Restaurar proyectos eliminados</span>
                   <ChevronRight size={13} />
                 </div>
@@ -262,14 +262,14 @@ export const DashboardPage: React.FC = () => {
             </div>
 
             {/* Governance Direct Access Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 mt-2">
               <Link
                 to="/admin/projects"
-                className="p-5 bg-slate-900/40 hover:bg-slate-900/70 border border-slate-800 rounded-2xl flex flex-col justify-between transition-all group"
+                className="p-4 bg-slate-900/50 hover:bg-slate-900/80 border border-slate-800/80 hover:border-slate-700 rounded-lg flex flex-col justify-between transition-all group"
               >
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-xl bg-purple-600/20 border border-purple-500/40 flex items-center justify-center text-purple-400">
-                    <FolderKanban size={20} />
+                  <div className="w-9 h-9 rounded-md bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                    <FolderKanban size={18} />
                   </div>
                   <div>
                     <h3 className="text-sm font-semibold text-slate-200">Supervisión de Proyectos</h3>
@@ -283,11 +283,11 @@ export const DashboardPage: React.FC = () => {
 
               <Link
                 to="/admin/users"
-                className="p-5 bg-slate-900/40 hover:bg-slate-900/70 border border-slate-800 rounded-2xl flex flex-col justify-between transition-all group"
+                className="p-4 bg-slate-900/50 hover:bg-slate-900/80 border border-slate-800/80 hover:border-slate-700 rounded-lg flex flex-col justify-between transition-all group"
               >
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-xl bg-purple-600/20 border border-purple-500/40 flex items-center justify-center text-purple-400">
-                    <Users size={20} />
+                  <div className="w-9 h-9 rounded-md bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                    <Users size={18} />
                   </div>
                   <div>
                     <h3 className="text-sm font-semibold text-slate-200">Gestión de Usuarios (RBAC)</h3>
@@ -301,11 +301,11 @@ export const DashboardPage: React.FC = () => {
 
               <Link
                 to="/admin/audit"
-                className="p-5 bg-slate-900/40 hover:bg-slate-900/70 border border-slate-800 rounded-2xl flex flex-col justify-between transition-all group"
+                className="p-4 bg-slate-900/50 hover:bg-slate-900/80 border border-slate-800/80 hover:border-slate-700 rounded-lg flex flex-col justify-between transition-all group"
               >
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-xl bg-purple-600/20 border border-purple-500/40 flex items-center justify-center text-purple-400">
-                    <History size={20} />
+                  <div className="w-9 h-9 rounded-md bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                    <History size={18} />
                   </div>
                   <div>
                     <h3 className="text-sm font-semibold text-slate-200">Bitácora Global</h3>
@@ -326,17 +326,17 @@ export const DashboardPage: React.FC = () => {
         {!isSuperAdmin && (
           <>
             {/* KPI Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
               <Link 
                 to="/projects"
-                className="bg-slate-900/40 hover:bg-slate-900/70 border border-slate-800/80 hover:border-blue-500/40 rounded-2xl p-4.5 flex flex-col justify-between transition-all group shadow-sm"
+                className="bg-slate-900/50 hover:bg-slate-900/80 border border-slate-800/80 hover:border-blue-500/40 rounded-lg p-4 flex flex-col justify-between transition-all group shadow-xs"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-slate-400">
+                  <span className="text-xs font-medium text-slate-400">
                     {isColaborador ? 'Modelos Compartidos' : 'Mis Proyectos UML'}
                   </span>
-                  <div className="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
-                    <FolderKanban size={16} />
+                  <div className="w-7 h-7 rounded bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
+                    <FolderKanban size={15} />
                   </div>
                 </div>
                 <div className="flex items-baseline justify-between mt-1">
@@ -347,17 +347,17 @@ export const DashboardPage: React.FC = () => {
                     Activos
                   </span>
                 </div>
-                <div className="mt-3 pt-2.5 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-500 group-hover:text-blue-300 transition-colors">
+                <div className="mt-3 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-500 group-hover:text-blue-300 transition-colors">
                   <span>Gestionar todos los proyectos</span>
                   <ChevronRight size={13} />
                 </div>
               </Link>
 
-              <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-4.5 flex flex-col justify-between shadow-sm">
+              <div className="bg-slate-900/50 border border-slate-800/80 rounded-lg p-4 flex flex-col justify-between shadow-xs">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-slate-400">Clases Modeladas</span>
-                  <div className="w-8 h-8 rounded-lg bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-                    <Layers size={16} />
+                  <span className="text-xs font-medium text-slate-400">Clases Modeladas</span>
+                  <div className="w-7 h-7 rounded bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                    <Layers size={15} />
                   </div>
                 </div>
                 <div className="flex items-baseline justify-between mt-1">
@@ -368,16 +368,16 @@ export const DashboardPage: React.FC = () => {
                     Entidades UML
                   </span>
                 </div>
-                <div className="mt-3 pt-2.5 border-t border-slate-800/60 text-[11px] text-slate-500">
+                <div className="mt-3 pt-2 border-t border-slate-800/60 text-[11px] text-slate-500">
                   En todos tus proyectos
                 </div>
               </div>
 
-              <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-4.5 flex flex-col justify-between shadow-sm">
+              <div className="bg-slate-900/50 border border-slate-800/80 rounded-lg p-4 flex flex-col justify-between shadow-xs">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-slate-400">Relaciones UML</span>
-                  <div className="w-8 h-8 rounded-lg bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
-                    <FileCode2 size={16} />
+                  <span className="text-xs font-medium text-slate-400">Relaciones UML</span>
+                  <div className="w-7 h-7 rounded bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+                    <FileCode2 size={15} />
                   </div>
                 </div>
                 <div className="flex items-baseline justify-between mt-1">
@@ -388,19 +388,19 @@ export const DashboardPage: React.FC = () => {
                     Asociaciones
                   </span>
                 </div>
-                <div className="mt-3 pt-2.5 border-t border-slate-800/60 text-[11px] text-slate-500">
+                <div className="mt-3 pt-2 border-t border-slate-800/60 text-[11px] text-slate-500">
                   Con cardinalidad y tipos
                 </div>
               </div>
 
               <Link 
                 to="/projects"
-                className="bg-slate-900/40 hover:bg-slate-900/70 border border-slate-800/80 hover:border-rose-500/40 rounded-2xl p-4.5 flex flex-col justify-between transition-all group shadow-sm"
+                className="bg-slate-900/50 hover:bg-slate-900/80 border border-slate-800/80 hover:border-rose-500/40 rounded-lg p-4 flex flex-col justify-between transition-all group shadow-xs"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-slate-400">Papelera de Reciclaje</span>
-                  <div className="w-8 h-8 rounded-lg bg-rose-600/20 border border-rose-500/30 flex items-center justify-center text-rose-400">
-                    <RotateCcw size={16} />
+                  <span className="text-xs font-medium text-slate-400">Papelera de Reciclaje</span>
+                  <div className="w-7 h-7 rounded bg-rose-600/20 border border-rose-500/30 flex items-center justify-center text-rose-400">
+                    <RotateCcw size={15} />
                   </div>
                 </div>
                 <div className="flex items-baseline justify-between mt-1">
@@ -411,7 +411,7 @@ export const DashboardPage: React.FC = () => {
                     Recuperables
                   </span>
                 </div>
-                <div className="mt-3 pt-2.5 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-500 group-hover:text-rose-300 transition-colors">
+                <div className="mt-3 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-500 group-hover:text-rose-300 transition-colors">
                   <span>Ver papelera</span>
                   <ChevronRight size={13} />
                 </div>
@@ -419,16 +419,16 @@ export const DashboardPage: React.FC = () => {
             </div>
 
             {/* Quick Actions & Recent Projects Section */}
-            <div className="flex flex-col gap-4 mt-2">
+            <div className="flex flex-col gap-3.5 mt-2">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-base font-bold text-slate-100">Proyectos Recientes</h2>
+                  <h2 className="text-sm font-bold text-slate-100">Proyectos Recientes</h2>
                   <p className="text-xs text-slate-400">Últimos modelos de clases trabajados</p>
                 </div>
 
                 <Link
                   to="/projects"
-                  className="text-xs font-semibold text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors"
+                  className="text-xs font-medium text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors"
                 >
                   <span>Ver todos ({projects.length})</span>
                   <ArrowRight size={13} />
@@ -441,27 +441,27 @@ export const DashboardPage: React.FC = () => {
                   <span>Cargando modelos...</span>
                 </div>
               ) : recentProjects.length === 0 ? (
-                <div className="p-8 bg-slate-900/30 border border-dashed border-slate-800 rounded-2xl text-center">
+                <div className="p-7 bg-slate-900/30 border border-dashed border-slate-800 rounded-lg text-center">
                   <p className="text-xs text-slate-400 mb-3">No tienes proyectos creados todavía.</p>
                   <Link
                     to="/projects"
-                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-all shadow-xs cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-md text-xs font-semibold transition-all shadow-xs cursor-pointer"
                   >
-                    <FolderPlus size={14} />
+                    <FolderPlus size={13} />
                     <span>Crear Proyecto en Proyectos UML</span>
                   </Link>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5">
                   {recentProjects.map(proj => (
                     <div
                       key={proj.id}
                       onClick={() => handleOpenProject(proj.id, proj.name)}
-                      className="p-4 bg-slate-900/40 hover:bg-slate-900/70 border border-slate-800 hover:border-blue-500/40 rounded-2xl flex flex-col justify-between transition-all cursor-pointer group shadow-sm overflow-hidden"
+                      className="p-3.5 bg-slate-900/50 hover:bg-slate-900/80 border border-slate-800/80 hover:border-blue-500/40 rounded-lg flex flex-col justify-between transition-all cursor-pointer group shadow-xs overflow-hidden"
                     >
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-blue-950/60 border border-blue-800/60 text-blue-300">
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-blue-950/60 border border-blue-800/60 text-blue-300">
                             {proj.version || 'v1.0.0'}
                           </span>
                           <span className="text-[10px] text-slate-500 flex items-center gap-1">
@@ -470,17 +470,17 @@ export const DashboardPage: React.FC = () => {
                           </span>
                         </div>
 
-                        <h3 className="text-sm font-semibold text-slate-200 group-hover:text-blue-400 transition-colors line-clamp-1 mb-1">
+                        <h3 className="text-xs font-semibold text-slate-200 group-hover:text-blue-400 transition-colors line-clamp-1 mb-1">
                           {proj.name}
                         </h3>
-                        <p className="text-xs text-slate-400 line-clamp-2 min-h-[32px] mb-3">
+                        <p className="text-[11px] text-slate-400 line-clamp-2 min-h-[30px] mb-2">
                           {proj.description || 'Sin descripción.'}
                         </p>
                       </div>
 
-                      <div className="pt-2.5 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-400">
+                      <div className="pt-2 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-400">
                         <span className="font-mono">{proj.nodeCount || 0} clases</span>
-                        <span className="text-blue-400 font-semibold flex items-center gap-0.5 group-hover:translate-x-1 transition-transform">
+                        <span className="text-blue-400 font-semibold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
                           Abrir <ChevronRight size={12} />
                         </span>
                       </div>

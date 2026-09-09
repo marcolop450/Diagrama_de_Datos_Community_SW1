@@ -1,8 +1,17 @@
 import React, { useEffect, useRef } from 'react';
+import { useAuthStore } from '../../stores/authStore';
+import { getAppPalette } from '../../constants/canvasThemes';
 
-export const AuroraBackground: React.FC<{ opacity?: number }> = ({ opacity = 0.75 }) => {
+interface AuroraBackgroundProps {
+  opacity?: number;
+}
+
+export const AuroraBackground: React.FC<AuroraBackgroundProps> = ({ opacity = 0.85 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animFrameId = useRef<number | null>(null);
+  const { user } = useAuthStore();
+  const activePaletteId = user?.preferences?.appPalette || 'warm-titanium';
+  const palette = getAppPalette(activePaletteId);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -21,72 +30,87 @@ export const AuroraBackground: React.FC<{ opacity?: number }> = ({ opacity = 0.7
 
     let t = 0;
 
-    // Rich Aurora light wave nodes
-    const lights = [
-      { baseColor: 'rgba(56, 189, 248, ', speedX: 0.0009, speedY: 0.0012, radiusRatio: 0.55, initialX: 0.2, initialY: 0.25 },
-      { baseColor: 'rgba(99, 102, 241, ', speedX: 0.0007, speedY: 0.0011, radiusRatio: 0.6, initialX: 0.8, initialY: 0.35 },
-      { baseColor: 'rgba(168, 85, 247, ', speedX: 0.0011, speedY: 0.0008, radiusRatio: 0.65, initialX: 0.5, initialY: 0.75 },
-      { baseColor: 'rgba(16, 185, 129, ', speedX: 0.0008, speedY: 0.0014, radiusRatio: 0.48, initialX: 0.15, initialY: 0.8 },
-      { baseColor: 'rgba(236, 72, 153, ', speedX: 0.0012, speedY: 0.0007, radiusRatio: 0.45, initialX: 0.85, initialY: 0.8 },
-    ];
-
-    // Background floating starlight particles
-    const stars = Array.from({ length: 35 }, () => ({
-      x: Math.random(),
-      y: Math.random(),
-      size: Math.random() * 1.5 + 0.5,
-      alpha: Math.random() * 0.6 + 0.2,
-      speed: Math.random() * 0.0004 + 0.0002,
-    }));
+    // Palette-driven vibrant color waves
+    const isTitanium = activePaletteId === 'warm-titanium';
+    const auroraWaves = isTitanium
+      ? [
+          { color: '245, 158, 11', baseY: 0.22, amp: 70, freq: 0.0018, speed: 0.012, alpha: 0.55 }, // Amber Gold
+          { color: '217, 119, 6', baseY: 0.35, amp: 85, freq: 0.0014, speed: 0.009, alpha: 0.45 },  // Warm Bronze
+          { color: '251, 146, 60', baseY: 0.18, amp: 60, freq: 0.0022, speed: 0.015, alpha: 0.48 }, // Sunset Terracotta
+          { color: '139, 92, 246', baseY: 0.45, amp: 95, freq: 0.0011, speed: 0.007, alpha: 0.35 }, // Plum Violet depth
+        ]
+      : [
+          { color: '99, 102, 241', baseY: 0.20, amp: 75, freq: 0.0018, speed: 0.012, alpha: 0.55 }, // Electric Indigo
+          { color: '168, 85, 247', baseY: 0.32, amp: 85, freq: 0.0015, speed: 0.009, alpha: 0.50 }, // Vivid Violet
+          { color: '6, 182, 212', baseY: 0.16, amp: 65, freq: 0.0021, speed: 0.014, alpha: 0.52 },  // Arctic Cyan
+          { color: '236, 72, 153', baseY: 0.42, amp: 90, freq: 0.0012, speed: 0.008, alpha: 0.38 }, // Magenta Glow
+        ];
 
     const render = () => {
       t += 1;
       ctx.clearRect(0, 0, width, height);
 
-      // Deep atmospheric dark base
-      ctx.fillStyle = '#060911';
+      // 1. Rich base canvas tone from active palette (Warm Charcoal or Deep Obsidian, NOT pitch black)
+      ctx.fillStyle = palette.bgBase;
       ctx.fillRect(0, 0, width, height);
 
-      // 1. Draw glowing cosmic stars
-      stars.forEach((star) => {
-        const currentAlpha = star.alpha + Math.sin(t * star.speed * 20) * 0.25;
-        ctx.fillStyle = `rgba(224, 231, 255, ${Math.max(0.1, currentAlpha)})`;
-        ctx.beginPath();
-        ctx.arc(star.x * width, ((star.y + t * star.speed) % 1) * height, star.size, 0, Math.PI * 2);
-        ctx.fill();
-      });
-
-      // 2. Multi-layer Screen Aurora Mesh
+      // 2. Multi-Harmonic Radiant Aurora Ribbons
       ctx.save();
       ctx.globalAlpha = opacity;
       ctx.globalCompositeOperation = 'screen';
 
-      lights.forEach((light, i) => {
-        const curX = (light.initialX + Math.sin(t * light.speedX + i * 1.4) * 0.28) * width;
-        const curY = (light.initialY + Math.cos(t * light.speedY + i * 1.1) * 0.24) * height;
-        const curR = (light.radiusRatio + Math.sin(t * 0.0015 + i) * 0.1) * Math.min(width, height);
-
-        const grad = ctx.createRadialGradient(curX, curY, 0, curX, curY, Math.max(20, curR));
-        grad.addColorStop(0, `${light.baseColor}0.55)`);
-        grad.addColorStop(0.4, `${light.baseColor}0.25)`);
-        grad.addColorStop(0.7, `${light.baseColor}0.08)`);
-        grad.addColorStop(1, `${light.baseColor}0)`);
-
-        ctx.fillStyle = grad;
+      auroraWaves.forEach((wave, idx) => {
+        // Draw fluid undulating ribbon curtain
         ctx.beginPath();
-        ctx.arc(curX, curY, curR, 0, Math.PI * 2);
+        const startY = wave.baseY * height;
+        ctx.moveTo(0, startY);
+
+        const step = 24;
+        for (let x = 0; x <= width + step; x += step) {
+          const y = startY + Math.sin(x * wave.freq + t * wave.speed + idx * 1.5) * wave.amp
+                          + Math.cos(x * wave.freq * 0.5 + t * wave.speed * 0.7) * (wave.amp * 0.5);
+          ctx.lineTo(x, y);
+        }
+
+        ctx.lineTo(width, 0);
+        ctx.lineTo(0, 0);
+        ctx.closePath();
+
+        // Vertical glowing curtain gradient
+        const ribbonGrad = ctx.createLinearGradient(0, startY - wave.amp, 0, startY + wave.amp * 2);
+        ribbonGrad.addColorStop(0, `rgba(${wave.color}, 0)`);
+        ribbonGrad.addColorStop(0.3, `rgba(${wave.color}, ${wave.alpha})`);
+        ribbonGrad.addColorStop(0.65, `rgba(${wave.color}, ${wave.alpha * 0.45})`);
+        ribbonGrad.addColorStop(1, `rgba(${wave.color}, 0)`);
+
+        ctx.fillStyle = ribbonGrad;
+        ctx.fill();
+
+        // Secondary breathing orbital plume for volumetric atmospheric depth
+        const plumeX = ((Math.sin(t * 0.003 + idx * 2) * 0.35) + 0.5) * width;
+        const plumeY = ((Math.cos(t * 0.0025 + idx * 1.8) * 0.25) + wave.baseY) * height;
+        const plumeRadius = Math.min(width, height) * 0.45;
+
+        const orbGrad = ctx.createRadialGradient(plumeX, plumeY, 0, plumeX, plumeY, plumeRadius);
+        orbGrad.addColorStop(0, `rgba(${wave.color}, ${wave.alpha * 0.6})`);
+        orbGrad.addColorStop(0.4, `rgba(${wave.color}, ${wave.alpha * 0.25})`);
+        orbGrad.addColorStop(1, `rgba(${wave.color}, 0)`);
+
+        ctx.fillStyle = orbGrad;
+        ctx.beginPath();
+        ctx.arc(plumeX, plumeY, plumeRadius, 0, Math.PI * 2);
         ctx.fill();
       });
 
       ctx.restore();
 
-      // 3. Subtle Engineering Dot Matrix
+      // 3. Technical Grid Pattern for CASE Architectural Feel
       ctx.save();
-      ctx.fillStyle = 'rgba(51, 65, 85, 0.4)';
-      const step = 42;
-      for (let x = 0; x < width; x += step) {
-        for (let y = 0; y < height; y += step) {
-          ctx.fillRect(x, y, 1.2, 1.2);
+      ctx.fillStyle = isTitanium ? 'rgba(82, 82, 91, 0.35)' : 'rgba(71, 85, 105, 0.35)';
+      const gridStep = 40;
+      for (let x = 0; x < width; x += gridStep) {
+        for (let y = 0; y < height; y += gridStep) {
+          ctx.fillRect(x, y, 1, 1);
         }
       }
       ctx.restore();
@@ -100,7 +124,7 @@ export const AuroraBackground: React.FC<{ opacity?: number }> = ({ opacity = 0.7
       if (animFrameId.current) cancelAnimationFrame(animFrameId.current);
       window.removeEventListener('resize', handleResize);
     };
-  }, [opacity]);
+  }, [opacity, activePaletteId, palette.bgBase]);
 
   return (
     <canvas
@@ -109,3 +133,4 @@ export const AuroraBackground: React.FC<{ opacity?: number }> = ({ opacity = 0.7
     />
   );
 };
+

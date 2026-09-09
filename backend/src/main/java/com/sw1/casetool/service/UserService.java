@@ -85,6 +85,12 @@ public class UserService {
         if (request.getCanvasTheme() != null) {
             currentPrefs.put("canvasTheme", request.getCanvasTheme());
         }
+        if (request.getAppPalette() != null) {
+            currentPrefs.put("appPalette", request.getAppPalette());
+        }
+        if (request.getAutoSaveEnabled() != null) {
+            currentPrefs.put("autoSaveEnabled", request.getAutoSaveEnabled());
+        }
         if (request.getOnboardingCompleted() != null) {
             currentPrefs.put("onboardingCompleted", request.getOnboardingCompleted());
         }

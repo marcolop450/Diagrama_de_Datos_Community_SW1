@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '../components/layout/AppLayout';
 import { useAuthStore } from '../stores/authStore';
@@ -31,7 +32,7 @@ import CreateProjectModal from '../components/modals/CreateProjectModal';
 
 export const ProjectsPage: React.FC = () => {
   const { user } = useAuthStore();
-  const { loadDiagram } = useDiagramStore();
+  const { project, loadDiagram, resetDiagram } = useDiagramStore();
   const navigate = useNavigate();
 
   const [projects, setProjects] = useState<DiagramProject[]>([]);
@@ -170,6 +171,12 @@ export const ProjectsPage: React.FC = () => {
     try {
       setSubmittingAction(true);
       await api.deleteProject(deleteModalProject.id);
+      if (localStorage.getItem('case_last_project_id') === deleteModalProject.id) {
+        localStorage.removeItem('case_last_project_id');
+      }
+      if (project?.id === deleteModalProject.id) {
+        resetDiagram();
+      }
       toast.success(`Proyecto "${deleteModalProject.name}" movido a la papelera`);
       setDeleteModalProject(null);
       await loadProjects();
@@ -201,6 +208,12 @@ export const ProjectsPage: React.FC = () => {
     try {
       setSubmittingAction(true);
       await api.purgeProject(purgeModalProject.id);
+      if (localStorage.getItem('case_last_project_id') === purgeModalProject.id) {
+        localStorage.removeItem('case_last_project_id');
+      }
+      if (project?.id === purgeModalProject.id) {
+        resetDiagram();
+      }
       toast.success(`Proyecto "${purgeModalProject.name}" eliminado permanentemente`);
       setPurgeModalProject(null);
       await loadProjects();
@@ -325,7 +338,7 @@ export const ProjectsPage: React.FC = () => {
               setCurrentPage(1);
               setSelectedTag('ALL');
             }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer border ${
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer border ${
               activeTab === 'active'
                 ? 'bg-blue-600/20 text-blue-300 border-blue-500/40 shadow-xs'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900 border-slate-800'
@@ -333,7 +346,7 @@ export const ProjectsPage: React.FC = () => {
           >
             <FolderKanban size={14} />
             <span>Proyectos Activos</span>
-            <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-slate-800 text-slate-300">
+            <span className="ml-1 px-1.5 py-0.2 rounded text-[10px] font-mono bg-slate-800 text-slate-300">
               {projects.length}
             </span>
           </button>
@@ -344,7 +357,7 @@ export const ProjectsPage: React.FC = () => {
               setCurrentPage(1);
               setSelectedTag('ALL');
             }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer border ${
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer border ${
               activeTab === 'trash'
                 ? 'bg-rose-950/40 text-rose-300 border-rose-800/60 shadow-xs'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900 border-slate-800'
@@ -352,16 +365,16 @@ export const ProjectsPage: React.FC = () => {
           >
             <RotateCcw size={14} />
             <span>Papelera de Reciclaje</span>
-            <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-slate-800 text-slate-300">
+            <span className="ml-1 px-1.5 py-0.2 rounded text-[10px] font-mono bg-slate-800 text-slate-300">
               {trashProjects.length}
             </span>
           </button>
         </div>
 
         {/* Search & Tag Filter Bar */}
-        <div className="flex flex-col md:flex-row gap-3 bg-slate-900/40 border border-slate-800/80 p-3.5 rounded-2xl">
+        <div className="flex flex-col md:flex-row gap-2.5 bg-slate-900/50 border border-slate-800/80 p-3 rounded-lg">
           <div className="relative flex-1">
-            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
             <input
               type="text"
               placeholder="Buscar proyectos por nombre, descripción o etiquetas..."
@@ -370,7 +383,7 @@ export const ProjectsPage: React.FC = () => {
                 setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full bg-slate-950 border border-slate-800 text-slate-100 placeholder:text-slate-500 focus:border-blue-500 rounded-xl pl-9 pr-3 py-2 text-xs focus:outline-none transition-colors"
+              className="w-full bg-slate-950 border border-slate-800 text-slate-100 placeholder:text-slate-500 focus:border-blue-500 rounded-md pl-8.5 pr-3 py-1.5 text-xs focus:outline-none transition-colors"
             />
           </div>
 
@@ -382,7 +395,7 @@ export const ProjectsPage: React.FC = () => {
                   setSelectedTag('ALL');
                   setCurrentPage(1);
                 }}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer ${
+                className={`px-2 py-1 rounded text-xs font-medium transition-all shrink-0 cursor-pointer ${
                   selectedTag === 'ALL'
                     ? 'bg-blue-600 text-white shadow-xs'
                     : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
@@ -397,7 +410,7 @@ export const ProjectsPage: React.FC = () => {
                     setSelectedTag(tag);
                     setCurrentPage(1);
                   }}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer ${
+                  className={`px-2 py-1 rounded text-xs font-mono transition-all shrink-0 cursor-pointer ${
                     selectedTag === tag
                       ? 'bg-blue-600 text-white shadow-xs'
                       : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
@@ -442,26 +455,26 @@ export const ProjectsPage: React.FC = () => {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
             {paginatedProjects.map(proj => (
               <div 
                 key={proj.id}
-                className="flex flex-col justify-between bg-slate-900/40 hover:bg-slate-900/60 border border-slate-800/80 hover:border-slate-700 rounded-2xl p-4.5 transition-all shadow-sm group overflow-hidden"
+                className="flex flex-col justify-between bg-slate-900/50 hover:bg-slate-900/80 border border-slate-800/80 hover:border-slate-700 rounded-lg p-4 transition-all shadow-xs group overflow-hidden"
               >
                 <div>
-                  <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
                     <div className="flex flex-wrap items-center gap-1.5 min-w-0">
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold bg-blue-950/60 border border-blue-800/60 text-blue-300 shrink-0">
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-blue-950/60 border border-blue-800/60 text-blue-300 shrink-0">
                         {proj.version || 'v1.0.0'}
                       </span>
                       {proj.clonedFromId && (
-                        <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-mono bg-purple-950/60 border border-purple-800/60 text-purple-300 shrink-0">
+                        <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono bg-purple-950/60 border border-purple-800/60 text-purple-300 shrink-0">
                           <GitFork size={10} />
                           Fork
                         </span>
                       )}
                       {proj.isDeleted && (
-                        <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-rose-950/60 border border-rose-800 text-rose-300 shrink-0">
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-rose-950/60 border border-rose-800 text-rose-300 shrink-0">
                           En Papelera
                         </span>
                       )}
@@ -473,10 +486,10 @@ export const ProjectsPage: React.FC = () => {
                           <button
                             onClick={() => {
                               setCloneModalProject(proj);
-                              setCloneName(`${proj.name} (Copia)`);
+                              setCloneName(`${proj.name} Copia`);
                             }}
-                            className="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer shrink-0"
-                            title="Clonar proyecto (Deep Copy)"
+                            className="p-1 text-slate-400 hover:text-blue-400 hover:bg-slate-800 rounded transition-colors cursor-pointer shrink-0"
+                            title="Clonar proyecto"
                           >
                             <Copy size={13} />
                           </button>
@@ -490,7 +503,7 @@ export const ProjectsPage: React.FC = () => {
                                 setEditVersion(proj.version || 'v1.0.0');
                                 setEditTags(Array.isArray(proj.tags) ? [...proj.tags] : []);
                               }}
-                              className="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer shrink-0"
+                              className="p-1 text-slate-400 hover:text-emerald-400 hover:bg-slate-800 rounded transition-colors cursor-pointer shrink-0"
                               title="Editar metadatos"
                             >
                               <Edit3 size={13} />
@@ -499,7 +512,7 @@ export const ProjectsPage: React.FC = () => {
 
                           <button
                             onClick={() => setHistoryModalProject(proj)}
-                            className="p-1.5 text-slate-400 hover:text-purple-400 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer shrink-0"
+                            className="p-1 text-slate-400 hover:text-purple-400 hover:bg-slate-800 rounded transition-colors cursor-pointer shrink-0"
                             title="Consultar historial y trazabilidad"
                           >
                             <History size={13} />
@@ -508,7 +521,7 @@ export const ProjectsPage: React.FC = () => {
                           {!isColaborador && (
                             <button
                               onClick={() => setDeleteModalProject(proj)}
-                              className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer shrink-0"
+                              className="p-1 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded transition-colors cursor-pointer shrink-0"
                               title="Mover a papelera de reciclaje"
                             >
                               <Trash2 size={13} />
@@ -520,7 +533,7 @@ export const ProjectsPage: React.FC = () => {
                           <button
                             onClick={() => handleRestoreProject(proj.id, proj.name)}
                             disabled={restoringId === proj.id}
-                            className="flex items-center gap-1 px-2.5 py-1 bg-emerald-950/60 hover:bg-emerald-900/60 text-emerald-300 border border-emerald-800/80 rounded-lg text-xs font-semibold transition-all cursor-pointer active:scale-95 disabled:opacity-50 shrink-0"
+                            className="flex items-center gap-1 px-2 py-0.5 bg-emerald-950/60 hover:bg-emerald-900/60 text-emerald-300 border border-emerald-800/80 rounded text-xs font-semibold transition-all cursor-pointer active:scale-95 disabled:opacity-50 shrink-0"
                             title="Restaurar proyecto"
                           >
                             <RotateCcw size={12} className={restoringId === proj.id ? 'animate-spin' : ''} />
@@ -529,7 +542,7 @@ export const ProjectsPage: React.FC = () => {
 
                           <button
                             onClick={() => setHistoryModalProject(proj)}
-                            className="p-1.5 text-slate-400 hover:text-purple-400 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer shrink-0"
+                            className="p-1 text-slate-400 hover:text-purple-400 hover:bg-slate-800 rounded transition-colors cursor-pointer shrink-0"
                             title="Consultar historial y trazabilidad"
                           >
                             <History size={13} />
@@ -538,8 +551,8 @@ export const ProjectsPage: React.FC = () => {
                           {!isColaborador && (
                             <button
                               onClick={() => setPurgeModalProject(proj)}
-                              className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 rounded-lg transition-colors cursor-pointer shrink-0"
-                              title="Eliminar definitivamente (Purga física)"
+                              className="p-1 text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 rounded transition-colors cursor-pointer shrink-0"
+                              title="Eliminar definitivamente"
                             >
                               <Trash2 size={13} />
                             </button>
@@ -551,18 +564,18 @@ export const ProjectsPage: React.FC = () => {
 
                   <h3 
                     onClick={() => activeTab === 'active' && handleOpenProject(proj.id, proj.name)}
-                    className={`text-sm font-semibold text-slate-100 line-clamp-1 mb-1 ${activeTab === 'active' ? 'cursor-pointer hover:text-blue-400 transition-colors' : ''}`}
+                    className={`text-xs font-semibold text-slate-100 line-clamp-1 mb-1 ${activeTab === 'active' ? 'cursor-pointer hover:text-blue-400 transition-colors' : ''}`}
                   >
                     {proj.name}
                   </h3>
                   
-                  <p className="text-xs text-slate-400 line-clamp-2 min-h-[32px] mb-3">
+                  <p className="text-[11px] text-slate-400 line-clamp-2 min-h-[30px] mb-2.5 leading-relaxed">
                     {proj.description || 'Sin descripción detallada para este modelo.'}
                   </p>
 
                   {/* Tags */}
                   {Array.isArray(proj.tags) && proj.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mb-3">
+                    <div className="flex flex-wrap gap-1 mb-2.5">
                       {proj.tags.map(t => (
                         <span key={t} className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-950 text-slate-400 border border-slate-800">
                           #{t}
@@ -573,7 +586,7 @@ export const ProjectsPage: React.FC = () => {
                 </div>
 
                 {/* Footer Metadata */}
-                <div className="pt-3 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-400">
+                <div className="pt-2.5 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-400">
                   <div className="flex items-center gap-3">
                     <span className="flex items-center gap-1 font-mono">
                       <Layers size={12} className="text-blue-400" />
@@ -588,10 +601,10 @@ export const ProjectsPage: React.FC = () => {
                   {activeTab === 'active' && (
                     <button
                       onClick={() => handleOpenProject(proj.id, proj.name)}
-                      className="text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors cursor-pointer flex items-center gap-1"
+                      className="text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors cursor-pointer flex items-center gap-0.5"
                     >
                       <span>Abrir</span>
-                      <ChevronRight size={13} />
+                      <ChevronRight size={12} />
                     </button>
                   )}
                 </div>
@@ -632,20 +645,20 @@ export const ProjectsPage: React.FC = () => {
           onSuccess={loadProjects} 
         />
 
-        {/* MODAL 2: Editar Metadatos (CU03) */}
-        {editModalProject && (
+        {/* MODAL 2: Editar Metadatos */}
+        {editModalProject && createPortal(
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xs p-4">
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-5 shadow-2xl">
+            <div className="bg-slate-900 border border-slate-800 rounded-lg w-full max-w-md p-5 shadow-xl animate-fade-in">
               <div className="flex justify-between items-center pb-3 border-b border-slate-800 mb-4">
                 <div className="flex items-center gap-2">
-                  <Edit3 size={18} className="text-emerald-400" />
+                  <Edit3 size={16} className="text-emerald-400" />
                   <h2 className="text-sm font-bold text-slate-100">Editar Metadatos del Proyecto</h2>
                 </div>
                 <button 
                   onClick={() => setEditModalProject(null)}
-                  className="p-1 text-slate-400 hover:text-slate-200 rounded-lg cursor-pointer"
+                  className="p-1 text-slate-400 hover:text-slate-200 rounded cursor-pointer"
                 >
-                  <X size={16} />
+                  <X size={15} />
                 </button>
               </div>
 
@@ -659,7 +672,7 @@ export const ProjectsPage: React.FC = () => {
                     required
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 text-slate-100 focus:border-blue-500 rounded-xl px-3 py-2 text-xs focus:outline-none"
+                    className="w-full bg-slate-950 border border-slate-800 text-slate-100 focus:border-blue-500 rounded-md px-3 py-1.5 text-xs focus:outline-none"
                   />
                 </div>
 
@@ -671,7 +684,7 @@ export const ProjectsPage: React.FC = () => {
                     rows={2}
                     value={editDesc}
                     onChange={(e) => setEditDesc(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 text-slate-100 focus:border-blue-500 rounded-xl px-3 py-2 text-xs focus:outline-none resize-none"
+                    className="w-full bg-slate-950 border border-slate-800 text-slate-100 focus:border-blue-500 rounded-md px-3 py-1.5 text-xs focus:outline-none resize-none"
                   />
                 </div>
 
@@ -684,7 +697,7 @@ export const ProjectsPage: React.FC = () => {
                       type="text"
                       value={editVersion}
                       onChange={(e) => setEditVersion(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-800 text-slate-100 focus:border-blue-500 rounded-xl px-3 py-2 text-xs focus:outline-none font-mono"
+                      className="w-full bg-slate-950 border border-slate-800 text-slate-100 focus:border-blue-500 rounded-md px-3 py-1.5 text-xs focus:outline-none font-mono"
                     />
                   </div>
 
@@ -698,13 +711,13 @@ export const ProjectsPage: React.FC = () => {
                       value={editTagInput}
                       onChange={(e) => setEditTagInput(e.target.value)}
                       onKeyDown={handleAddEditTag}
-                      className="w-full bg-slate-950 border border-slate-800 text-slate-100 focus:border-blue-500 rounded-xl px-3 py-2 text-xs focus:outline-none font-mono"
+                      className="w-full bg-slate-950 border border-slate-800 text-slate-100 focus:border-blue-500 rounded-md px-3 py-1.5 text-xs focus:outline-none font-mono"
                     />
                   </div>
                 </div>
 
                 {editTags.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 p-2 bg-slate-950/60 border border-slate-800/80 rounded-xl">
+                  <div className="flex flex-wrap gap-1.5 p-2 bg-slate-950/60 border border-slate-800/80 rounded-md">
                     {editTags.map(t => (
                       <span key={t} className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-950/60 border border-emerald-800/60 text-emerald-300">
                         #{t}
@@ -724,14 +737,14 @@ export const ProjectsPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setEditModalProject(null)}
-                    className="px-3.5 py-1.5 text-xs font-semibold text-slate-400 hover:text-slate-200 cursor-pointer"
+                    className="px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-slate-200 cursor-pointer"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
                     disabled={submittingAction}
-                    className="flex items-center gap-1.5 px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold shadow-xs disabled:opacity-50 cursor-pointer"
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-md text-xs font-semibold shadow-xs disabled:opacity-50 cursor-pointer"
                   >
                     {submittingAction ? <RefreshCw size={13} className="animate-spin" /> : <Check size={13} />}
                     <span>Guardar Cambios</span>
@@ -739,23 +752,24 @@ export const ProjectsPage: React.FC = () => {
                 </div>
               </form>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
-        {/* MODAL 3: Clonación Profunda (Deep Copy) */}
-        {cloneModalProject && (
+        {/* MODAL 3: Clonación Profunda */}
+        {cloneModalProject && createPortal(
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xs p-4">
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-5 shadow-2xl">
+            <div className="bg-slate-900 border border-slate-800 rounded-lg w-full max-w-md p-5 shadow-xl animate-fade-in">
               <div className="flex justify-between items-center pb-3 border-b border-slate-800 mb-4">
                 <div className="flex items-center gap-2">
-                  <Copy size={18} className="text-blue-400" />
-                  <h2 className="text-sm font-bold text-slate-100">Clonar Proyecto (Deep Copy)</h2>
+                  <Copy size={16} className="text-blue-400" />
+                  <h2 className="text-sm font-bold text-slate-100">Clonar Proyecto</h2>
                 </div>
                 <button 
                   onClick={() => setCloneModalProject(null)}
-                  className="p-1 text-slate-400 hover:text-slate-200 rounded-lg cursor-pointer"
+                  className="p-1 text-slate-400 hover:text-slate-200 rounded cursor-pointer"
                 >
-                  <X size={16} />
+                  <X size={15} />
                 </button>
               </div>
 
@@ -773,7 +787,7 @@ export const ProjectsPage: React.FC = () => {
                     required
                     value={cloneName}
                     onChange={(e) => setCloneName(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 text-slate-100 focus:border-blue-500 rounded-xl px-3 py-2 text-xs focus:outline-none"
+                    className="w-full bg-slate-950 border border-slate-800 text-slate-100 focus:border-blue-500 rounded-md px-3 py-1.5 text-xs focus:outline-none"
                   />
                 </div>
 
@@ -781,14 +795,14 @@ export const ProjectsPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setCloneModalProject(null)}
-                    className="px-3.5 py-1.5 text-xs font-semibold text-slate-400 hover:text-slate-200 cursor-pointer"
+                    className="px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-slate-200 cursor-pointer"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
                     disabled={submittingAction}
-                    className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold shadow-xs disabled:opacity-50 cursor-pointer"
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-md text-xs font-semibold shadow-xs disabled:opacity-50 cursor-pointer"
                   >
                     {submittingAction ? <RefreshCw size={13} className="animate-spin" /> : <Check size={13} />}
                     <span>Confirmar y Abrir Copia</span>
@@ -796,16 +810,17 @@ export const ProjectsPage: React.FC = () => {
                 </div>
               </form>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
-        {/* MODAL 4: Eliminar Proyecto (Soft Delete) */}
-        {deleteModalProject && (
+        {/* MODAL 4: Eliminar Proyecto (Mover a la Papelera) */}
+        {deleteModalProject && createPortal(
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xs p-4">
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-5 shadow-2xl">
+            <div className="bg-slate-900 border border-slate-800 rounded-lg w-full max-w-md p-5 shadow-xl animate-fade-in">
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-xl bg-rose-600/20 border border-rose-500/40 flex items-center justify-center text-rose-400 shrink-0">
-                  <AlertTriangle size={20} />
+                <div className="w-9 h-9 rounded-md bg-rose-600/20 border border-rose-500/40 flex items-center justify-center text-rose-400 shrink-0">
+                  <AlertTriangle size={18} />
                 </div>
                 <div>
                   <h2 className="text-sm font-bold text-slate-100">Mover a la Papelera</h2>
@@ -821,7 +836,7 @@ export const ProjectsPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setDeleteModalProject(null)}
-                  className="px-3.5 py-1.5 text-xs font-semibold text-slate-400 hover:text-slate-200 cursor-pointer"
+                  className="px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-slate-200 cursor-pointer"
                 >
                   Cancelar
                 </button>
@@ -829,23 +844,24 @@ export const ProjectsPage: React.FC = () => {
                   type="button"
                   onClick={handleDeleteProject}
                   disabled={submittingAction}
-                  className="flex items-center gap-1.5 px-4 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-semibold shadow-xs disabled:opacity-50 cursor-pointer"
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-md text-xs font-semibold shadow-xs disabled:opacity-50 cursor-pointer"
                 >
                   {submittingAction ? <RefreshCw size={13} className="animate-spin" /> : <Trash2 size={13} />}
                   <span>Mover a Papelera</span>
                 </button>
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
-        {/* MODAL 5: Purga Definitiva (Hard Delete) */}
-        {purgeModalProject && (
+        {/* MODAL 5: Purga Definitiva */}
+        {purgeModalProject && createPortal(
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-xs p-4">
-            <div className="bg-slate-900 border border-rose-800/80 rounded-2xl w-full max-w-md p-5 shadow-2xl">
+            <div className="bg-slate-900 border border-rose-800/80 rounded-lg w-full max-w-md p-5 shadow-xl animate-fade-in">
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-xl bg-rose-950 border border-rose-800 flex items-center justify-center text-rose-400 shrink-0">
-                  <Trash2 size={20} />
+                <div className="w-9 h-9 rounded-md bg-rose-950 border border-rose-800 flex items-center justify-center text-rose-400 shrink-0">
+                  <Trash2 size={18} />
                 </div>
                 <div>
                   <h2 className="text-sm font-bold text-rose-200">Eliminación Física Definitiva</h2>
@@ -862,7 +878,7 @@ export const ProjectsPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setPurgeModalProject(null)}
-                  className="px-3.5 py-1.5 text-xs font-semibold text-slate-400 hover:text-slate-200 cursor-pointer"
+                  className="px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-slate-200 cursor-pointer"
                 >
                   Cancelar
                 </button>
@@ -870,14 +886,15 @@ export const ProjectsPage: React.FC = () => {
                   type="button"
                   onClick={handlePurgeProject}
                   disabled={submittingAction}
-                  className="flex items-center gap-1.5 px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold shadow-xs disabled:opacity-50 cursor-pointer"
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-md text-xs font-semibold shadow-xs disabled:opacity-50 cursor-pointer"
                 >
                   {submittingAction ? <RefreshCw size={13} className="animate-spin" /> : <Trash2 size={13} />}
                   <span>Sí, Eliminar Definitivamente</span>
                 </button>
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
         {/* History Modal (CU05) */}

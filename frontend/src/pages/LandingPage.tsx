@@ -50,7 +50,7 @@ export const LandingPage: React.FC = () => {
     {
       icon: <Sparkles className="w-6 h-6 text-amber-400" />,
       title: 'Asistencia IA Multimodal',
-      description: 'Modelado por dictado de voz (PLN) y digitalización de fotos de pizarra con Circuit Breaker y fallback resiliente (Gemini 2.5 Flash → Groq).',
+      description: 'Modelado por dictado de voz y digitalización de fotos de pizarra con redundancia multimodelo y fallback resiliente.',
       tag: 'Multi-IA Fallback'
     },
     {
@@ -83,13 +83,13 @@ export const LandingPage: React.FC = () => {
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate('/login')}
-              className="px-4 py-2 text-sm font-medium text-slate-200 hover:text-white bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 rounded-lg transition-all"
+              className="px-4 py-2 text-sm font-medium text-slate-200 hover:text-white bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 rounded-md transition-all cursor-pointer"
             >
               Iniciar Sesión
             </button>
             <button
               onClick={() => navigate('/login')}
-              className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-500 rounded-lg shadow-md shadow-blue-500/20 transition-all group"
+              className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-500 rounded-md shadow-md shadow-blue-500/20 transition-all group cursor-pointer"
             >
               <span>Comenzar</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
@@ -118,21 +118,21 @@ export const LandingPage: React.FC = () => {
 
         {/* Subtitle description */}
         <p className="mt-6 text-base sm:text-lg lg:text-xl text-slate-300 max-w-3xl mx-auto leading-relaxed">
-          Diseña diagramas de clases UML 2.5+ con normalización relacional en tiempo real, interoperabilidad XMI (ArchiTec) y generación automatizada de backend en <strong>Spring Boot (4 capas)</strong>, <strong>DDL PostgreSQL</strong> y <strong>Postman v2.1</strong> con asistencia de IA multimodal.
+          Diseña diagramas de clases UML 2.5+ con normalización relacional en tiempo real, interoperabilidad XMI ArchiTec y generación automatizada de backend en <strong>Spring Boot en 4 capas</strong>, <strong>DDL PostgreSQL</strong> y <strong>colecciones Postman v2.1</strong> con asistencia de IA multimodal.
         </p>
 
         {/* Primary CTA Buttons */}
         <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 max-w-md mx-auto">
           <button
             onClick={() => navigate('/login')}
-            className="w-full sm:w-auto px-7 py-3.5 rounded-xl text-base font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-xl shadow-blue-500/25 flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
+            className="w-full sm:w-auto px-7 py-3 rounded-md text-base font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-xl shadow-blue-500/25 flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
           >
             <span>Iniciar Modelador CASE</span>
             <ArrowRight className="w-5 h-5" />
           </button>
           <a
             href="#caracteristicas"
-            className="w-full sm:w-auto px-7 py-3.5 rounded-xl text-base font-semibold text-slate-200 bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 flex items-center justify-center gap-2 transition-all"
+            className="w-full sm:w-auto px-7 py-3 rounded-md text-base font-semibold text-slate-200 bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 flex items-center justify-center gap-2 transition-all cursor-pointer"
           >
             <Layers className="w-5 h-5 text-indigo-400" />
             <span>Ver Características</span>
@@ -141,28 +141,28 @@ export const LandingPage: React.FC = () => {
 
         {/* Key Technical Badges */}
         <div className="mt-14 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 max-w-4xl mx-auto text-left">
-          <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm flex items-center gap-3">
+          <div className="p-3.5 rounded-lg bg-slate-900/60 border border-slate-800/80 backdrop-blur-xs flex items-center gap-3">
             <Server className="w-5 h-5 text-blue-400 shrink-0" />
             <div>
               <div className="text-xs text-slate-400 font-mono">Backend</div>
               <div className="text-sm font-semibold text-white">Spring Boot 4 Capas</div>
             </div>
           </div>
-          <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm flex items-center gap-3">
+          <div className="p-3.5 rounded-lg bg-slate-900/60 border border-slate-800/80 backdrop-blur-xs flex items-center gap-3">
             <Lock className="w-5 h-5 text-emerald-400 shrink-0" />
             <div>
               <div className="text-xs text-slate-400 font-mono">Seguridad</div>
               <div className="text-sm font-semibold text-white">Sesión Volátil JWT</div>
             </div>
           </div>
-          <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm flex items-center gap-3">
+          <div className="p-3.5 rounded-lg bg-slate-900/60 border border-slate-800/80 backdrop-blur-xs flex items-center gap-3">
             <Cpu className="w-5 h-5 text-purple-400 shrink-0" />
             <div>
               <div className="text-xs text-slate-400 font-mono">Resiliencia</div>
               <div className="text-sm font-semibold text-white">Multi-IA Fallback</div>
             </div>
           </div>
-          <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm flex items-center gap-3">
+          <div className="p-3.5 rounded-lg bg-slate-900/60 border border-slate-800/80 backdrop-blur-xs flex items-center gap-3">
             <Share2 className="w-5 h-5 text-cyan-400 shrink-0" />
             <div>
               <div className="text-xs text-slate-400 font-mono">Concurrencia</div>
@@ -188,11 +188,11 @@ export const LandingPage: React.FC = () => {
             {features.map((feat, idx) => (
               <div
                 key={idx}
-                className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800/90 hover:border-slate-700/90 hover:bg-slate-850 transition-all duration-300 group flex flex-col justify-between"
+                className="p-6 rounded-lg bg-slate-900/80 border border-slate-800/90 hover:border-slate-700/90 hover:bg-slate-850 transition-all duration-300 group flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <div className="p-2.5 rounded-xl bg-slate-800/80 border border-slate-700/60 group-hover:scale-105 transition-transform">
+                    <div className="p-2.5 rounded-md bg-slate-800/80 border border-slate-700/60 group-hover:scale-105 transition-transform">
                       {feat.icon}
                     </div>
                     <span className="text-[11px] font-mono px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700/50">
@@ -215,7 +215,7 @@ export const LandingPage: React.FC = () => {
       {/* Architecture & PUDS Section */}
       <section id="arquitectura" className="relative z-10 py-20 border-t border-slate-800/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="p-8 sm:p-12 rounded-3xl bg-gradient-to-br from-slate-900/90 to-slate-950/90 border border-slate-800/90 shadow-2xl">
+          <div className="p-8 sm:p-12 rounded-lg bg-gradient-to-br from-slate-900/90 to-slate-950/90 border border-slate-800/90 shadow-2xl">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
               <div>
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-400 text-xs font-semibold font-mono uppercase mb-4">
@@ -262,7 +262,7 @@ export const LandingPage: React.FC = () => {
               </div>
 
               {/* Code Generation Visual Preview */}
-              <div className="bg-slate-950 rounded-2xl border border-slate-800 p-5 font-mono text-xs text-slate-300 shadow-inner overflow-hidden">
+              <div className="bg-slate-950 rounded-md border border-slate-800 p-5 font-mono text-xs text-slate-300 shadow-inner overflow-hidden">
                 <div className="flex items-center justify-between pb-3 border-b border-slate-800 text-slate-500 mb-3">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-red-500/80"></div>
@@ -278,9 +278,9 @@ export const LandingPage: React.FC = () => {
                   <div className="pl-4 text-indigo-400">├── repository/PacienteRepository.java</div>
                   <div className="pl-4 text-emerald-400">└── model/Paciente.java</div>
                   <div>src/main/resources/</div>
-                  <div className="pl-4 text-amber-400">├── schema.sql (PostgreSQL 17)</div>
-                  <div className="pl-4 text-cyan-400">└── postman_collection.json (v2.1)</div>
-                  <div className="text-slate-300 pt-2 font-bold">pom.xml (Spring Boot 4.1.0)</div>
+                  <div className="pl-4 text-amber-400">├── schema.sql • PostgreSQL 17</div>
+                  <div className="pl-4 text-cyan-400">└── postman_collection.json • Postman v2.1</div>
+                  <div className="text-slate-300 pt-2 font-bold">pom.xml • Spring Boot 4.1.0</div>
                 </div>
               </div>
             </div>

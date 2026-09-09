@@ -4,6 +4,9 @@ import com.sw1.casetool.dto.ClassNodeRequest;
 import com.sw1.casetool.dto.CloneProjectRequest;
 import com.sw1.casetool.dto.CreateProjectRequest;
 import com.sw1.casetool.dto.ProjectResponse;
+import com.sw1.casetool.dto.RelationshipRequest;
+import com.sw1.casetool.dto.SyncDiagramRequest;
+import com.sw1.casetool.dto.FullDiagramResponse;
 import com.sw1.casetool.dto.UpdateProjectRequest;
 import com.sw1.casetool.model.ClassNode;
 import com.sw1.casetool.model.DiagramProject;
@@ -533,5 +536,256 @@ public class DiagramServiceTest {
 
         verify(classNodeRepository).save(any(ClassNode.class));
         verify(diagramHistoryService).recordHistory(eq(mockProject), eq(userId), eq("NODE_CLONED"), eq("CLASS_NODE"), any(), any(), any());
+    }
+
+    // ==========================================
+    // CU09: Conectar Relaciones y Cardinalidades
+    // ==========================================
+
+    @Test
+    @DisplayName("CU09-T1: Debe crear relación de asociación con cardinalidades válidas e historial")
+    void testAddRelationship_Association_Success() {
+        UUID sourceId = UUID.randomUUID();
+        UUID targetId = UUID.randomUUID();
+
+        ClassNode source = ClassNode.builder().id(sourceId).name("Estudiante").project(mockProject).build();
+        ClassNode target = ClassNode.builder().id(targetId).name("Materia").project(mockProject).build();
+
+        RelationshipRequest request = new RelationshipRequest();
+        request.setSourceClassId(sourceId);
+        request.setTargetClassId(targetId);
+        request.setType("association");
+        request.setSourceCardinality("1..*");
+        request.setTargetCardinality("1");
+        request.setLabel("cursa");
+        request.setSourceRole("estudiantes");
+        request.setTargetRole("materia");
+
+        when(projectRepository.findByIdAndIsDeletedFalse(projectId)).thenReturn(Optional.of(mockProject));
+        when(classNodeRepository.findById(sourceId)).thenReturn(Optional.of(source));
+        when(classNodeRepository.findById(targetId)).thenReturn(Optional.of(target));
+        when(relationshipRepository.save(any(Relationship.class))).thenAnswer(i -> {
+            Relationship r = i.getArgument(0);
+            r.setId(UUID.randomUUID());
+            return r;
+        });
+
+        Relationship created = diagramService.addRelationship(projectId, request);
+
+        assertNotNull(created);
+        assertEquals("association", created.getType());
+        assertEquals("1..*", created.getSourceCardinality());
+        assertEquals("1", created.getTargetCardinality());
+        assertEquals("cursa", created.getLabel());
+        assertEquals("estudiantes", created.getSourceRole());
+
+        verify(relationshipRepository).save(any(Relationship.class));
+        verify(diagramHistoryService).recordHistory(eq(mockProject), eq(userId), eq("RELATIONSHIP_CREATED"), eq("RELATIONSHIP"), any(), isNull(), any());
+    }
+
+    @Test
+    @DisplayName("CU09-T2: Debe rechazar auto-herencia directa (A extiende A)")
+    void testAddRelationship_SelfInheritance_ThrowsException() {
+        UUID classId = UUID.randomUUID();
+        ClassNode node = ClassNode.builder().id(classId).name("Persona").project(mockProject).build();
+
+        RelationshipRequest request = new RelationshipRequest();
+        request.setSourceClassId(classId);
+        request.setTargetClassId(classId);
+        request.setType("inheritance");
+
+        when(projectRepository.findByIdAndIsDeletedFalse(projectId)).thenReturn(Optional.of(mockProject));
+        when(classNodeRepository.findById(classId)).thenReturn(Optional.of(node));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+                diagramService.addRelationship(projectId, request)
+        );
+
+        assertTrue(ex.getMessage().contains("Una clase no puede heredarse a sí misma"));
+        verify(relationshipRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("CU09-T3: Debe detectar y bloquear ciclo de herencia circular directo (A -> B y B -> A) [Excepción E1]")
+    void testAddRelationship_DirectCircularInheritance_ThrowsException() {
+        UUID classA = UUID.randomUUID();
+        UUID classB = UUID.randomUUID();
+
+        ClassNode nodeA = ClassNode.builder().id(classA).name("ClaseA").project(mockProject).build();
+        ClassNode nodeB = ClassNode.builder().id(classB).name("ClaseB").project(mockProject).build();
+
+        // Ya existe: ClaseA extiende ClaseB (A -> B)
+        Relationship existingRel = Relationship.builder()
+                .id(UUID.randomUUID())
+                .project(mockProject)
+                .sourceClass(nodeA)
+                .targetClass(nodeB)
+                .type("inheritance")
+                .build();
+
+        when(projectRepository.findByIdAndIsDeletedFalse(projectId)).thenReturn(Optional.of(mockProject));
+        when(classNodeRepository.findById(classB)).thenReturn(Optional.of(nodeB));
+        when(classNodeRepository.findById(classA)).thenReturn(Optional.of(nodeA));
+        when(relationshipRepository.findByProjectId(projectId)).thenReturn(List.of(existingRel));
+
+        // Intento de agregar: ClaseB extiende ClaseA (B -> A)
+        RelationshipRequest request = new RelationshipRequest();
+        request.setSourceClassId(classB);
+        request.setTargetClassId(classA);
+        request.setType("inheritance");
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+                diagramService.addRelationship(projectId, request)
+        );
+
+        assertTrue(ex.getMessage().contains("herencia circular") || ex.getMessage().contains("Excepción E1"));
+        verify(relationshipRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("CU09-T4: Debe detectar y bloquear ciclo de herencia circular transitivo (A -> B -> C y C -> A) [Excepción E1]")
+    void testAddRelationship_TransitiveCircularInheritance_ThrowsException() {
+        UUID classA = UUID.randomUUID();
+        UUID classB = UUID.randomUUID();
+        UUID classC = UUID.randomUUID();
+
+        ClassNode nodeA = ClassNode.builder().id(classA).name("ClaseA").project(mockProject).build();
+        ClassNode nodeB = ClassNode.builder().id(classB).name("ClaseB").project(mockProject).build();
+        ClassNode nodeC = ClassNode.builder().id(classC).name("ClaseC").project(mockProject).build();
+
+        // Ya existe: A -> B y B -> C
+        Relationship rel1 = Relationship.builder().id(UUID.randomUUID()).project(mockProject).sourceClass(nodeA).targetClass(nodeB).type("inheritance").build();
+        Relationship rel2 = Relationship.builder().id(UUID.randomUUID()).project(mockProject).sourceClass(nodeB).targetClass(nodeC).type("inheritance").build();
+
+        when(projectRepository.findByIdAndIsDeletedFalse(projectId)).thenReturn(Optional.of(mockProject));
+        when(classNodeRepository.findById(classC)).thenReturn(Optional.of(nodeC));
+        when(classNodeRepository.findById(classA)).thenReturn(Optional.of(nodeA));
+        when(relationshipRepository.findByProjectId(projectId)).thenReturn(List.of(rel1, rel2));
+
+        // Intento: C extiende A (C -> A) => Cerraría el ciclo A -> B -> C -> A
+        RelationshipRequest request = new RelationshipRequest();
+        request.setSourceClassId(classC);
+        request.setTargetClassId(classA);
+        request.setType("inheritance");
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+                diagramService.addRelationship(projectId, request)
+        );
+
+        assertTrue(ex.getMessage().contains("herencia circular") || ex.getMessage().contains("Excepción E1"));
+        verify(relationshipRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("CU09-T5: Debe rechazar multiplicidad múltiple en el contenedor compuesto de una composición")
+    void testAddRelationship_CompositionMultipleSourceCardinality_ThrowsException() {
+        UUID compId = UUID.randomUUID();
+        UUID partId = UUID.randomUUID();
+
+        ClassNode composite = ClassNode.builder().id(compId).name("Pedido").project(mockProject).build();
+        ClassNode part = ClassNode.builder().id(partId).name("DetallePedido").project(mockProject).build();
+
+        RelationshipRequest request = new RelationshipRequest();
+        request.setSourceClassId(compId);
+        request.setTargetClassId(partId);
+        request.setType("composition");
+        request.setSourceCardinality("*"); // Inválido en composición OMG UML 2.5
+        request.setTargetCardinality("1..*");
+
+        when(projectRepository.findByIdAndIsDeletedFalse(projectId)).thenReturn(Optional.of(mockProject));
+        when(classNodeRepository.findById(compId)).thenReturn(Optional.of(composite));
+        when(classNodeRepository.findById(partId)).thenReturn(Optional.of(part));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+                diagramService.addRelationship(projectId, request)
+        );
+
+        assertTrue(ex.getMessage().contains("contenedor compuesto no puede tener multiplicidad múltiple"));
+        verify(relationshipRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("CU09-T6: En herencia y dependencia las cardinalidades deben limpiarse automáticamente (OMG UML 2.5)")
+    void testAddRelationship_InheritanceClearsCardinalities() {
+        UUID childId = UUID.randomUUID();
+        UUID parentId = UUID.randomUUID();
+
+        ClassNode child = ClassNode.builder().id(childId).name("Docente").project(mockProject).build();
+        ClassNode parent = ClassNode.builder().id(parentId).name("Persona").project(mockProject).build();
+
+        RelationshipRequest request = new RelationshipRequest();
+        request.setSourceClassId(childId);
+        request.setTargetClassId(parentId);
+        request.setType("inheritance");
+        request.setSourceCardinality("1"); // Inadecuado para herencia
+        request.setTargetCardinality("1");
+
+        when(projectRepository.findByIdAndIsDeletedFalse(projectId)).thenReturn(Optional.of(mockProject));
+        when(classNodeRepository.findById(childId)).thenReturn(Optional.of(child));
+        when(classNodeRepository.findById(parentId)).thenReturn(Optional.of(parent));
+        when(relationshipRepository.findByProjectId(projectId)).thenReturn(Collections.emptyList());
+        when(relationshipRepository.save(any(Relationship.class))).thenAnswer(i -> i.getArgument(0));
+
+        Relationship saved = diagramService.addRelationship(projectId, request);
+
+        assertNotNull(saved);
+        assertEquals("inheritance", saved.getType());
+        assertNull(saved.getSourceCardinality());
+        assertNull(saved.getTargetCardinality());
+    }
+
+    @Test
+    @DisplayName("CU09-T7: syncFullDiagram debe persistir y preservar sourceHandle y targetHandle correctamente")
+    void testSyncFullDiagram_PersistsHandlesAndEdges_Success() {
+        UUID node1Id = UUID.randomUUID();
+        UUID node2Id = UUID.randomUUID();
+
+        ClassNode n1 = ClassNode.builder().id(node1Id).name("Docente").project(mockProject).build();
+        ClassNode n2 = ClassNode.builder().id(node2Id).name("Materia").project(mockProject).build();
+
+        when(userProfileRepository.findByEmailIgnoreCase("architect@casetool.com"))
+                .thenReturn(Optional.of(mockUser));
+        when(projectRepository.findByIdAndIsDeletedFalse(projectId))
+                .thenReturn(Optional.of(mockProject));
+        when(classNodeRepository.findByProjectId(projectId))
+                .thenReturn(List.of(n1, n2));
+        when(relationshipRepository.findByProjectId(projectId))
+                .thenReturn(Collections.emptyList());
+
+        when(classNodeRepository.save(any(ClassNode.class))).thenAnswer(i -> i.getArgument(0));
+        when(relationshipRepository.save(any(Relationship.class))).thenAnswer(i -> {
+            Relationship r = i.getArgument(0);
+            if (r.getId() == null) r.setId(UUID.randomUUID());
+            return r;
+        });
+
+        SyncDiagramRequest syncReq = SyncDiagramRequest.builder()
+                .nodes(List.of(
+                        SyncDiagramRequest.SyncNodeItem.builder().id(node1Id.toString()).name("Docente").build(),
+                        SyncDiagramRequest.SyncNodeItem.builder().id(node2Id.toString()).name("Materia").build()
+                ))
+                .edges(List.of(
+                        SyncDiagramRequest.SyncEdgeItem.builder()
+                                .id("new-edge-1")
+                                .source(node1Id.toString())
+                                .target(node2Id.toString())
+                                .type("association")
+                                .sourceCardinality("1")
+                                .targetCardinality("1..*")
+                                .label("dicta")
+                                .sourceHandle("right")
+                                .targetHandle("left")
+                                .build()
+                ))
+                .build();
+
+        FullDiagramResponse response = diagramService.syncFullDiagram(projectId, syncReq, "architect@casetool.com");
+
+        assertNotNull(response);
+        verify(relationshipRepository).save(argThat(r ->
+                "right".equals(r.getSourceHandle()) &&
+                "left".equals(r.getTargetHandle()) &&
+                "dicta".equals(r.getLabel())
+        ));
     }
 }

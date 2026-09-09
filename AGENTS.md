@@ -10,9 +10,9 @@
 ## 1. Enfoque de Desarrollo y Estado Real de los Casos de Uso (CU)
 
 El desarrollo del sistema se ejecuta **estrictamente Caso de Uso por Caso de Uso (CU por CU)** bajo el Proceso Unificado de Desarrollo de Software (PUDS).
-* **Realizados Correctamente y Validados:** Exclusivamente hasta el **CU08**.
-* **Todo lo posterior a CU08:** Eran maquetas/demos no definitivas que deben ser desarrolladas formalmente desde cero paso a paso.
-* **Foco Inmediato Siguiente:** **CU09** (Conectar Relaciones y Cardinalidades).
+* **Realizados Correctamente y Validados:** Exclusivamente hasta el **CU10**.
+* **Todo lo posterior a CU10:** Eran maquetas/demos no definitivas que deben ser desarrolladas formalmente desde cero paso a paso.
+* **Foco Inmediato Siguiente:** **CU11** (Exportar Modelo y Documentación Técnica).
 
 ### Matriz de Estado de Casos de Uso por Ciclos
 
@@ -27,8 +27,8 @@ El desarrollo del sistema se ejecuta **estrictamente Caso de Uso por Caso de Uso
 | **CU06** | Ejecutar Tutorial Onboarding (< 2 min) | Ciclo 1 | `A3: Colaborador` / `A2: Arquitecto` | **Implementado** | Guía interactiva paso a paso para adopción rápida del editor y herramientas CASE (< 120s), spotlight no invasivo, gatillado automático/manual ("Guía Rápida") y persistencia en `user_profiles.preferences`. |
 | **CU07** | Crear Proyecto desde Plantilla Base | Ciclo 1 | `A2: Arquitecto` | **Implementado** | Catálogo interactivo de plantillas de dominio (Académico, Hospitalario, Facturación y Blanco), scaffolding profundo transaccional de nodos y relaciones OMG UML 2.5, remapeo consistente de IDs y trazabilidad en bitácora e historial. |
 | **CU08** | Modelar Clases UML (Tipos y Visibilidad) | Ciclo 1 | `A2: Arquitecto` / `A3: Colaborador` | **Implementado** | Modelado canónico OMG UML 2.5 (3 compartimentos, visibilidades `+`, `-`, `#`, `~`, estereotipos con guillemets, cursiva abstract, subrayado static, badge `{PK}`, catálogo Java 21 / PostgreSQL 17, firmas con parámetros tipados `(p: Type)`), validación de unicidad de nombre en frontend/backend (`E1: Nombre Duplicado`), clonación atómica profunda (`cloneClassNode`) con offset `(+48, +48)` y trazabilidad completa. |
-| **CU09** | Conectar Relaciones y Cardinalidades | Ciclo 1 | `A2: Arquitecto` / `A3: Colaborador` | **Pendiente** | Trazado de asociaciones, agregaciones, composiciones, herencias y dependencias con multiplicidades. |
-| **CU10** | Validar Normalización Lógica (1NF a 3NF) | Ciclo 1 | `A2: Arquitecto` / `A3: Colaborador` | **Pendiente** | Motor heurístico de auditoría de normalización para alertar atributos compuestos, transitivos o redundantes. |
+| **CU09** | Conectar Relaciones y Cardinalidades | Ciclo 1 | `A2: Arquitecto` / `A3: Colaborador` | **Implementado** | Trazado canónico OMG UML 2.5 (asociación dirigida con flecha abierta, agregación con rombo hueco, composición con rombo relleno, generalización y realización con triángulo cerrado, dependencia con línea discontinua), omisión de cardinalidad en relaciones estructurales, restricción de composición simple en contenedor, roles (source/target), prevención de ciclos de herencia directos y transitivos vía DFS en backend y frontend (E1: Herencia Circular), botón de inversión de dirección atómica, y sistema de historial en lienzo con atajos de teclado Deshacer/Rehacer (Ctrl+Z, Ctrl+Y). |
+| **CU10** | Validar Normalización Lógica (1NF a 3NF) | Ciclo 1 | `A2: Arquitecto` / `A3: Colaborador` | **Implementado** | Motor heurístico de auditoría de normalización relacional (TOM y Codd). Detección de claves primarias faltantes en 1NF con inyección asistida de `{PK}`, atributos multivaluados y repetitivos, verificación de FKs en relaciones $1..*$ en 2NF, descomposición de relaciones $*..*$ en clases intermedias asociativas en 3NF, dependencias transitivas y campos calculados. Semáforo de calidad (0 a 100%), modal interactivo con filtros, certificación de auditoría inmutable en backend (`audit_logs`) y suite de pruebas unitarias al 100%. |
 | **CU11** | Exportar Modelo y Documentación Técnica | Ciclo 2 | `A2: Arquitecto` / `A3: Colaborador` | **Pendiente** | 4 formatos: OMG XMI 2.1 (ArchiTec/StarUML), PNG alta resolución, PDF técnico ejecutivo y Excel (.xlsx) con tipo de dato SQL/JPA por columna. |
 | **CU12** | Importar Modelo desde XMI (ArchiTec) | Ciclo 2 | `A2: Arquitecto` | **Pendiente** | Parser bidireccional XML/XMI OMG para importar modelos externos de ArchiTec y StarUML directamente al canvas. |
 | **CU13** | Generar Backend Spring Boot (4 Capas en ZIP) | Ciclo 2 | `A2: Arquitecto` | **Pendiente** | Generación automatizada de código Java 21: Entities JPA, Repositories, Services y Controllers empaquetados en `.zip`. |
@@ -96,7 +96,11 @@ El desarrollo del sistema se ejecuta **estrictamente Caso de Uso por Caso de Uso
 
 ## 4. Reglas Inviolables de Interfaz de Usuario (UI/UX)
 
-1. **Pure Dark Mode Estricto:** Paleta visual de alto contraste (`bg-slate-950`, `bg-slate-900`, acentos `blue-500`, `purple-500`, `emerald-500`).
+1. **Identidad Visual Profesional e IHC Equilibrada (Prohibición de Colores Excesivamente Oscuros):**
+   * Queda erradicado el modo ultra oscuro opresivo (`bg-slate-950` monocromático fúnebre).
+   * La plataforma implementa las 2 paletas ergonómicas oficiales de alta fidelidad: **Titanio Cálido** (antracita cálido con acentos ámbar dorado y calidez orgánica) y **Grafito Obsidiana** (grafito neutro de precisión con acentos índigo y zafiro cósmico).
+   * **Conservación de la Aurora Boreal:** Se mantiene intacta la Aurora Boreal multicapa ambiental como fondo atmosférico vivo y sutil.
+   * **Cursor Reactivo Distintivo:** Cursor de baja luminosidad ambiental, cola corta de seguimiento inercial y punto seguidor de precisión con ondas ripple táctiles.
 2. **Cero Emojis:** Toda la iconografía debe ser 100% vectorial con `lucide-react`. Sin emojis en ninguna vista o texto.
 3. **Cero Redundancia de Navegación:**
    * El botón "Volver al Dashboard" reside únicamente en el Header principal para todas las subpáginas (`/admin/users`, `/settings`, `/editor`).
@@ -140,4 +144,32 @@ El desarrollo del sistema se ejecuta **estrictamente Caso de Uso por Caso de Uso
 * **Solución Aplicada:**
   1. Se eliminó la restricción CHECK restrictiva en Supabase PostgreSQL (`ALTER TABLE diagram_history DROP CONSTRAINT IF EXISTS diagram_history_action_type_check;`).
   2. Se configuró enriquecimiento defensivo en frontend para extraer `err.response?.data?.message` en lugar de mensajes genéricos en los toasts.
+
+### Incidente BD-02: Pérdida de Handles y Colapso de Relaciones al Guardar Diagrama
+* **Síntoma:** Al guardar el diagrama, una flecha recién conectada entre dos clases desaparecía visualmente o se superponía con otra relación preexistente generando cardinalidades montadas ("1 1 *"), y a continuación el lienzo no permitía volver a conectar las clases.
+* **Causa Raíz:**
+  1. Ni la tabla `relationships` en PostgreSQL 17 ni la entidad `Relationship` ni los DTOs persistían `source_handle` y `target_handle`. Al sincronizar (`syncFullDiagram`), React Flow recibía `mappedEdges` sin handles y colapsaba todas las relaciones entre las mismas clases al primer handle disponible (`bottom` -> `top`), ocultando la nueva arista detrás de la anterior y superponiendo los textos de cardinalidad.
+  2. En React Flow por defecto (`ConnectionMode.Strict`), los handles de tipo `target` no pueden iniciar conexiones y los de tipo `source` no pueden recibirlas, y la función `addEdge` descartaba como duplicadas las aristas con mismos extremos sin handles explícitos.
+* **Solución Aplicada:**
+  1. Se agregaron las columnas `source_handle` y `target_handle` en PostgreSQL 17 (`relationships`), mapeadas en `Relationship.java`, `RelationshipRequest.java`, `SyncDiagramRequest.java`, `DiagramService.java` y `diagramStore.ts`.
+  2. Se configuró `connectionMode={ConnectionMode.Loose}` en `DiagramCanvas.tsx` y `isConnectable={true}` en los 4 puertos magnéticos de `ClassNodeComponent.tsx`, permitiendo conexiones libres y fluidas en cualquier dirección entre cualquier handle.
+  3. En `diagramStore.ts` (`onConnect`), se eliminó el descarte de duplicados de `addEdge` para permitir múltiples relaciones UML válidas entre clases.
+  4. En `RelationshipEdge.tsx`, se implementó cálculo geométrico ortogonal de posición de etiquetas según la orientación real del puerto (`sourcePosition` y `targetPosition`), eliminando el solapamiento de cardinalidades y roles.
+
+### Incidente BD-03: Duplicación de Proyectos en Guardado y Solapamiento de Header sobre Sidebar
+* **Síntoma:**
+  1. Cada vez que se guardaba el diagrama (manual o auto-guardado en segundo plano), se creaba una copia redundante del proyecto "Sistema de Gestión Académica" en la base de datos PostgreSQL 17, llenando la papelera y el listado de proyectos.
+  2. Al ingresar al lienzo `/editor`, el navbar superior (`Header.tsx`) cubría y ocultaba la cabecera del `Sidebar.tsx` ("Gobernanza / Arquitectura", rol y botón de cierre).
+  3. La barra lateral mostraba "Modelo Activo" con un punto verde vacío y sin texto cuando no había ningún proyecto seleccionado.
+* **Causa Raíz:**
+  1. `diagramStore.ts` iniciaba con un estado mock fijo (`sampleProject` con id `'sample-project-id'`). En `saveDiagram`, la condición `if (!currentProject?.id || !isUUID(currentProject.id))` trataba el ID como no persistido y disparaba silenciosamente `api.createProject()`. Además, el auto-guardado en `MainLayout.tsx` se disparaba cada 30 segundos, creando copias continuas sin control.
+  2. En `MainLayout.tsx` y `AppLayout.tsx`, el drawer del `aside` declaraba `fixed ... inset-y-0 left-0`. Al tener `inset-y-0` (`top: 0`), su cabecera quedaba oculta detrás del `Header` (`h-14`, 56px) debido al contexto de apilamiento (`z-30` del header vs `z-10` del contenedor).
+  3. No se persistía en `localStorage` el último proyecto abierto, provocando que al entrar a `/editor` se inyectaran nuevamente los datos dummy.
+* **Solución Aplicada:**
+  1. Se eliminaron por completo `sampleProject`, `sampleNodes` y `sampleEdges`. El estado inicial de `diagramStore` es estrictamente limpio (`project: null`, `nodes: []`, `edges: []`).
+  2. `saveDiagram()` ahora valida que exista un proyecto con UUID persistido y ejecuta exclusivamente `api.syncDiagram()`. Nunca crea proyectos silenciosamente.
+  3. En `MainLayout.tsx`, al navegar a `/editor` sin ID de ruta, se consulta `localStorage.getItem('case_last_project_id')`. Si existe, redirige y carga dicho proyecto; si no existe, permanece en el lienzo limpio mostrando un estado vacío profesional ("Ningún modelo UML abierto") con acciones para ir a "Mis Proyectos" o "Crear Modelo".
+  4. Se corrigió el posicionamiento del sidebar en `MainLayout.tsx` y `AppLayout.tsx` a `fixed top-14 bottom-0 left-0 z-40 md:relative md:top-0 md:h-full md:z-20` (y el backdrop móvil a `fixed top-14 bottom-0 inset-x-0`), garantizando que la barra lateral comience exactamente a 56px debajo del navbar y nunca sea solapada.
+  5. En `Sidebar.tsx`, el card "Modelo Activo" valida la existencia de un proyecto real; en su ausencia muestra "Ningún modelo activo" con un botón de acceso directo a "Ver Mis Proyectos".
+
 

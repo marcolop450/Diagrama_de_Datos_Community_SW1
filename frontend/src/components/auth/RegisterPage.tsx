@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import { Logo } from '../common/Logo';
 import { AuroraBackground } from '../common/AuroraBackground';
+import { AppPaletteId, APP_PALETTES } from '../../constants/canvasThemes';
 import toast from 'react-hot-toast';
 import { 
   Lock, 
@@ -13,7 +14,8 @@ import {
   EyeOff, 
   ArrowLeft, 
   ShieldCheck,
-  AtSign
+  AtSign,
+  Sparkles
 } from 'lucide-react';
 
 export const RegisterPage: React.FC = () => {
@@ -24,8 +26,24 @@ export const RegisterPage: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const [currentPalette, setCurrentPalette] = useState<AppPaletteId>(() => {
+    return (localStorage.getItem('case_app_palette') as AppPaletteId) || 'warm-titanium';
+  });
+
   const navigate = useNavigate();
   const { register } = useAuthStore();
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-palette', currentPalette);
+    localStorage.setItem('case_app_palette', currentPalette);
+  }, [currentPalette]);
+
+  const togglePalette = () => {
+    const next: AppPaletteId = currentPalette === 'warm-titanium' ? 'obsidian-graphite' : 'warm-titanium';
+    setCurrentPalette(next);
+    toast.success(`Paleta ${APP_PALETTES[next].name} activada`);
+  };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,16 +90,22 @@ export const RegisterPage: React.FC = () => {
     }
   };
 
+  const isWarm = currentPalette === 'warm-titanium';
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4 relative overflow-hidden select-none font-sans">
+    <div className="min-h-screen text-slate-100 flex items-center justify-center p-4 relative overflow-hidden select-none font-sans" style={{ backgroundColor: 'var(--bg-base)' }}>
       {/* Aurora Ambient Background */}
-      <AuroraBackground opacity={0.75} />
+      <AuroraBackground opacity={0.8} />
 
       {/* Register Card */}
-      <div className="max-w-md w-full bg-slate-900/90 border border-slate-800/90 rounded-3xl shadow-2xl p-6 sm:p-8 backdrop-blur-2xl relative z-10 transition-all animate-page-enter">
+      <div className={`max-w-lg w-full rounded-2xl shadow-2xl p-6 sm:p-8 backdrop-blur-2xl relative z-10 transition-all duration-300 border animate-page-enter ${
+        isWarm 
+          ? 'bg-zinc-900/90 border-zinc-700/80 shadow-zinc-950/60' 
+          : 'bg-[#181a20]/90 border-[#2b2f3a]/90 shadow-black/70'
+      }`}>
         
         {/* Top Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-6 gap-2">
           <Link
             to="/"
             className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors group"
@@ -90,9 +114,26 @@ export const RegisterPage: React.FC = () => {
             <span>Volver al Inicio</span>
           </Link>
 
-          <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[10px] font-mono">
-            <ShieldCheck className="w-3 h-3" />
-            <span>Plan Community Gratis</span>
+          <div className="flex items-center gap-2">
+            {/* Quick Palette Switcher */}
+            <button
+              type="button"
+              onClick={togglePalette}
+              title={`Cambiar a ${isWarm ? 'Grafito Obsidiana' : 'Titanio Cálido'}`}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border transition-all cursor-pointer ${
+                isWarm
+                  ? 'bg-amber-500/10 border-amber-500/30 text-amber-300 hover:bg-amber-500/20'
+                  : 'bg-indigo-500/10 border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/20'
+              }`}
+            >
+              <Sparkles size={12} className={isWarm ? 'text-amber-400' : 'text-indigo-400'} />
+              <span>{isWarm ? 'Titanio Cálido' : 'Grafito Obsidiana'}</span>
+            </button>
+
+            <div className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-mono">
+              <ShieldCheck className="w-3 h-3" />
+              <span>Herramienta CASE</span>
+            </div>
           </div>
         </div>
 
@@ -124,7 +165,11 @@ export const RegisterPage: React.FC = () => {
                 spellCheck="false"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="w-full bg-slate-950/90 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl pl-10 pr-3 py-2.5 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none transition-all"
+                className={`w-full bg-slate-950/90 border rounded-xl pl-10 pr-3 py-2.5 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none transition-all ${
+                  isWarm
+                    ? 'border-zinc-700/80 focus:border-amber-500 focus:ring-1 focus:ring-amber-500/40'
+                    : 'border-slate-700/80 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/40'
+                }`}
                 placeholder="Ing. Marco Lopez"
               />
             </div>
@@ -148,7 +193,11 @@ export const RegisterPage: React.FC = () => {
                   spellCheck="false"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full bg-slate-950/90 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl pl-10 pr-3 py-2.5 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none transition-all"
+                  className={`w-full bg-slate-950/90 border rounded-xl pl-10 pr-3 py-2.5 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none transition-all ${
+                    isWarm
+                      ? 'border-zinc-700/80 focus:border-amber-500 focus:ring-1 focus:ring-amber-500/40'
+                      : 'border-slate-700/80 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/40'
+                  }`}
                   placeholder="m_ale"
                 />
               </div>
@@ -169,7 +218,11 @@ export const RegisterPage: React.FC = () => {
                   spellCheck="false"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-slate-950/90 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl pl-10 pr-3 py-2.5 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none transition-all"
+                  className={`w-full bg-slate-950/90 border rounded-xl pl-10 pr-3 py-2.5 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none transition-all ${
+                    isWarm
+                      ? 'border-zinc-700/80 focus:border-amber-500 focus:ring-1 focus:ring-amber-500/40'
+                      : 'border-slate-700/80 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/40'
+                  }`}
                   placeholder="marco@correo.com"
                 />
               </div>
@@ -192,7 +245,11 @@ export const RegisterPage: React.FC = () => {
                   autoComplete="new-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-slate-950/90 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl pl-10 pr-8 py-2.5 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none transition-all font-mono"
+                  className={`w-full bg-slate-950/90 border rounded-xl pl-10 pr-8 py-2.5 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none transition-all font-mono ${
+                    isWarm
+                      ? 'border-zinc-700/80 focus:border-amber-500 focus:ring-1 focus:ring-amber-500/40'
+                      : 'border-slate-700/80 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/40'
+                  }`}
                   placeholder="••••••••"
                 />
                 <button
@@ -219,7 +276,11 @@ export const RegisterPage: React.FC = () => {
                   autoComplete="new-password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full bg-slate-950/90 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl pl-10 pr-3 py-2.5 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none transition-all font-mono"
+                  className={`w-full bg-slate-950/90 border rounded-xl pl-10 pr-3 py-2.5 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none transition-all font-mono ${
+                    isWarm
+                      ? 'border-zinc-700/80 focus:border-amber-500 focus:ring-1 focus:ring-amber-500/40'
+                      : 'border-slate-700/80 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/40'
+                  }`}
                   placeholder="••••••••"
                 />
               </div>
@@ -229,11 +290,15 @@ export const RegisterPage: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold py-3 rounded-xl transition-all shadow-lg shadow-blue-500/25 disabled:opacity-50 flex items-center justify-center gap-2 text-xs sm:text-sm active:scale-[0.99] cursor-pointer"
+            className={`w-full mt-3 font-semibold py-2.5 rounded-xl transition-all shadow-md disabled:opacity-50 flex items-center justify-center gap-2 text-xs sm:text-sm active:scale-[0.99] cursor-pointer ${
+              isWarm
+                ? 'bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-zinc-950 font-bold shadow-amber-500/20'
+                : 'bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white shadow-indigo-500/25'
+            }`}
           >
             {loading ? (
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
                 <span>Creando cuenta de usuario...</span>
               </div>
             ) : (
@@ -245,10 +310,15 @@ export const RegisterPage: React.FC = () => {
           </button>
         </form>
 
-        <div className="mt-5 pt-4 border-t border-slate-800 text-center">
+        <div className="mt-5 pt-4 border-t border-slate-800/80 text-center">
           <p className="text-xs text-slate-400">
             ¿Ya tienes una cuenta registrada?{' '}
-            <Link to="/login" className="text-blue-400 hover:text-blue-300 font-semibold transition-colors">
+            <Link 
+              to="/login" 
+              className={`font-semibold transition-colors ${
+                isWarm ? 'text-amber-400 hover:text-amber-300' : 'text-indigo-400 hover:text-indigo-300'
+              }`}
+            >
               Iniciar Sesión
             </Link>
           </p>

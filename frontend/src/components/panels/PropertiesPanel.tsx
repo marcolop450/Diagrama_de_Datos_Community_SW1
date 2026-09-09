@@ -8,14 +8,18 @@ import {
   Key,
   Sparkles,
   Copy,
-  AlertCircle
+  ClipboardCopy,
+  ClipboardPaste,
+  AlertCircle,
+  ArrowLeftRight,
+  Info
 } from 'lucide-react';
 import { ClassAttribute, ClassMethod } from '../../types/diagram';
 import toast from 'react-hot-toast';
 
 const CARDINALITY_OPTIONS = ['1', '0..1', '1..*', '0..*', '*'];
-const COMMON_TYPES = ['Long', 'Integer', 'Double', 'BigDecimal', 'String', 'Boolean', 'LocalDate', 'LocalDateTime', 'UUID', 'byte[]'];
-const COMMON_RETURN_TYPES = ['void', 'String', 'Long', 'Integer', 'Double', 'Boolean', 'UUID', 'List<T>', 'Optional<T>'];
+const COMMON_TYPES = ['Long', 'Integer', 'Double', 'BigDecimal', 'String', 'Boolean', 'LocalDate', 'LocalDateTime', 'UUID', 'String[]', 'Integer[]', 'List<String>', 'byte[]'];
+const COMMON_RETURN_TYPES = ['void', 'String', 'Long', 'Integer', 'Double', 'Boolean', 'UUID', 'List<T>', 'List<String>', 'Optional<T>'];
 
 const PropertiesPanel: React.FC = () => {
   const { 
@@ -24,9 +28,13 @@ const PropertiesPanel: React.FC = () => {
     updateClassNode, 
     deleteClassNode, 
     cloneClassNode,
+    copiedClassNode,
+    copyClassNode,
+    pasteClassNode,
     isClassNameTaken,
     updateRelationship, 
     deleteRelationship, 
+    flipRelationship,
     setSelectedNode,
     setSelectedEdge
   } = useDiagramStore();
@@ -287,17 +295,45 @@ const PropertiesPanel: React.FC = () => {
                   </label>
                 </div>
 
-                <div className="pt-3 border-t border-slate-800/80">
+                <div className="pt-3 border-t border-slate-800/80 space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => copyClassNode(selectedNode.id)}
+                      className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-slate-900 hover:bg-slate-850 text-slate-200 hover:text-white border border-slate-700/80 hover:border-slate-600 rounded-lg text-[11px] font-semibold transition-all active:scale-98 cursor-pointer shadow-xs"
+                      title="Copiar clase al portapapeles (Ctrl+C)"
+                    >
+                      <ClipboardCopy size={13} className="text-sky-400" />
+                      <span>Copiar (Ctrl+C)</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={!copiedClassNode}
+                      onClick={() => pasteClassNode()}
+                      className={`flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition-all shadow-xs ${
+                        copiedClassNode
+                          ? 'bg-slate-900 hover:bg-slate-850 text-slate-200 hover:text-white border-slate-700/80 hover:border-slate-600 active:scale-98 cursor-pointer'
+                          : 'bg-slate-950 text-slate-600 border-slate-800 cursor-not-allowed opacity-50'
+                      }`}
+                      title={copiedClassNode ? `Pegar '${copiedClassNode.name}' (Ctrl+V)` : 'Primero copia una clase con Ctrl+C'}
+                    >
+                      <ClipboardPaste size={13} className="text-emerald-400" />
+                      <span>Pegar (Ctrl+V)</span>
+                    </button>
+                  </div>
+
                   <button
                     type="button"
                     onClick={async () => {
                       await cloneClassNode(selectedNode.id);
                       toast.success('Clase duplicada exitosamente');
                     }}
-                    className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-slate-900 hover:bg-slate-850 text-slate-200 hover:text-white border border-slate-700/80 hover:border-slate-600 rounded-lg text-xs font-semibold transition-all active:scale-98 cursor-pointer shadow-xs"
+                    className="w-full flex items-center justify-center gap-2 px-3 py-1.5 bg-slate-900 hover:bg-slate-850 text-slate-200 hover:text-white border border-slate-700/80 hover:border-slate-600 rounded-lg text-xs font-semibold transition-all active:scale-98 cursor-pointer shadow-xs"
+                    title="Duplicar clase inmediatamente (Ctrl+D)"
                   >
                     <Copy size={13} className="text-blue-400" />
-                    <span>Duplicar Clase</span>
+                    <span>Duplicar Clase (Ctrl+D)</span>
                   </button>
                 </div>
               </div>
@@ -653,164 +689,443 @@ const PropertiesPanel: React.FC = () => {
         )}
 
         {/* ================= RELATIONSHIP PROPERTIES ================= */}
-        {selectedEdge && (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                Tipo de Relación UML (OMG 2.5)
-              </label>
-              <select 
-                value={selectedEdge.data?.type || 'association'} 
-                onChange={(e) => handleEdgeTypeChange(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-800 focus:border-blue-500 rounded-xl px-3 py-2 text-xs font-sans text-slate-200 focus:outline-none transition-colors cursor-pointer"
-              >
-                <option value="association">Asociación (Línea simple con flecha)</option>
-                <option value="aggregation">Agregación (Rombo vacío en origen)</option>
-                <option value="composition">Composición (Rombo relleno en origen)</option>
-                <option value="inheritance">Herencia / Generalización (Triángulo cerrado)</option>
-                <option value="implementation">Realización / Implementación (Punteada + Triángulo)</option>
-                <option value="dependency">Dependencia (Línea punteada + Flecha)</option>
-              </select>
-            </div>
+        {selectedEdge && (() => {
+          const edgeType = (selectedEdge.data?.type || 'association').toLowerCase();
+          const isNoCardType = edgeType === 'inheritance' || edgeType === 'generalization' || edgeType === 'implementation' || edgeType === 'realization' || edgeType === 'dependency';
+          const isComposition = edgeType === 'composition';
 
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                Etiqueta / Verbo de Relación
-              </label>
-              <input 
-                type="text" 
-                value={selectedEdge.data?.label || ''} 
-                onChange={(e) => handleEdgeLabelChange(e.target.value)}
-                placeholder="ej: pertenece_a, gestiona, contiene"
-                className="w-full bg-slate-900 border border-slate-800 focus:border-blue-500 rounded-xl px-3 py-2 text-xs font-mono text-slate-100 placeholder:text-slate-600 focus:outline-none transition-colors"
-              />
-            </div>
-
-            {/* Quick Cardinality Presets */}
-            <div className="p-3 bg-slate-900/70 border border-slate-800/90 rounded-xl space-y-2">
-              <div className="flex items-center justify-between">
+          return (
+            <div className="space-y-4">
+              {/* Orientation & Direction Flip */}
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
                 <span className="text-[11px] font-semibold text-slate-300 uppercase tracking-wider">
-                  Preajustes Rápidos (UML 2.5)
+                  Orientación
                 </span>
-                <Sparkles size={12} className="text-blue-400" />
+                <button
+                  type="button"
+                  onClick={() => flipRelationship(selectedEdge.id)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-blue-400 hover:text-blue-300 border border-slate-800 hover:border-slate-700 rounded-xl text-xs font-medium transition-colors cursor-pointer"
+                  title="Invertir origen y destino de la relación"
+                >
+                  <ArrowLeftRight size={13} />
+                  <span>Invertir Dirección</span>
+                </button>
               </div>
-              <div className="grid grid-cols-5 gap-1.5">
-                {[
-                  { label: '1 : 1', src: '1', tgt: '1' },
-                  { label: '1 : *', src: '1', tgt: '*' },
-                  { label: '1 : 1..*', src: '1', tgt: '1..*' },
-                  { label: '* : *', src: '*', tgt: '*' },
-                  { label: '0..1 : 1', src: '0..1', tgt: '1' },
-                ].map((preset) => {
-                  const isActive = 
-                    selectedEdge.data?.sourceCardinality === preset.src && 
-                    selectedEdge.data?.targetCardinality === preset.tgt;
-                  return (
+
+              {/* Relationship Type Cards Grid */}
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                  Tipo de Relación UML
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    {
+                      id: 'association',
+                      name: 'Asociación',
+                      desc: 'Línea con flecha',
+                      icon: (
+                        <svg width="24" height="12" viewBox="0 0 24 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="2" y1="6" x2="18" y2="6" />
+                          <polyline points="13,2 19,6 13,10" />
+                        </svg>
+                      )
+                    },
+                    {
+                      id: 'aggregation',
+                      name: 'Agregación',
+                      desc: 'Rombo hueco',
+                      icon: (
+                        <svg width="24" height="12" viewBox="0 0 24 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                          <polygon points="2,6 6,2 10,6 6,10" fill="transparent" />
+                          <line x1="10" y1="6" x2="22" y2="6" />
+                        </svg>
+                      )
+                    },
+                    {
+                      id: 'composition',
+                      name: 'Composición',
+                      desc: 'Rombo relleno',
+                      icon: (
+                        <svg width="24" height="12" viewBox="0 0 24 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                          <polygon points="2,6 6,2 10,6 6,10" fill="currentColor" />
+                          <line x1="10" y1="6" x2="22" y2="6" />
+                        </svg>
+                      )
+                    },
+                    {
+                      id: 'inheritance',
+                      name: 'Herencia',
+                      desc: 'Triángulo cerrado',
+                      icon: (
+                        <svg width="24" height="12" viewBox="0 0 24 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="2" y1="6" x2="14" y2="6" />
+                          <polygon points="14,2 21,6 14,10" fill="transparent" />
+                        </svg>
+                      )
+                    },
+                    {
+                      id: 'implementation',
+                      name: 'Realización',
+                      desc: 'Punteada triángulo',
+                      icon: (
+                        <svg width="24" height="12" viewBox="0 0 24 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="2" y1="6" x2="14" y2="6" strokeDasharray="3,2" />
+                          <polygon points="14,2 21,6 14,10" fill="transparent" />
+                        </svg>
+                      )
+                    },
+                    {
+                      id: 'dependency',
+                      name: 'Dependencia',
+                      desc: 'Punteada flecha',
+                      icon: (
+                        <svg width="24" height="12" viewBox="0 0 24 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="2" y1="6" x2="16" y2="6" strokeDasharray="3,2" />
+                          <polyline points="12,2 18,6 12,10" />
+                        </svg>
+                      )
+                    },
+                  ].map((t) => {
+                    const currentType = (selectedEdge.data?.type || 'association').toLowerCase();
+                    const isSelected = 
+                      currentType === t.id ||
+                      (t.id === 'inheritance' && currentType === 'generalization') ||
+                      (t.id === 'implementation' && currentType === 'realization');
+
+                    return (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => handleEdgeTypeChange(t.id)}
+                        className={`p-2.5 rounded-xl border text-left flex flex-col gap-1 transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-blue-600/20 border-blue-500/80 text-blue-300 ring-1 ring-blue-500/40 shadow-xs'
+                            : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5 font-medium text-xs">
+                          <span className={isSelected ? 'text-blue-400' : 'text-slate-400'}>
+                            {t.icon}
+                          </span>
+                          <span className="truncate">{t.name}</span>
+                        </div>
+                        <span className="text-[10px] text-slate-500 leading-tight truncate">
+                          {t.desc}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Routing Style (Trazo: Recta, Ortogonal, Curva) */}
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                  Estilo de Trazo / Enrutamiento
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { 
+                      id: 'smoothstep', 
+                      name: 'Ortogonal Suave', 
+                      desc: 'Horizontal / Vertical suave',
+                      icon: (
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M2 14V8a4 4 0 0 1 4-4h8" />
+                        </svg>
+                      )
+                    },
+                    { 
+                      id: 'step', 
+                      name: 'Ortogonal 90°', 
+                      desc: 'Ángulos rectos puros',
+                      icon: (
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square">
+                          <path d="M2 14V4h12" />
+                        </svg>
+                      )
+                    },
+                    { 
+                      id: 'straight', 
+                      name: 'Línea Recta', 
+                      desc: 'Directa / Diagonal',
+                      icon: (
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                          <line x1="2" y1="14" x2="14" y2="2" />
+                        </svg>
+                      )
+                    },
+                    { 
+                      id: 'bezier', 
+                      name: 'Curva Bézier', 
+                      desc: 'Fluida y orgánica',
+                      icon: (
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                          <path d="M2 14C5 14 5 2 14 2" />
+                        </svg>
+                      )
+                    },
+                  ].map((rt) => {
+                    const isSelected = (selectedEdge.data?.routing || 'smoothstep') === rt.id;
+                    return (
+                      <button
+                        key={rt.id}
+                        type="button"
+                        onClick={() => updateRelationship(selectedEdge.id, { routing: rt.id as any })}
+                        className={`p-2.5 rounded-xl border text-left flex flex-col gap-1 transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-blue-600/20 border-blue-500/80 text-blue-300 ring-1 ring-blue-500/40 shadow-xs'
+                            : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5 font-medium text-xs">
+                          <span className={isSelected ? 'text-blue-400' : 'text-slate-400'}>
+                            {rt.icon}
+                          </span>
+                          <span className="truncate">{rt.name}</span>
+                        </div>
+                        <span className="text-[10px] text-slate-500 leading-tight truncate">
+                          {rt.desc}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {selectedEdge.data?.waypoints && selectedEdge.data.waypoints.length > 0 && (
+                  <div className="mt-2 flex items-center justify-between p-2.5 bg-blue-950/30 border border-blue-800/40 rounded-xl">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-blue-400" />
+                      <span className="text-xs text-blue-300">
+                        Trazo personalizado ({selectedEdge.data.waypoints.length} {selectedEdge.data.waypoints.length === 1 ? 'punto' : 'puntos'})
+                      </span>
+                    </div>
                     <button
-                      key={preset.label}
                       type="button"
-                      onClick={() => applyCardinalityPreset(preset.src, preset.tgt)}
-                      className={`px-1.5 py-1.5 rounded-lg text-[11px] font-mono font-semibold text-center transition-all cursor-pointer border ${
-                        isActive
-                          ? 'bg-blue-600 text-white border-blue-400 shadow-xs shadow-blue-500/20'
-                          : 'bg-slate-950 text-slate-300 hover:text-white border-slate-800 hover:border-slate-700'
-                      }`}
-                      title={`Aplicar ${preset.label}`}
+                      onClick={() => updateRelationship(selectedEdge.id, { waypoints: [] })}
+                      className="text-[11px] font-medium text-amber-400 hover:text-amber-300 hover:underline cursor-pointer"
                     >
-                      {preset.label}
+                      Restablecer
                     </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Granular Source / Target Cardinalities "a Elección" */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                  Card. Origen
-                </label>
-                <select 
-                  value={CARDINALITY_OPTIONS.includes(selectedEdge.data?.sourceCardinality || '') && !customSourceCard ? selectedEdge.data?.sourceCardinality : 'custom'} 
-                  onChange={(e) => {
-                    if (e.target.value === 'custom') {
-                      setCustomSourceCard(true);
-                    } else {
-                      setCustomSourceCard(false);
-                      handleEdgeCardinalityChange(e.target.value, selectedEdge.data?.targetCardinality || '');
-                    }
-                  }}
-                  className="w-full bg-slate-900 border border-slate-800 focus:border-blue-500 rounded-xl px-2.5 py-2 text-xs font-mono text-blue-300 focus:outline-none transition-colors cursor-pointer"
-                >
-                  <option value="1">1 (Exactamente 1)</option>
-                  <option value="0..1">0..1 (Opcional)</option>
-                  <option value="1..*">1..* (Uno o más)</option>
-                  <option value="0..*">0..* (Cero o más)</option>
-                  <option value="*">* (Muchos)</option>
-                  <option value="custom">Personalizado...</option>
-                </select>
-                {(customSourceCard || !CARDINALITY_OPTIONS.includes(selectedEdge.data?.sourceCardinality || '')) && (
-                  <input 
-                    type="text" 
-                    value={selectedEdge.data?.sourceCardinality || ''} 
-                    onChange={(e) => handleEdgeCardinalityChange(e.target.value, selectedEdge.data?.targetCardinality || '')}
-                    placeholder="ej: 1..10"
-                    className="w-full mt-1.5 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs font-mono text-blue-300 focus:outline-none transition-colors"
-                  />
+                  </div>
                 )}
               </div>
 
+              {/* Association Direction Toggle */}
+              {edgeType === 'association' && (
+                <div className="flex items-center justify-between p-3 bg-slate-900/60 border border-slate-800 rounded-xl">
+                  <div>
+                    <span className="text-xs font-medium text-slate-200 block">
+                      Flecha Abierta en Destino
+                    </span>
+                    <span className="text-[10px] text-slate-400">
+                      {selectedEdge.data?.isDirected !== false ? 'Asociación dirigida (con punta)' : 'Asociación simple (sin punta)'}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => updateRelationship(selectedEdge.id, { isDirected: selectedEdge.data?.isDirected === false ? true : false })}
+                    className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${
+                      selectedEdge.data?.isDirected !== false ? 'bg-blue-600' : 'bg-slate-700'
+                    }`}
+                  >
+                    <span 
+                      className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
+                        selectedEdge.data?.isDirected !== false ? 'left-4.5' : 'left-0.5'
+                      }`}
+                    />
+                  </button>
+                </div>
+              )}
+
+              {/* Label / Verb */}
               <div>
                 <label className="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                  Card. Destino
+                  Etiqueta o Verbo de Relación
                 </label>
-                <select 
-                  value={CARDINALITY_OPTIONS.includes(selectedEdge.data?.targetCardinality || '') && !customTargetCard ? selectedEdge.data?.targetCardinality : 'custom'} 
-                  onChange={(e) => {
-                    if (e.target.value === 'custom') {
-                      setCustomTargetCard(true);
-                    } else {
-                      setCustomTargetCard(false);
-                      handleEdgeCardinalityChange(selectedEdge.data?.sourceCardinality || '', e.target.value);
-                    }
-                  }}
-                  className="w-full bg-slate-900 border border-slate-800 focus:border-blue-500 rounded-xl px-2.5 py-2 text-xs font-mono text-indigo-300 focus:outline-none transition-colors cursor-pointer"
-                >
-                  <option value="1">1 (Exactamente 1)</option>
-                  <option value="0..1">0..1 (Opcional)</option>
-                  <option value="1..*">1..* (Uno o más)</option>
-                  <option value="0..*">0..* (Cero o más)</option>
-                  <option value="*">* (Muchos)</option>
-                  <option value="custom">Personalizado...</option>
-                </select>
-                {(customTargetCard || !CARDINALITY_OPTIONS.includes(selectedEdge.data?.targetCardinality || '')) && (
+                <input 
+                  type="text" 
+                  value={selectedEdge.data?.label || ''} 
+                  onChange={(e) => handleEdgeLabelChange(e.target.value)}
+                  placeholder="ej: pertenece_a, gestiona, contiene"
+                  className="w-full bg-slate-900 border border-slate-800 focus:border-blue-500 rounded-xl px-3 py-2 text-xs font-mono text-slate-100 placeholder:text-slate-600 focus:outline-none transition-colors"
+                />
+              </div>
+
+              {/* Roles: Source and Target */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                    Rol Origen
+                  </label>
                   <input 
                     type="text" 
-                    value={selectedEdge.data?.targetCardinality || ''} 
-                    onChange={(e) => handleEdgeCardinalityChange(selectedEdge.data?.sourceCardinality || '', e.target.value)}
-                    placeholder="ej: 0..5"
-                    className="w-full mt-1.5 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs font-mono text-indigo-300 focus:outline-none transition-colors"
+                    value={selectedEdge.data?.sourceRole || ''} 
+                    onChange={(e) => updateRelationship(selectedEdge.id, { sourceRole: e.target.value })}
+                    placeholder="ej: propietario"
+                    className="w-full bg-slate-900 border border-slate-800 focus:border-blue-500 rounded-xl px-2.5 py-2 text-xs font-mono text-slate-100 placeholder:text-slate-600 focus:outline-none transition-colors"
                   />
-                )}
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                    Rol Destino
+                  </label>
+                  <input 
+                    type="text" 
+                    value={selectedEdge.data?.targetRole || ''} 
+                    onChange={(e) => updateRelationship(selectedEdge.id, { targetRole: e.target.value })}
+                    placeholder="ej: cuenta"
+                    className="w-full bg-slate-900 border border-slate-800 focus:border-blue-500 rounded-xl px-2.5 py-2 text-xs font-mono text-slate-100 placeholder:text-slate-600 focus:outline-none transition-colors"
+                  />
+                </div>
+              </div>
+
+              {/* Cardinalities Section */}
+              {isNoCardType ? (
+                <div className="p-3 bg-blue-950/25 border border-blue-800/40 rounded-xl text-blue-200 text-xs flex items-start gap-2.5">
+                  <Info size={15} className="text-blue-400 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="font-semibold text-blue-300 text-xs">Multiplicidad no requerida</p>
+                    <p className="text-[11px] text-blue-300/80 leading-relaxed">
+                      Las relaciones de herencia, realización y dependencia son estructurales o de comportamiento en el estándar UML y omiten cardinalidades numéricas.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {/* Quick Cardinality Presets */}
+                  <div className="p-3 bg-slate-900/70 border border-slate-800/90 rounded-xl space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-semibold text-slate-300 uppercase tracking-wider">
+                        Preajustes Rápidos
+                      </span>
+                      <Sparkles size={12} className="text-blue-400" />
+                    </div>
+                    <div className="grid grid-cols-5 gap-1.5">
+                      {[
+                        { label: '1 : 1', src: '1', tgt: '1' },
+                        { label: '1 : *', src: '1', tgt: '*' },
+                        { label: '1 : 1..*', src: '1', tgt: '1..*' },
+                        { label: '* : *', src: '*', tgt: '*' },
+                        { label: '0..1 : 1', src: '0..1', tgt: '1' },
+                      ].map((preset) => {
+                        const isActive = 
+                          selectedEdge.data?.sourceCardinality === preset.src && 
+                          selectedEdge.data?.targetCardinality === preset.tgt;
+                        return (
+                          <button
+                            key={preset.label}
+                            type="button"
+                            onClick={() => applyCardinalityPreset(preset.src, preset.tgt)}
+                            className={`px-1.5 py-1.5 rounded-lg text-[11px] font-mono font-semibold text-center transition-all cursor-pointer border ${
+                              isActive
+                                ? 'bg-blue-600 text-white border-blue-400 shadow-xs shadow-blue-500/20'
+                                : 'bg-slate-950 text-slate-300 hover:text-white border-slate-800 hover:border-slate-700'
+                            }`}
+                            title={`Aplicar ${preset.label}`}
+                          >
+                            {preset.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {isComposition && (
+                      <p className="text-[10px] text-amber-400/90 pt-1 leading-snug">
+                        En composición, el contenedor (origen) representa el todo y su multiplicidad máxima es 1.
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Granular Source / Target Cardinalities */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                        Card. Origen
+                      </label>
+                      <select 
+                        value={CARDINALITY_OPTIONS.includes(selectedEdge.data?.sourceCardinality || '') && !customSourceCard ? selectedEdge.data?.sourceCardinality : 'custom'} 
+                        onChange={(e) => {
+                          if (e.target.value === 'custom') {
+                            setCustomSourceCard(true);
+                          } else {
+                            setCustomSourceCard(false);
+                            handleEdgeCardinalityChange(e.target.value, selectedEdge.data?.targetCardinality || '');
+                          }
+                        }}
+                        className="w-full bg-slate-900 border border-slate-800 focus:border-blue-500 rounded-xl px-2.5 py-2 text-xs font-mono text-blue-300 focus:outline-none transition-colors cursor-pointer"
+                      >
+                        <option value="1">1 (Exactamente 1)</option>
+                        <option value="0..1">0..1 (Opcional)</option>
+                        {!isComposition && <option value="1..*">1..* (Uno o más)</option>}
+                        {!isComposition && <option value="0..*">0..* (Cero o más)</option>}
+                        {!isComposition && <option value="*">* (Muchos)</option>}
+                        <option value="custom">Personalizado...</option>
+                      </select>
+                      {(customSourceCard || !CARDINALITY_OPTIONS.includes(selectedEdge.data?.sourceCardinality || '')) && (
+                        <input 
+                          type="text" 
+                          value={selectedEdge.data?.sourceCardinality || ''} 
+                          onChange={(e) => handleEdgeCardinalityChange(e.target.value, selectedEdge.data?.targetCardinality || '')}
+                          placeholder="ej: 1..10"
+                          className="w-full mt-1.5 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs font-mono text-blue-300 focus:outline-none transition-colors"
+                        />
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                        Card. Destino
+                      </label>
+                      <select 
+                        value={CARDINALITY_OPTIONS.includes(selectedEdge.data?.targetCardinality || '') && !customTargetCard ? selectedEdge.data?.targetCardinality : 'custom'} 
+                        onChange={(e) => {
+                          if (e.target.value === 'custom') {
+                            setCustomTargetCard(true);
+                          } else {
+                            setCustomTargetCard(false);
+                            handleEdgeCardinalityChange(selectedEdge.data?.sourceCardinality || '', e.target.value);
+                          }
+                        }}
+                        className="w-full bg-slate-900 border border-slate-800 focus:border-blue-500 rounded-xl px-2.5 py-2 text-xs font-mono text-indigo-300 focus:outline-none transition-colors cursor-pointer"
+                      >
+                        <option value="1">1 (Exactamente 1)</option>
+                        <option value="0..1">0..1 (Opcional)</option>
+                        <option value="1..*">1..* (Uno o más)</option>
+                        <option value="0..*">0..* (Cero o más)</option>
+                        <option value="*">* (Muchos)</option>
+                        <option value="custom">Personalizado...</option>
+                      </select>
+                      {(customTargetCard || !CARDINALITY_OPTIONS.includes(selectedEdge.data?.targetCardinality || '')) && (
+                        <input 
+                          type="text" 
+                          value={selectedEdge.data?.targetCardinality || ''} 
+                          onChange={(e) => handleEdgeCardinalityChange(selectedEdge.data?.sourceCardinality || '', e.target.value)}
+                          placeholder="ej: 0..5"
+                          className="w-full mt-1.5 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs font-mono text-indigo-300 focus:outline-none transition-colors"
+                        />
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Delete Edge Button */}
+              <div className="pt-4 border-t border-slate-800/80">
+                <button
+                  type="button"
+                  onClick={() => {
+                    deleteRelationship(selectedEdge.id);
+                    toast.success('Relación eliminada del modelo');
+                  }}
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-rose-950/20 hover:bg-rose-950/40 text-rose-300 hover:text-rose-200 border border-rose-800/40 hover:border-rose-700/60 rounded-xl text-xs font-semibold transition-all active:scale-98 cursor-pointer"
+                >
+                  <Trash2 size={14} className="text-rose-400" />
+                  <span>Eliminar Relación del Modelo</span>
+                </button>
               </div>
             </div>
-
-            {/* Delete Edge Button */}
-            <div className="pt-4 border-t border-slate-800/80">
-              <button
-                type="button"
-                onClick={() => {
-                  deleteRelationship(selectedEdge.id);
-                  toast.success('Relación eliminada del modelo');
-                }}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-rose-950/20 hover:bg-rose-950/40 text-rose-300 hover:text-rose-200 border border-rose-800/40 hover:border-rose-700/60 rounded-xl text-xs font-semibold transition-all active:scale-98 cursor-pointer"
-              >
-                <Trash2 size={14} className="text-rose-400" />
-                <span>Eliminar Relación del Modelo</span>
-              </button>
-            </div>
-          </div>
-        )}
+          );
+        })()}
       </div>
     </aside>
   );

@@ -46,5 +46,9 @@ public class SyncDiagramRequest {
         private String label;
         private String sourceRole;
         private String targetRole;
+        private String sourceHandle;
+        private String targetHandle;
+        private String routing;
+        private String waypoints;
     }
 }

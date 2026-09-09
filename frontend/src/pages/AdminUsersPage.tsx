@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import AppLayout from '../components/layout/AppLayout';
 import { useAuthStore } from '../stores/authStore';
 import { api } from '../services/api';
@@ -169,11 +170,11 @@ export const AdminUsersPage: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
           <div>
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-purple-600/20 border border-purple-500/40 flex items-center justify-center text-purple-400 shadow-sm">
+              <div className="w-8 h-8 rounded-lg bg-purple-600/20 border border-purple-500/40 flex items-center justify-center text-purple-400 shadow-xs">
                 <ShieldAlert size={18} />
               </div>
               <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
-                Gestión de Usuarios y Roles (RBAC)
+                Gestión de Usuarios y Roles
               </h1>
             </div>
             <p className="text-xs sm:text-sm text-slate-400 mt-1">
@@ -185,98 +186,98 @@ export const AdminUsersPage: React.FC = () => {
             <button
               onClick={handleRefresh}
               disabled={refreshing}
-              className="flex items-center gap-2 px-3.5 py-2 bg-purple-950/40 hover:bg-purple-900/50 border border-purple-800/60 hover:border-purple-700 text-purple-300 hover:text-white rounded-xl text-xs font-semibold transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+              className="flex items-center gap-2 px-3 py-1.5 bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white rounded-lg text-xs font-semibold transition-all active:scale-95 cursor-pointer disabled:opacity-50"
             >
-              <RefreshCw size={14} className={refreshing ? 'animate-spin text-purple-400' : 'text-purple-400'} />
+              <RefreshCw size={13} className={refreshing ? 'animate-spin text-purple-400' : 'text-purple-400'} />
               <span>{refreshing ? 'Actualizando...' : 'Actualizar'}</span>
             </button>
           </div>
         </div>
 
         {/* Metrics Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-          <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 flex flex-col">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="bg-slate-900/50 border border-slate-800/90 rounded-lg p-3.5 flex flex-col hover:border-slate-700/60 transition-colors">
             <div className="flex items-center justify-between text-slate-400 mb-2">
               <span className="text-xs font-medium">Total Usuarios</span>
-              <Users size={16} className="text-blue-400" />
+              <Users size={15} className="text-blue-400" />
             </div>
             <span className="text-2xl font-bold font-mono text-white">
               {metrics ? metrics.totalUsers : '-'}
             </span>
-            <span className="text-[10px] text-slate-500 mt-1">Registrados en PostgreSQL</span>
+            <span className="text-[10px] text-slate-500 mt-1">Registrados</span>
           </div>
 
-          <div className="bg-slate-900/60 border border-purple-900/40 rounded-2xl p-4 flex flex-col">
+          <div className="bg-slate-900/50 border border-purple-900/30 rounded-lg p-3.5 flex flex-col hover:border-purple-800/50 transition-colors">
             <div className="flex items-center justify-between text-purple-300 mb-2">
               <span className="text-xs font-medium">Super Admins</span>
-              <ShieldCheck size={16} className="text-purple-400" />
+              <ShieldCheck size={15} className="text-purple-400" />
             </div>
             <span className="text-2xl font-bold font-mono text-purple-200">
               {metrics ? metrics.totalSuperAdmins : '-'}
             </span>
-            <span className="text-[10px] text-purple-400/70 mt-1">Control Total RBAC</span>
+            <span className="text-[10px] text-purple-400/70 mt-1">Control Total</span>
           </div>
 
-          <div className="bg-slate-900/60 border border-blue-900/40 rounded-2xl p-4 flex flex-col">
+          <div className="bg-slate-900/50 border border-blue-900/30 rounded-lg p-3.5 flex flex-col hover:border-blue-800/50 transition-colors">
             <div className="flex items-center justify-between text-blue-300 mb-2">
               <span className="text-xs font-medium">Arquitectos</span>
-              <Layers size={16} className="text-blue-400" />
+              <Layers size={15} className="text-blue-400" />
             </div>
             <span className="text-2xl font-bold font-mono text-blue-200">
               {metrics ? metrics.totalArchitects : '-'}
             </span>
-            <span className="text-[10px] text-blue-400/70 mt-1">Modelado CASE & Código</span>
+            <span className="text-[10px] text-blue-400/70 mt-1">Modelado CASE</span>
           </div>
 
-          <div className="bg-slate-900/60 border border-emerald-900/40 rounded-2xl p-4 flex flex-col">
+          <div className="bg-slate-900/50 border border-emerald-900/30 rounded-lg p-3.5 flex flex-col hover:border-emerald-800/50 transition-colors">
             <div className="flex items-center justify-between text-emerald-300 mb-2">
               <span className="text-xs font-medium">Colaboradores</span>
-              <Users size={16} className="text-emerald-400" />
+              <Users size={15} className="text-emerald-400" />
             </div>
             <span className="text-2xl font-bold font-mono text-emerald-200">
               {metrics ? metrics.totalCollaborators : '-'}
             </span>
-            <span className="text-[10px] text-emerald-400/70 mt-1">Co-diseño y Visualización</span>
+            <span className="text-[10px] text-emerald-400/70 mt-1">Co-diseño</span>
           </div>
 
-          <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 flex flex-col">
+          <div className="bg-slate-900/50 border border-slate-800/90 rounded-lg p-3.5 flex flex-col hover:border-slate-700/60 transition-colors">
             <div className="flex items-center justify-between text-slate-400 mb-2">
               <span className="text-xs font-medium">Cuentas Activas</span>
-              <UserCheck size={16} className="text-emerald-400" />
+              <UserCheck size={15} className="text-emerald-400" />
             </div>
             <span className="text-2xl font-bold font-mono text-emerald-400">
               {metrics ? metrics.totalActiveUsers : '-'}
             </span>
-            <span className="text-[10px] text-slate-500 mt-1">Acceso Habilitado</span>
+            <span className="text-[10px] text-slate-500 mt-1">Habilitadas</span>
           </div>
 
-          <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 flex flex-col">
+          <div className="bg-slate-900/50 border border-slate-800/90 rounded-lg p-3.5 flex flex-col hover:border-slate-700/60 transition-colors">
             <div className="flex items-center justify-between text-slate-400 mb-2">
               <span className="text-xs font-medium">Suspendidos</span>
-              <UserX size={16} className="text-rose-400" />
+              <UserX size={15} className="text-rose-400" />
             </div>
             <span className="text-2xl font-bold font-mono text-rose-400">
               {metrics ? metrics.totalInactiveUsers : '-'}
             </span>
-            <span className="text-[10px] text-slate-500 mt-1">Acceso Bloqueado</span>
+            <span className="text-[10px] text-slate-500 mt-1">Bloqueadas</span>
           </div>
         </div>
 
         {/* Search & Filters */}
-        <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-3 sm:p-4 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+        <div className="bg-slate-900/40 border border-slate-800 rounded-lg p-3 sm:p-3.5 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
           <div className="relative flex-1">
-            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+            <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
             <input
               type="text"
               placeholder="Buscar por nombre, usuario o correo electrónico..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 focus:border-purple-500 text-slate-100 placeholder:text-slate-500 rounded-xl pl-9 pr-3 py-2 text-xs focus:outline-none transition-colors"
+              className="w-full bg-slate-950 border border-slate-800 focus:border-purple-500 text-slate-100 placeholder:text-slate-500 rounded-md pl-9 pr-3 py-1.5 text-xs focus:outline-none transition-colors"
             />
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1.5 text-xs text-slate-300">
+            <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-md px-2.5 py-1.5 text-xs text-slate-300">
               <Filter size={13} className="text-slate-500" />
               <select
                 value={roleFilter}
@@ -290,7 +291,7 @@ export const AdminUsersPage: React.FC = () => {
               </select>
             </div>
 
-            <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1.5 text-xs text-slate-300">
+            <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-md px-2.5 py-1.5 text-xs text-slate-300">
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
@@ -305,14 +306,14 @@ export const AdminUsersPage: React.FC = () => {
         </div>
 
         {/* Users Table */}
-        <div className="bg-slate-900/40 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+        <div className="bg-slate-900/40 border border-slate-800 rounded-lg overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-slate-950/80 text-slate-400 font-mono text-[11px] uppercase tracking-wider border-b border-slate-800">
                   <th className="py-3 px-4">Usuario</th>
                   <th className="py-3 px-4">Correo Electrónico</th>
-                  <th className="py-3 px-4">Rol RBAC</th>
+                  <th className="py-3 px-4">Rol Asignado</th>
                   <th className="py-3 px-4">Estado</th>
                   <th className="py-3 px-4">Fecha Alta</th>
                   <th className="py-3 px-4 text-right">Acciones</th>
@@ -452,21 +453,21 @@ export const AdminUsersPage: React.FC = () => {
       </div>
 
       {/* Role Change Modal */}
-      {roleModalUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl p-6 shadow-2xl flex flex-col gap-4">
+      {roleModalUser && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-lg p-5 sm:p-6 shadow-2xl flex flex-col gap-4">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div className="flex items-center gap-2">
-                <Crown size={18} className="text-purple-400" />
-                <h3 className="font-bold text-white text-sm sm:text-base">
-                  Asignar Rol RBAC
+                <Crown size={16} className="text-purple-400" />
+                <h3 className="font-bold text-white text-sm">
+                  Asignar Rol de Usuario
                 </h3>
               </div>
               <button 
                 onClick={() => setRoleModalUser(null)}
-                className="text-slate-500 hover:text-white transition-colors"
+                className="text-slate-500 hover:text-white transition-colors cursor-pointer"
               >
-                <X size={18} />
+                <X size={16} />
               </button>
             </div>
 
@@ -502,7 +503,7 @@ export const AdminUsersPage: React.FC = () => {
                     key={item.role}
                     type="button"
                     onClick={() => setSelectedNewRole(item.role)}
-                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                    className={`p-3 rounded-lg border text-left transition-all cursor-pointer ${
                       selectedNewRole === item.role
                         ? `bg-slate-800 ${item.border} ring-1 ring-purple-500/30`
                         : 'bg-slate-950 border-slate-800 hover:border-slate-700 text-slate-400'
@@ -521,29 +522,30 @@ export const AdminUsersPage: React.FC = () => {
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800 mt-2">
               <button
                 onClick={() => setRoleModalUser(null)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium transition-colors cursor-pointer"
+                className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-md text-xs font-medium transition-colors cursor-pointer"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleSaveRole}
                 disabled={savingAction}
-                className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-purple-500/20 transition-all cursor-pointer disabled:opacity-50"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-md text-xs font-semibold shadow-sm transition-all cursor-pointer disabled:opacity-50"
               >
                 {savingAction ? <RefreshCw size={13} className="animate-spin" /> : <Check size={13} />}
                 <span>Guardar Rol</span>
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Status Toggle Modal */}
-      {statusModalUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl p-6 shadow-2xl flex flex-col gap-4">
+      {statusModalUser && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-lg p-5 sm:p-6 shadow-2xl flex flex-col gap-4">
             <div className="flex items-center gap-3 text-rose-400 border-b border-slate-800 pb-3">
-              <AlertTriangle size={20} />
+              <AlertTriangle size={18} />
               <h3 className="font-bold text-white text-sm sm:text-base">
                 {statusModalUser.isActive ? '¿Suspender Cuenta de Usuario?' : '¿Reactivar Cuenta de Usuario?'}
               </h3>
@@ -564,17 +566,17 @@ export const AdminUsersPage: React.FC = () => {
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800 mt-2">
               <button
                 onClick={() => setStatusModalUser(null)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium transition-colors cursor-pointer"
+                className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-md text-xs font-medium transition-colors cursor-pointer"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleToggleStatus}
                 disabled={savingAction}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-white shadow-md transition-all cursor-pointer disabled:opacity-50 ${
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-semibold text-white shadow-sm transition-all cursor-pointer disabled:opacity-50 ${
                   statusModalUser.isActive
-                    ? 'bg-rose-600 hover:bg-rose-500 shadow-rose-600/20'
-                    : 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/20'
+                    ? 'bg-rose-600 hover:bg-rose-500'
+                    : 'bg-emerald-600 hover:bg-emerald-500'
                 }`}
               >
                 {savingAction ? <RefreshCw size={13} className="animate-spin" /> : <Power size={13} />}
@@ -582,7 +584,8 @@ export const AdminUsersPage: React.FC = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </AppLayout>
   );

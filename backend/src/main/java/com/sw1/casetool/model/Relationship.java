@@ -52,6 +52,17 @@ public class Relationship {
     @Column(name = "target_role")
     private String targetRole;
 
+    @Column(name = "source_handle")
+    private String sourceHandle;
+
+    @Column(name = "target_handle")
+    private String targetHandle;
+
+    private String routing;
+
+    @Column(columnDefinition = "TEXT")
+    private String waypoints;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;

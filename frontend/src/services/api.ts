@@ -70,8 +70,10 @@ export const api = {
     grid?: boolean;
     snapToGrid?: boolean;
     autoSaveInterval?: number;
+    autoSaveEnabled?: boolean;
     defaultZoom?: number;
-    canvasTheme?: 'dark' | 'light' | 'blue' | 'cream';
+    canvasTheme?: string;
+    appPalette?: string;
     onboardingCompleted?: boolean;
     customSettings?: Record<string, any>;
   }) => {
@@ -223,6 +225,16 @@ export const api = {
   },
   purgeProject: async (id: string) => {
     const res = await apiClient.delete(`/projects/${id}/purge`);
+    return res.data;
+  },
+
+  // Validar Normalización Lógica (CU10)
+  validateProjectNormalization: async (projectId: string) => {
+    const res = await apiClient.post(`/projects/${projectId}/validate-normalization`);
+    return res.data;
+  },
+  validateLiveNormalization: async (diagramData: any) => {
+    const res = await apiClient.post('/projects/validate-normalization-live', diagramData);
     return res.data;
   },
 };

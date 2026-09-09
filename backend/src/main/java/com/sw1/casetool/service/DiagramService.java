@@ -449,6 +449,10 @@ public class DiagramService {
                         .label(srcRel.getLabel())
                         .sourceRole(srcRel.getSourceRole())
                         .targetRole(srcRel.getTargetRole())
+                        .sourceHandle(srcRel.getSourceHandle())
+                        .targetHandle(srcRel.getTargetHandle())
+                        .routing(srcRel.getRouting())
+                        .waypoints(srcRel.getWaypoints())
                         .build();
 
                 relationshipRepository.save(clonedRel);
@@ -819,20 +823,50 @@ public class DiagramService {
     public Relationship addRelationship(UUID projectId, RelationshipRequest request) {
         DiagramProject project = getProject(projectId);
         ClassNode source = classNodeRepository.findById(request.getSourceClassId())
-                .orElseThrow(() -> new ResourceNotFoundException("Source class not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Source class not found: " + request.getSourceClassId()));
         ClassNode target = classNodeRepository.findById(request.getTargetClassId())
-                .orElseThrow(() -> new ResourceNotFoundException("Target class not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Target class not found: " + request.getTargetClassId()));
+
+        String relType = (request.getType() != null && !request.getType().trim().isEmpty())
+                ? request.getType().trim().toLowerCase()
+                : "association";
+
+        String sourceCard = request.getSourceCardinality();
+        String targetCard = request.getTargetCardinality();
+
+        // Reglas OMG UML 2.5: herencia, realización y dependencia no llevan cardinalidades
+        if ("inheritance".equals(relType) || "generalization".equals(relType) || "realization".equals(relType) || "implementation".equals(relType) || "dependency".equals(relType)) {
+            sourceCard = null;
+            targetCard = null;
+        }
+
+        // Regla OMG UML 2.5: Composición no permite contenedor compuesto múltiple
+        if ("composition".equals(relType) && sourceCard != null) {
+            String sc = sourceCard.trim();
+            if ("*".equals(sc) || "0..*".equals(sc) || "1..*".equals(sc)) {
+                throw new IllegalArgumentException("En la composición OMG UML 2.5, el contenedor compuesto no puede tener multiplicidad múltiple (*). Debe ser 1 o 0..1.");
+            }
+        }
+
+        // CU09 - Excepción E1: Detección de Herencia Circular (DFS)
+        if ("inheritance".equals(relType) || "generalization".equals(relType)) {
+            validateNoCircularInheritance(projectId, source.getId(), target.getId(), null);
+        }
 
         Relationship rel = Relationship.builder()
                 .project(project)
                 .sourceClass(source)
                 .targetClass(target)
-                .type(request.getType())
-                .sourceCardinality(request.getSourceCardinality())
-                .targetCardinality(request.getTargetCardinality())
+                .type(relType)
+                .sourceCardinality(sourceCard)
+                .targetCardinality(targetCard)
                 .label(request.getLabel())
                 .sourceRole(request.getSourceRole())
                 .targetRole(request.getTargetRole())
+                .sourceHandle(request.getSourceHandle())
+                .targetHandle(request.getTargetHandle())
+                .routing(request.getRouting())
+                .waypoints(request.getWaypoints())
                 .build();
 
         Relationship saved = relationshipRepository.save(rel);
@@ -843,6 +877,9 @@ public class DiagramService {
         afterState.put("targetClass", target.getName());
         afterState.put("sourceCardinality", saved.getSourceCardinality());
         afterState.put("targetCardinality", saved.getTargetCardinality());
+        afterState.put("label", saved.getLabel());
+        afterState.put("sourceRole", saved.getSourceRole());
+        afterState.put("targetRole", saved.getTargetRole());
 
         diagramHistoryService.recordHistory(
                 project,
@@ -864,9 +901,35 @@ public class DiagramService {
                 .orElseThrow(() -> new ResourceNotFoundException("Relationship not found in project"));
 
         ClassNode source = classNodeRepository.findById(request.getSourceClassId())
-                .orElseThrow(() -> new ResourceNotFoundException("Source class not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Source class not found: " + request.getSourceClassId()));
         ClassNode target = classNodeRepository.findById(request.getTargetClassId())
-                .orElseThrow(() -> new ResourceNotFoundException("Target class not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Target class not found: " + request.getTargetClassId()));
+
+        String relType = (request.getType() != null && !request.getType().trim().isEmpty())
+                ? request.getType().trim().toLowerCase()
+                : "association";
+
+        String sourceCard = request.getSourceCardinality();
+        String targetCard = request.getTargetCardinality();
+
+        // Reglas OMG UML 2.5: herencia, realización y dependencia no llevan cardinalidades
+        if ("inheritance".equals(relType) || "generalization".equals(relType) || "realization".equals(relType) || "implementation".equals(relType) || "dependency".equals(relType)) {
+            sourceCard = null;
+            targetCard = null;
+        }
+
+        // Regla OMG UML 2.5: Composición no permite contenedor compuesto múltiple
+        if ("composition".equals(relType) && sourceCard != null) {
+            String sc = sourceCard.trim();
+            if ("*".equals(sc) || "0..*".equals(sc) || "1..*".equals(sc)) {
+                throw new IllegalArgumentException("En la composición OMG UML 2.5, el contenedor compuesto no puede tener multiplicidad múltiple (*). Debe ser 1 o 0..1.");
+            }
+        }
+
+        // CU09 - Excepción E1: Detección de Herencia Circular (DFS)
+        if ("inheritance".equals(relType) || "generalization".equals(relType)) {
+            validateNoCircularInheritance(projectId, source.getId(), target.getId(), relId);
+        }
 
         Map<String, Object> beforeState = new HashMap<>();
         beforeState.put("type", rel.getType());
@@ -874,15 +937,30 @@ public class DiagramService {
         beforeState.put("targetClass", rel.getTargetClass().getName());
         beforeState.put("sourceCardinality", rel.getSourceCardinality());
         beforeState.put("targetCardinality", rel.getTargetCardinality());
+        beforeState.put("label", rel.getLabel());
+        beforeState.put("sourceRole", rel.getSourceRole());
+        beforeState.put("targetRole", rel.getTargetRole());
 
         rel.setSourceClass(source);
         rel.setTargetClass(target);
-        rel.setType(request.getType());
-        rel.setSourceCardinality(request.getSourceCardinality());
-        rel.setTargetCardinality(request.getTargetCardinality());
+        rel.setType(relType);
+        rel.setSourceCardinality(sourceCard);
+        rel.setTargetCardinality(targetCard);
         rel.setLabel(request.getLabel());
         rel.setSourceRole(request.getSourceRole());
         rel.setTargetRole(request.getTargetRole());
+        if (request.getSourceHandle() != null) {
+            rel.setSourceHandle(request.getSourceHandle());
+        }
+        if (request.getTargetHandle() != null) {
+            rel.setTargetHandle(request.getTargetHandle());
+        }
+        if (request.getRouting() != null) {
+            rel.setRouting(request.getRouting());
+        }
+        if (request.getWaypoints() != null) {
+            rel.setWaypoints(request.getWaypoints());
+        }
 
         Relationship saved = relationshipRepository.save(rel);
 
@@ -892,6 +970,9 @@ public class DiagramService {
         afterState.put("targetClass", target.getName());
         afterState.put("sourceCardinality", saved.getSourceCardinality());
         afterState.put("targetCardinality", saved.getTargetCardinality());
+        afterState.put("label", saved.getLabel());
+        afterState.put("sourceRole", saved.getSourceRole());
+        afterState.put("targetRole", saved.getTargetRole());
 
         diagramHistoryService.recordHistory(
                 rel.getProject(),
@@ -904,6 +985,53 @@ public class DiagramService {
         );
 
         return saved;
+    }
+
+    /**
+     * Valida que una relación de herencia no genere auto-herencia ni ciclos (CU09 - Excepción E1)
+     */
+    public void validateNoCircularInheritance(UUID projectId, UUID sourceClassId, UUID targetClassId, UUID excludeRelId) {
+        if (sourceClassId.equals(targetClassId)) {
+            throw new IllegalArgumentException("Relación inválida: Una clase no puede heredarse a sí misma.");
+        }
+
+        // Cargar todas las relaciones de herencia del proyecto
+        List<Relationship> inheritanceRels = relationshipRepository.findByProjectId(projectId).stream()
+                .filter(r -> "inheritance".equalsIgnoreCase(r.getType()) || "generalization".equalsIgnoreCase(r.getType()))
+                .filter(r -> excludeRelId == null || !r.getId().equals(excludeRelId))
+                .toList();
+
+        // Construir grafo de adyacencia: source (subclase/hija) -> target (superclase/padre)
+        Map<UUID, List<UUID>> adj = new HashMap<>();
+        for (Relationship r : inheritanceRels) {
+            UUID s = r.getSourceClass().getId();
+            UUID t = r.getTargetClass().getId();
+            adj.computeIfAbsent(s, k -> new ArrayList<>()).add(t);
+        }
+
+        // Si ya existe un camino de herencia desde targetClassId hacia sourceClassId,
+        // conectar sourceClassId -> targetClassId cerraría el ciclo.
+        if (hasInheritancePathDFS(targetClassId, sourceClassId, adj, new HashSet<>())) {
+            throw new IllegalArgumentException("Relación inválida: produce una dependencia de herencia circular entre clases (Excepción E1).");
+        }
+    }
+
+    private boolean hasInheritancePathDFS(UUID current, UUID destination, Map<UUID, List<UUID>> adj, Set<UUID> visited) {
+        if (current.equals(destination)) {
+            return true;
+        }
+        if (!visited.add(current)) {
+            return false;
+        }
+        List<UUID> neighbors = adj.get(current);
+        if (neighbors != null) {
+            for (UUID next : neighbors) {
+                if (hasInheritancePathDFS(next, destination, adj, visited)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     @Transactional
@@ -989,9 +1117,17 @@ public class DiagramService {
 
                 if (item.getId() != null) {
                     idToNodeMap.put(item.getId(), savedNode);
+                    idToNodeMap.put(item.getId().toLowerCase(), savedNode);
                 }
                 idToNodeMap.put(savedNode.getId().toString(), savedNode);
+                idToNodeMap.put(savedNode.getId().toString().toLowerCase(), savedNode);
             }
+        }
+
+        // Defensive lookup: ensure all pre-existing nodes can also be resolved by ID
+        for (ClassNode en : existingNodes) {
+            idToNodeMap.putIfAbsent(en.getId().toString(), en);
+            idToNodeMap.putIfAbsent(en.getId().toString().toLowerCase(), en);
         }
 
         // 2. Synchronize relationships
@@ -1003,8 +1139,11 @@ public class DiagramService {
 
         if (request.getEdges() != null) {
             for (SyncDiagramRequest.SyncEdgeItem item : request.getEdges()) {
-                ClassNode sourceNode = idToNodeMap.get(item.getSource());
-                ClassNode targetNode = idToNodeMap.get(item.getTarget());
+                String srcKey = item.getSource() != null ? item.getSource().trim() : null;
+                String tgtKey = item.getTarget() != null ? item.getTarget().trim() : null;
+
+                ClassNode sourceNode = srcKey != null ? (idToNodeMap.get(srcKey) != null ? idToNodeMap.get(srcKey) : idToNodeMap.get(srcKey.toLowerCase())) : null;
+                ClassNode targetNode = tgtKey != null ? (idToNodeMap.get(tgtKey) != null ? idToNodeMap.get(tgtKey) : idToNodeMap.get(tgtKey.toLowerCase())) : null;
 
                 if (sourceNode == null || targetNode == null) {
                     continue;
@@ -1021,12 +1160,16 @@ public class DiagramService {
 
                 rel.setSourceClass(sourceNode);
                 rel.setTargetClass(targetNode);
-                rel.setType(item.getType() != null ? item.getType().toLowerCase() : "association");
+                rel.setType(item.getType() != null ? item.getType().trim().toLowerCase() : "association");
                 rel.setSourceCardinality(item.getSourceCardinality());
                 rel.setTargetCardinality(item.getTargetCardinality());
                 rel.setLabel(item.getLabel());
                 rel.setSourceRole(item.getSourceRole());
                 rel.setTargetRole(item.getTargetRole());
+                rel.setSourceHandle(item.getSourceHandle());
+                rel.setTargetHandle(item.getTargetHandle());
+                rel.setRouting(item.getRouting());
+                rel.setWaypoints(item.getWaypoints());
 
                 Relationship savedRel = relationshipRepository.save(rel);
                 keptRelIds.add(savedRel.getId());

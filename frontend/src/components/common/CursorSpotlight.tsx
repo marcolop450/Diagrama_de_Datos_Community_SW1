@@ -11,11 +11,22 @@ export const CursorSpotlight: React.FC = () => {
   const points = useRef<Point[]>([]);
   const isPointerActive = useRef(false);
   const animFrameId = useRef<number | null>(null);
+  const isTitaniumRef = useRef(true);
 
   // Short, sleek, nimble trail (10 points max)
   const NUM_POINTS = 10;
 
   useEffect(() => {
+    // Sincronizar dinámicamente con la paleta activa (Titanio Cálido vs Grafito Obsidiana)
+    const updatePalette = () => {
+      const palette = document.documentElement.getAttribute('data-palette') || localStorage.getItem('case_app_palette');
+      isTitaniumRef.current = palette !== 'obsidian-graphite';
+    };
+    updatePalette();
+
+    const observer = new MutationObserver(updatePalette);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-palette'] });
+
     points.current = Array.from({ length: NUM_POINTS }, () => ({ x: -100, y: -100 }));
 
     const canvas = canvasRef.current;
@@ -41,6 +52,10 @@ export const CursorSpotlight: React.FC = () => {
       }
     };
 
+    const handleMouseLeave = () => {
+      isPointerActive.current = false;
+    };
+
     const handleTouchStart = (e: TouchEvent) => {
       if (e.touches.length > 0) {
         const touch = e.touches[0];
@@ -59,6 +74,10 @@ export const CursorSpotlight: React.FC = () => {
         targetPos.current = { x: touch.clientX, y: touch.clientY };
         isPointerActive.current = true;
       }
+    };
+
+    const handleTouchEnd = () => {
+      isPointerActive.current = false;
     };
 
     const render = () => {
@@ -89,42 +108,78 @@ export const CursorSpotlight: React.FC = () => {
             ctx.quadraticCurveTo(pts[i].x, pts[i].y, xc, yc);
           }
 
-          // Compact gradient from cyan head to fading blue
           const grad = ctx.createLinearGradient(
             pts[0].x, pts[0].y,
             pts[NUM_POINTS - 1].x, pts[NUM_POINTS - 1].y
           );
-          grad.addColorStop(0, 'rgba(56, 189, 248, 0.9)'); // Bright Cyan
-          grad.addColorStop(0.5, 'rgba(96, 165, 250, 0.5)'); // Blue
-          grad.addColorStop(1, 'rgba(99, 102, 241, 0)'); // Fast fade
 
-          ctx.strokeStyle = grad;
-          ctx.lineWidth = 2.2;
-          ctx.lineCap = 'round';
-          ctx.lineJoin = 'round';
-          ctx.shadowColor = 'rgba(56, 189, 248, 0.4)';
-          ctx.shadowBlur = 8;
-          ctx.stroke();
+          if (isTitaniumRef.current) {
+            // Paleta Titanio Cálido: Ámbar brillante con calidez orgánica
+            grad.addColorStop(0, 'rgba(245, 158, 11, 0.95)'); // Bright Amber
+            grad.addColorStop(0.5, 'rgba(251, 146, 60, 0.55)'); // Warm Bronze
+            grad.addColorStop(1, 'rgba(217, 119, 6, 0)'); // Fast fade
 
-          // Small glowing cursor point
-          ctx.beginPath();
-          ctx.arc(pts[0].x, pts[0].y, 3, 0, Math.PI * 2);
-          ctx.fillStyle = '#38BDF8';
-          ctx.shadowColor = '#38BDF8';
-          ctx.shadowBlur = 10;
-          ctx.fill();
+            ctx.strokeStyle = grad;
+            ctx.lineWidth = 2.2;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.shadowColor = 'rgba(245, 158, 11, 0.45)';
+            ctx.shadowBlur = 8;
+            ctx.stroke();
 
-          // Subtle mini halo
-          const headAura = ctx.createRadialGradient(
-            pts[0].x, pts[0].y, 0,
-            pts[0].x, pts[0].y, 22
-          );
-          headAura.addColorStop(0, 'rgba(56, 189, 248, 0.15)');
-          headAura.addColorStop(1, 'rgba(56, 189, 248, 0)');
-          ctx.beginPath();
-          ctx.arc(pts[0].x, pts[0].y, 22, 0, Math.PI * 2);
-          ctx.fillStyle = headAura;
-          ctx.fill();
+            // Small glowing cursor point
+            ctx.beginPath();
+            ctx.arc(pts[0].x, pts[0].y, 3, 0, Math.PI * 2);
+            ctx.fillStyle = '#F59E0B';
+            ctx.shadowColor = '#F59E0B';
+            ctx.shadowBlur = 10;
+            ctx.fill();
+
+            // Subtle mini halo
+            const headAura = ctx.createRadialGradient(
+              pts[0].x, pts[0].y, 0,
+              pts[0].x, pts[0].y, 22
+            );
+            headAura.addColorStop(0, 'rgba(245, 158, 11, 0.18)');
+            headAura.addColorStop(1, 'rgba(245, 158, 11, 0)');
+            ctx.beginPath();
+            ctx.arc(pts[0].x, pts[0].y, 22, 0, Math.PI * 2);
+            ctx.fillStyle = headAura;
+            ctx.fill();
+          } else {
+            // Paleta Grafito Obsidiana: Cyan eléctrico y azul cósmico
+            grad.addColorStop(0, 'rgba(56, 189, 248, 0.9)'); // Bright Cyan
+            grad.addColorStop(0.5, 'rgba(96, 165, 250, 0.5)'); // Blue
+            grad.addColorStop(1, 'rgba(99, 102, 241, 0)'); // Fast fade
+
+            ctx.strokeStyle = grad;
+            ctx.lineWidth = 2.2;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.shadowColor = 'rgba(56, 189, 248, 0.4)';
+            ctx.shadowBlur = 8;
+            ctx.stroke();
+
+            // Small glowing cursor point
+            ctx.beginPath();
+            ctx.arc(pts[0].x, pts[0].y, 3, 0, Math.PI * 2);
+            ctx.fillStyle = '#38BDF8';
+            ctx.shadowColor = '#38BDF8';
+            ctx.shadowBlur = 10;
+            ctx.fill();
+
+            // Subtle mini halo
+            const headAura = ctx.createRadialGradient(
+              pts[0].x, pts[0].y, 0,
+              pts[0].x, pts[0].y, 22
+            );
+            headAura.addColorStop(0, 'rgba(56, 189, 248, 0.15)');
+            headAura.addColorStop(1, 'rgba(56, 189, 248, 0)');
+            ctx.beginPath();
+            ctx.arc(pts[0].x, pts[0].y, 22, 0, Math.PI * 2);
+            ctx.fillStyle = headAura;
+            ctx.fill();
+          }
         }
       }
 
@@ -134,15 +189,20 @@ export const CursorSpotlight: React.FC = () => {
     animFrameId.current = requestAnimationFrame(render);
 
     window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    document.addEventListener('mouseleave', handleMouseLeave);
     window.addEventListener('touchstart', handleTouchStart, { passive: true });
     window.addEventListener('touchmove', handleTouchMove, { passive: true });
+    window.addEventListener('touchend', handleTouchEnd);
 
     return () => {
       if (animFrameId.current) cancelAnimationFrame(animFrameId.current);
+      observer.disconnect();
       window.removeEventListener('resize', resize);
       window.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseleave', handleMouseLeave);
       window.removeEventListener('touchstart', handleTouchStart);
       window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
     };
   }, []);
 

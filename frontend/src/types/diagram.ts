@@ -5,6 +5,7 @@ export interface ClassAttribute {
   visibility: 'public' | 'private' | 'protected' | 'package';
   isStatic: boolean;
   isId?: boolean;
+  isPrimaryKey?: boolean;
   multiplicity?: string;
   defaultValue?: string;
 }
@@ -35,14 +36,26 @@ export interface ClassNodeData extends Record<string, unknown> {
   methods: ClassMethod[];
 }
 
+export type EdgeRoutingType = 'smoothstep' | 'step' | 'straight' | 'bezier';
+
+export interface EdgeWaypoint {
+  x: number;
+  y: number;
+}
+
 export interface RelationshipData extends Record<string, unknown> {
   id: string;
-  type: 'association' | 'aggregation' | 'composition' | 'inheritance' | 'implementation' | 'dependency';
+  type: 'association' | 'aggregation' | 'composition' | 'inheritance' | 'generalization' | 'implementation' | 'realization' | 'dependency';
   sourceCardinality: string;
   targetCardinality: string;
   label?: string;
   sourceRole?: string;
   targetRole?: string;
+  sourceHandle?: string | null;
+  targetHandle?: string | null;
+  routing?: EdgeRoutingType;
+  isDirected?: boolean;
+  waypoints?: EdgeWaypoint[];
 }
 
 export interface DiagramProject {

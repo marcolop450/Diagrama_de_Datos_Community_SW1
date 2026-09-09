@@ -139,20 +139,20 @@ export const AdminProjectsPage: React.FC = () => {
         {/* Header Banner */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-800 pb-5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-purple-600/20 border border-purple-500/40 flex items-center justify-center text-purple-400 shrink-0">
-              <FolderKanban size={22} />
+            <div className="w-9 h-9 rounded-lg bg-purple-600/20 border border-purple-500/40 flex items-center justify-center text-purple-400 shrink-0 shadow-xs">
+              <FolderKanban size={20} />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl md:text-2xl font-bold text-slate-100 tracking-tight">
-                  Proyectos en la Plataforma (Supervisión Global)
+                  Proyectos en la Plataforma
                 </h1>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-purple-950/60 border border-purple-800 text-purple-300">
                   Super Admin
                 </span>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
-                Supervisión, auditoría y recuperación de todos los modelos UML diseñados en la plataforma.
+                Supervisión global, auditoría y recuperación de todos los modelos UML diseñados en la plataforma.
               </p>
             </div>
           </div>
@@ -161,7 +161,7 @@ export const AdminProjectsPage: React.FC = () => {
             <button
               onClick={handleRefresh}
               disabled={refreshing}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-300 rounded-lg text-xs font-semibold transition-all cursor-pointer shadow-xs active:scale-95"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-300 rounded-md text-xs font-semibold transition-all cursor-pointer shadow-xs active:scale-95"
               title="Actualizar proyectos"
             >
               <RefreshCw size={13} className={refreshing ? 'animate-spin text-purple-400' : 'text-slate-400'} />
@@ -178,7 +178,7 @@ export const AdminProjectsPage: React.FC = () => {
               setCurrentPage(1);
               setSelectedTag('ALL');
             }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer border ${
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer border ${
               activeTab === 'active'
                 ? 'bg-purple-600/20 text-purple-300 border-purple-500/40 shadow-xs'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900 border-slate-800'
@@ -186,7 +186,7 @@ export const AdminProjectsPage: React.FC = () => {
           >
             <FolderKanban size={14} />
             <span>Proyectos Activos</span>
-            <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-slate-800 text-slate-300">
+            <span className="ml-1 px-1.5 py-0.2 rounded text-[10px] font-mono bg-slate-800 text-slate-300">
               {projects.length}
             </span>
           </button>
@@ -197,7 +197,7 @@ export const AdminProjectsPage: React.FC = () => {
               setCurrentPage(1);
               setSelectedTag('ALL');
             }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer border ${
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer border ${
               activeTab === 'trash'
                 ? 'bg-rose-950/40 text-rose-300 border-rose-800/60 shadow-xs'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900 border-slate-800'
@@ -205,16 +205,16 @@ export const AdminProjectsPage: React.FC = () => {
           >
             <RotateCcw size={14} />
             <span>Papelera de Reciclaje</span>
-            <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-slate-800 text-slate-300">
+            <span className="ml-1 px-1.5 py-0.2 rounded text-[10px] font-mono bg-slate-800 text-slate-300">
               {trashProjects.length}
             </span>
           </button>
         </div>
 
         {/* Search & Tag Filter Bar */}
-        <div className="flex flex-col md:flex-row gap-3 bg-slate-900/40 border border-slate-800/80 p-3.5 rounded-2xl">
+        <div className="flex flex-col md:flex-row gap-3 bg-slate-900/40 border border-slate-800/80 p-3 rounded-lg">
           <div className="relative flex-1">
-            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+            <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
             <input
               type="text"
               placeholder="Buscar proyectos por nombre, descripción o etiquetas..."
@@ -223,7 +223,7 @@ export const AdminProjectsPage: React.FC = () => {
                 setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full bg-slate-950 border border-slate-800 text-slate-100 placeholder:text-slate-500 focus:border-purple-500 rounded-xl pl-9 pr-3 py-2 text-xs focus:outline-none transition-colors"
+              className="w-full bg-slate-950 border border-slate-800 text-slate-100 placeholder:text-slate-500 focus:border-purple-500 rounded-md pl-9 pr-3 py-1.5 text-xs focus:outline-none transition-colors"
             />
           </div>
 
@@ -235,7 +235,7 @@ export const AdminProjectsPage: React.FC = () => {
                   setSelectedTag('ALL');
                   setCurrentPage(1);
                 }}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer ${
+                className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all shrink-0 cursor-pointer ${
                   selectedTag === 'ALL'
                     ? 'bg-purple-600 text-white shadow-xs'
                     : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
@@ -250,7 +250,7 @@ export const AdminProjectsPage: React.FC = () => {
                     setSelectedTag(tag);
                     setCurrentPage(1);
                   }}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer ${
+                  className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all shrink-0 cursor-pointer ${
                     selectedTag === tag
                       ? 'bg-purple-600 text-white shadow-xs'
                       : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
@@ -264,7 +264,7 @@ export const AdminProjectsPage: React.FC = () => {
         </div>
 
         {/* Informative Governance Alert */}
-        <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-slate-900/60 border border-slate-800 text-slate-400 rounded-xl text-xs">
+        <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-slate-900/60 border border-slate-800 text-slate-400 rounded-lg text-xs">
           <ShieldAlert size={15} className="text-purple-400 shrink-0" />
           <span>
             {activeTab === 'active'
@@ -280,8 +280,8 @@ export const AdminProjectsPage: React.FC = () => {
             <span className="text-xs text-slate-400">Cargando proyectos de la plataforma...</span>
           </div>
         ) : filteredProjects.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 px-4 bg-slate-900/20 border border-dashed border-slate-800 rounded-2xl text-center">
-            <div className="w-12 h-12 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 mb-3">
+          <div className="flex flex-col items-center justify-center py-20 px-4 bg-slate-900/20 border border-dashed border-slate-800 rounded-lg text-center">
+            <div className="w-12 h-12 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 mb-3 shadow-xs">
               <FolderKanban size={22} />
             </div>
             <h3 className="text-sm font-semibold text-slate-200">
@@ -300,7 +300,7 @@ export const AdminProjectsPage: React.FC = () => {
             {paginatedProjects.map(proj => (
               <div 
                 key={proj.id}
-                className="flex flex-col justify-between bg-slate-900/40 hover:bg-slate-900/60 border border-slate-800/80 hover:border-slate-700 rounded-2xl p-4.5 transition-all shadow-sm overflow-hidden"
+                className="flex flex-col justify-between bg-slate-900/40 hover:bg-slate-900/60 border border-slate-800/80 hover:border-slate-700/80 rounded-lg p-4 transition-all shadow-xs overflow-hidden"
               >
                 <div>
                   <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
