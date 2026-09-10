@@ -14,13 +14,15 @@ import {
   Database,
   Undo2,
   Redo2,
-  ShieldCheck
+  ShieldCheck,
+  Download
 } from 'lucide-react';
 import { useUiStore } from '../../stores/uiStore';
 import { useDiagramStore } from '../../stores/diagramStore';
 import { useReactFlow } from '@xyflow/react';
 import { ProjectHistoryModal } from '../history/ProjectHistoryModal';
 import { NormalizationReportModal } from '../modals/NormalizationReportModal';
+import { ExportModal } from '../modals/ExportModal';
 import { analyzeDiagramNormalization } from '../../services/normalizationEngine';
 import toast from 'react-hot-toast';
 
@@ -30,6 +32,7 @@ export const Toolbar: React.FC = () => {
   const { zoomIn, zoomOut, fitView, getViewport } = useReactFlow();
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isNormalizationOpen, setIsNormalizationOpen] = useState(false);
+  const [isExportOpen, setIsExportOpen] = useState(false);
   const [hoverTooltip, setHoverTooltip] = useState<{ text: string; top: number } | null>(null);
 
   const normReport = useMemo(() => {
@@ -243,6 +246,17 @@ export const Toolbar: React.FC = () => {
             <History size={16} />
           </button>
 
+          {/* Exportar Modelo y Documentación Técnica (CU11) */}
+          <button
+            onClick={() => setIsExportOpen(true)}
+            onMouseEnter={showTip('Exportar Modelo')}
+            onMouseLeave={hideTip}
+            className="p-2 rounded-md text-slate-400 hover:text-blue-400 hover:bg-blue-950/30 transition-all cursor-pointer"
+            title="Exportar Modelo y Documentación Técnica"
+          >
+            <Download size={16} />
+          </button>
+
           {/* Generate Backend Spring Boot */}
           <button
             onClick={() => toast('Generador de Backend Spring Boot (4 Capas en ZIP) en preparación')}
@@ -324,6 +338,12 @@ export const Toolbar: React.FC = () => {
       <NormalizationReportModal
         isOpen={isNormalizationOpen}
         onClose={() => setIsNormalizationOpen(false)}
+      />
+
+      {/* Export Model & Documentation Modal (CU11) */}
+      <ExportModal
+        isOpen={isExportOpen}
+        onClose={() => setIsExportOpen(false)}
       />
     </aside>
   );

@@ -66,10 +66,13 @@ const PropertiesPanel: React.FC = () => {
     const currentCount = selectedNode.data.attributes?.length || 0;
     const newAttr: ClassAttribute = {
       id: `a-${Date.now()}`,
-      name: `campo${currentCount + 1}`,
+      name: currentCount === 0 ? 'id' : `campo${currentCount + 1}`,
       type: currentCount === 0 ? 'Long' : 'String',
       visibility: 'private',
       isId: currentCount === 0,
+      isPrimaryKey: currentCount === 0,
+      isNotNull: currentCount === 0,
+      isNullable: currentCount !== 0,
       isStatic: false
     };
     const updated = [...(selectedNode.data.attributes || []), newAttr];
@@ -92,15 +95,52 @@ const PropertiesPanel: React.FC = () => {
 
   const handleToggleAttributeId = (attrId: string) => {
     if (!selectedNode) return;
-    const updated = selectedNode.data.attributes.map(a => 
-      a.id === attrId ? { ...a, isId: !a.isId } : a
-    );
+    const updated = selectedNode.data.attributes.map(a => {
+      if (a.id === attrId) {
+        const nextId = !(a.isId || a.isPrimaryKey);
+        return {
+          ...a,
+          isId: nextId,
+          isPrimaryKey: nextId,
+          isNotNull: nextId ? true : a.isNotNull,
+          isNullable: nextId ? false : a.isNullable
+        };
+      }
+      return a;
+    });
     updateClassNode(selectedNode.id, { attributes: updated });
     const target = updated.find(a => a.id === attrId);
     if (target?.isId) {
       toast.success(`Atributo '${target.name}' marcado como {PK}`);
     } else {
       toast('Atributo desmarcado de clave primaria');
+    }
+  };
+
+  const handleToggleAttributeNotNull = (attrId: string) => {
+    if (!selectedNode) return;
+    const target = selectedNode.data.attributes.find(a => a.id === attrId);
+    if (target?.isId || target?.isPrimaryKey) {
+      toast('Una clave primaria es obligatoria por definición (NOT NULL)');
+      return;
+    }
+    const updated = selectedNode.data.attributes.map(a => {
+      if (a.id === attrId) {
+        const nextNN = !a.isNotNull;
+        return {
+          ...a,
+          isNotNull: nextNN,
+          isNullable: !nextNN
+        };
+      }
+      return a;
+    });
+    updateClassNode(selectedNode.id, { attributes: updated });
+    const updatedTarget = updated.find(a => a.id === attrId);
+    if (updatedTarget?.isNotNull) {
+      toast.success(`Atributo '${updatedTarget.name}' marcado como NOT NULL`);
+    } else {
+      toast(`Atributo '${updatedTarget?.name}' marcado como NULLABLE`);
     }
   };
 
@@ -409,14 +449,37 @@ const PropertiesPanel: React.FC = () => {
                             type="button"
                             onClick={() => handleToggleAttributeId(attr.id)}
                             className={`px-2 py-1 rounded-lg text-[10px] font-mono font-bold border transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
-                              attr.isId
+                              (attr.isId || attr.isPrimaryKey)
                                 ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 ring-1 ring-amber-400/40 shadow-xs'
                                 : 'bg-slate-950 border-slate-800 text-slate-500 hover:text-slate-300 hover:border-slate-700'
                             }`}
-                            title={attr.isId ? 'Clave Primaria activa ({PK})' : 'Marcar como Clave Primaria ({PK})'}
+                            title={(attr.isId || attr.isPrimaryKey) ? 'Clave Primaria activa ({PK})' : 'Marcar como Clave Primaria ({PK})'}
                           >
-                            <Key size={10} className={attr.isId ? 'text-amber-400' : 'text-slate-500'} />
+                            <Key size={10} className={(attr.isId || attr.isPrimaryKey) ? 'text-amber-400' : 'text-slate-500'} />
                             <span>PK</span>
+                          </button>
+
+                          {/* NN (NOT NULL) Toggle Button */}
+                          <button
+                            type="button"
+                            onClick={() => handleToggleAttributeNotNull(attr.id)}
+                            disabled={Boolean(attr.isId || attr.isPrimaryKey)}
+                            className={`px-2 py-1 rounded-lg text-[10px] font-mono font-bold border transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
+                              (attr.isId || attr.isPrimaryKey)
+                                ? 'bg-blue-500/10 border-blue-500/30 text-blue-400/60 cursor-not-allowed opacity-75'
+                                : attr.isNotNull
+                                  ? 'bg-blue-500/20 border-blue-500/60 text-blue-300 ring-1 ring-blue-400/40 shadow-xs'
+                                  : 'bg-slate-950 border-slate-800 text-slate-500 hover:text-slate-300 hover:border-slate-700'
+                            }`}
+                            title={
+                              (attr.isId || attr.isPrimaryKey)
+                                ? 'Las claves primarias son siempre obligatorias (NOT NULL)'
+                                : attr.isNotNull
+                                  ? 'Campo obligatorio ({NN} - NOT NULL)'
+                                  : 'Campo opcional (NULLABLE). Clic para marcar NOT NULL'
+                            }
+                          >
+                            <span>NN</span>
                           </button>
 
                           {/* Static Toggle Button */}

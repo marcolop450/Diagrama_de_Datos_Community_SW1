@@ -166,7 +166,7 @@ const ClassNodeComponent = ({ data, selected }: CustomNodeProps) => {
               <span className="font-medium ml-1" style={{ color: theme.nodeText }}>{attr.name}</span>
               <span className="mx-1" style={{ color: theme.nodeTextMuted }}>:</span>
               <span className="font-medium" style={{ color: theme.nodeStereotypeText }}>{attr.type}</span>
-              {attr.isId && (
+              {(attr.isId || attr.isPrimaryKey) && (
                 <span 
                   className="ml-1.5 px-1 py-0.2 text-[9px] font-bold rounded-xs border shadow-xs"
                   style={{ 
@@ -174,8 +174,17 @@ const ClassNodeComponent = ({ data, selected }: CustomNodeProps) => {
                     color: theme.pkText, 
                     borderColor: theme.pkBorder 
                   }}
+                  title="Clave Primaria (PK - NOT NULL)"
                 >
                   &#123;PK&#125;
+                </span>
+              )}
+              {attr.isNotNull && !attr.isId && !attr.isPrimaryKey && (
+                <span 
+                  className="ml-1 px-1 py-0.2 text-[9px] font-semibold rounded-xs border border-blue-500/40 bg-blue-500/15 text-blue-400 shadow-xs"
+                  title="Campo Obligatorio (NOT NULL)"
+                >
+                  &#123;NN&#125;
                 </span>
               )}
             </div>

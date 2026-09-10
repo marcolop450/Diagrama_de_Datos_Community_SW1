@@ -272,7 +272,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
         stereotype: stereotype || undefined,
         isAbstract: !!isAbstract,
         attributes: [
-          { id: `a-${Date.now()}-1`, name: 'id', type: 'Long', visibility: 'private', isStatic: false, isId: true }
+          { id: `a-${Date.now()}-1`, name: 'id', type: 'Long', visibility: 'private', isStatic: false, isId: true, isPrimaryKey: true, isNotNull: true, isNullable: false }
         ],
         methods: [
           { id: `m-${Date.now()}-1`, name: 'getId', returnType: 'Long', visibility: 'public', isStatic: false, isAbstract: false, parameters: [] }
@@ -596,6 +596,9 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
                   name: 'id',
                   type: attr.type?.trim() ? attr.type : 'Long',
                   isId: true,
+                  isPrimaryKey: true,
+                  isNotNull: true,
+                  isNullable: false,
                 };
               }
               return attr;
@@ -617,6 +620,9 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
             visibility: 'public' as const,
             isStatic: false,
             isId: true,
+            isPrimaryKey: true,
+            isNotNull: true,
+            isNullable: false,
           };
           return {
             ...node,
@@ -681,6 +687,9 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
             visibility: 'public',
             isStatic: false,
             isId: true,
+            isPrimaryKey: true,
+            isNotNull: true,
+            isNullable: false,
           },
           {
             id: crypto.randomUUID(),
@@ -689,6 +698,9 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
             visibility: 'public',
             isStatic: false,
             isId: false,
+            isPrimaryKey: false,
+            isNotNull: true,
+            isNullable: false,
           },
           {
             id: crypto.randomUUID(),
@@ -697,6 +709,9 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
             visibility: 'public',
             isStatic: false,
             isId: false,
+            isPrimaryKey: false,
+            isNotNull: true,
+            isNullable: false,
           },
         ],
         methods: [],

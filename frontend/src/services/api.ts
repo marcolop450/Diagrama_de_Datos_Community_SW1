@@ -237,4 +237,24 @@ export const api = {
     const res = await apiClient.post('/projects/validate-normalization-live', diagramData);
     return res.data;
   },
+
+  // Exportar Modelo y Documentación Técnica (CU11)
+  exportProjectXmi: async (projectId: string) => {
+    const res = await apiClient.get(`/projects/${projectId}/export/xmi`, {
+      responseType: 'blob',
+    });
+    return res.data;
+  },
+  exportProjectExcel: async (projectId: string) => {
+    const res = await apiClient.get(`/projects/${projectId}/export/excel`, {
+      responseType: 'blob',
+    });
+    return res.data;
+  },
+  exportProjectPdf: async (projectId: string, options?: { imageBase64?: string; includeDictionary?: boolean; includeRelationships?: boolean }) => {
+    const res = await apiClient.post(`/projects/${projectId}/export/pdf`, options || {}, {
+      responseType: 'blob',
+    });
+    return res.data;
+  },
 };

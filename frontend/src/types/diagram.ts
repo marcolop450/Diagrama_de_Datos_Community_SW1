@@ -6,6 +6,8 @@ export interface ClassAttribute {
   isStatic: boolean;
   isId?: boolean;
   isPrimaryKey?: boolean;
+  isNotNull?: boolean;
+  isNullable?: boolean;
   multiplicity?: string;
   defaultValue?: string;
 }

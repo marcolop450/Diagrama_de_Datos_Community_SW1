@@ -10,9 +10,9 @@
 ## 1. Enfoque de Desarrollo y Estado Real de los Casos de Uso (CU)
 
 El desarrollo del sistema se ejecuta **estrictamente Caso de Uso por Caso de Uso (CU por CU)** bajo el Proceso Unificado de Desarrollo de Software (PUDS).
-* **Realizados Correctamente y Validados:** Exclusivamente hasta el **CU10**.
-* **Todo lo posterior a CU10:** Eran maquetas/demos no definitivas que deben ser desarrolladas formalmente desde cero paso a paso.
-* **Foco Inmediato Siguiente:** **CU11** (Exportar Modelo y Documentación Técnica).
+* **Realizados Correctamente y Validados:** Exclusivamente hasta el **CU11**.
+* **Todo lo posterior a CU11:** Eran maquetas/demos no definitivas que deben ser desarrolladas formalmente desde cero paso a paso.
+* **Foco Inmediato Siguiente:** **CU12** (Importar Modelo desde XMI (ArchiTec)).
 
 ### Matriz de Estado de Casos de Uso por Ciclos
 
@@ -29,7 +29,7 @@ El desarrollo del sistema se ejecuta **estrictamente Caso de Uso por Caso de Uso
 | **CU08** | Modelar Clases UML (Tipos y Visibilidad) | Ciclo 1 | `A2: Arquitecto` / `A3: Colaborador` | **Implementado** | Modelado canónico OMG UML 2.5 (3 compartimentos, visibilidades `+`, `-`, `#`, `~`, estereotipos con guillemets, cursiva abstract, subrayado static, badge `{PK}`, catálogo Java 21 / PostgreSQL 17, firmas con parámetros tipados `(p: Type)`), validación de unicidad de nombre en frontend/backend (`E1: Nombre Duplicado`), clonación atómica profunda (`cloneClassNode`) con offset `(+48, +48)` y trazabilidad completa. |
 | **CU09** | Conectar Relaciones y Cardinalidades | Ciclo 1 | `A2: Arquitecto` / `A3: Colaborador` | **Implementado** | Trazado canónico OMG UML 2.5 (asociación dirigida con flecha abierta, agregación con rombo hueco, composición con rombo relleno, generalización y realización con triángulo cerrado, dependencia con línea discontinua), omisión de cardinalidad en relaciones estructurales, restricción de composición simple en contenedor, roles (source/target), prevención de ciclos de herencia directos y transitivos vía DFS en backend y frontend (E1: Herencia Circular), botón de inversión de dirección atómica, y sistema de historial en lienzo con atajos de teclado Deshacer/Rehacer (Ctrl+Z, Ctrl+Y). |
 | **CU10** | Validar Normalización Lógica (1NF a 3NF) | Ciclo 1 | `A2: Arquitecto` / `A3: Colaborador` | **Implementado** | Motor heurístico de auditoría de normalización relacional (TOM y Codd). Detección de claves primarias faltantes en 1NF con inyección asistida de `{PK}`, atributos multivaluados y repetitivos, verificación de FKs en relaciones $1..*$ en 2NF, descomposición de relaciones $*..*$ en clases intermedias asociativas en 3NF, dependencias transitivas y campos calculados. Semáforo de calidad (0 a 100%), modal interactivo con filtros, certificación de auditoría inmutable en backend (`audit_logs`) y suite de pruebas unitarias al 100%. |
-| **CU11** | Exportar Modelo y Documentación Técnica | Ciclo 2 | `A2: Arquitecto` / `A3: Colaborador` | **Pendiente** | 4 formatos: OMG XMI 2.1 (ArchiTec/StarUML), PNG alta resolución, PDF técnico ejecutivo y Excel (.xlsx) con tipo de dato SQL/JPA por columna. |
+| **CU11** | Exportar Modelo y Documentación Técnica | Ciclo 2 | `A2: Arquitecto` / `A3: Colaborador` | **Implementado** | 4 formatos canónicos: OMG XMI 2.1 (ArchiTec/StarUML), PNG alta resolución (1x, 2x, 3x Ultra HD con fondos configurables), Memoria Técnica PDF ejecutiva con diagrama rasterizado incrustado, y Libro Excel (.xlsx) de 3 hojas con tipos PostgreSQL 17 / Java 21 JPA. Modal ergonómico, validación preventiva de modelo vacío (E1) y auditoría inmutable en `audit_logs`. |
 | **CU12** | Importar Modelo desde XMI (ArchiTec) | Ciclo 2 | `A2: Arquitecto` | **Pendiente** | Parser bidireccional XML/XMI OMG para importar modelos externos de ArchiTec y StarUML directamente al canvas. |
 | **CU13** | Generar Backend Spring Boot (4 Capas en ZIP) | Ciclo 2 | `A2: Arquitecto` | **Pendiente** | Generación automatizada de código Java 21: Entities JPA, Repositories, Services y Controllers empaquetados en `.zip`. |
 | **CU14** | Generar Esquema DDL SQL (PostgreSQL 17) | Ciclo 2 | `A2: Arquitecto` | **Pendiente** | Exportación de script SQL DDL para Supabase con tablas, PKs, FKs, tipos de datos y restricciones de integridad. |
