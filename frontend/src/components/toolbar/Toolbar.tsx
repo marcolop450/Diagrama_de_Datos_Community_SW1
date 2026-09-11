@@ -15,7 +15,8 @@ import {
   Undo2,
   Redo2,
   ShieldCheck,
-  Download
+  Download,
+  Upload
 } from 'lucide-react';
 import { useUiStore } from '../../stores/uiStore';
 import { useDiagramStore } from '../../stores/diagramStore';
@@ -23,6 +24,7 @@ import { useReactFlow } from '@xyflow/react';
 import { ProjectHistoryModal } from '../history/ProjectHistoryModal';
 import { NormalizationReportModal } from '../modals/NormalizationReportModal';
 import { ExportModal } from '../modals/ExportModal';
+import { ImportModal } from '../modals/ImportModal';
 import { analyzeDiagramNormalization } from '../../services/normalizationEngine';
 import toast from 'react-hot-toast';
 
@@ -33,6 +35,7 @@ export const Toolbar: React.FC = () => {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isNormalizationOpen, setIsNormalizationOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
   const [hoverTooltip, setHoverTooltip] = useState<{ text: string; top: number } | null>(null);
 
   const normReport = useMemo(() => {
@@ -257,6 +260,17 @@ export const Toolbar: React.FC = () => {
             <Download size={16} />
           </button>
 
+          {/* Importar Modelo desde XMI (CU12) */}
+          <button
+            onClick={() => setIsImportOpen(true)}
+            onMouseEnter={showTip('Importar Modelo XMI')}
+            onMouseLeave={hideTip}
+            className="p-2 rounded-md text-slate-400 hover:text-emerald-400 hover:bg-emerald-950/30 transition-all cursor-pointer"
+            title="Importar Modelo desde XMI (ArchiTec / StarUML / EA)"
+          >
+            <Upload size={16} />
+          </button>
+
           {/* Generate Backend Spring Boot */}
           <button
             onClick={() => toast('Generador de Backend Spring Boot (4 Capas en ZIP) en preparación')}
@@ -344,6 +358,12 @@ export const Toolbar: React.FC = () => {
       <ExportModal
         isOpen={isExportOpen}
         onClose={() => setIsExportOpen(false)}
+      />
+
+      {/* Import Model from XMI Modal (CU12) */}
+      <ImportModal
+        isOpen={isImportOpen}
+        onClose={() => setIsImportOpen(false)}
       />
     </aside>
   );

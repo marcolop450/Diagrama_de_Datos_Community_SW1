@@ -257,4 +257,27 @@ export const api = {
     });
     return res.data;
   },
+
+  // Importar Modelo desde XMI (CU12)
+  importProjectXmi: async (file: File, projectName?: string) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (projectName && projectName.trim()) {
+      formData.append('projectName', projectName.trim());
+    }
+    const res = await apiClient.post('/projects/import/xmi', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data;
+  },
+
+  importIntoProjectXmi: async (projectId: string, file: File, replaceCurrent = false) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('replaceCurrent', String(replaceCurrent));
+    const res = await apiClient.post(`/projects/${projectId}/import/xmi`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data;
+  },
 };

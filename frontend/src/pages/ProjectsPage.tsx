@@ -24,11 +24,13 @@ import {
   X,
   AlertTriangle,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Upload
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ProjectHistoryModal } from '../components/history/ProjectHistoryModal';
 import CreateProjectModal from '../components/modals/CreateProjectModal';
+import { ImportModal } from '../components/modals/ImportModal';
 
 export const ProjectsPage: React.FC = () => {
   const { user } = useAuthStore();
@@ -47,6 +49,7 @@ export const ProjectsPage: React.FC = () => {
 
   // Modals State
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const [cloneModalProject, setCloneModalProject] = useState<DiagramProject | null>(null);
   const [cloneName, setCloneName] = useState('');
@@ -317,6 +320,17 @@ export const ProjectsPage: React.FC = () => {
               <RefreshCw size={13} className={refreshing ? 'animate-spin text-blue-400' : 'text-slate-400'} />
               <span>Actualizar</span>
             </button>
+
+            {!isColaborador && (
+              <button
+                onClick={() => setIsImportModalOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 rounded-lg text-xs font-semibold transition-all shadow-xs active:scale-95 cursor-pointer"
+                title="Importar modelo desde archivo OMG XMI 2.1 (ArchiTec, StarUML, EA)"
+              >
+                <Upload size={14} className="text-emerald-400" />
+                <span>Importar XMI</span>
+              </button>
+            )}
 
             {!isColaborador && (
               <button
@@ -906,6 +920,15 @@ export const ProjectsPage: React.FC = () => {
             projectName={historyModalProject.name}
           />
         )}
+
+        {/* Import XMI Modal (CU12) */}
+        <ImportModal
+          isOpen={isImportModalOpen}
+          onClose={() => {
+            setIsImportModalOpen(false);
+            loadProjects();
+          }}
+        />
       </div>
     </AppLayout>
   );
