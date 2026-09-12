@@ -10,9 +10,9 @@
 ## 1. Enfoque de Desarrollo y Estado Real de los Casos de Uso (CU)
 
 El desarrollo del sistema se ejecuta **estrictamente Caso de Uso por Caso de Uso (CU por CU)** bajo el Proceso Unificado de Desarrollo de Software (PUDS).
-* **Realizados Correctamente y Validados:** Exclusivamente hasta el **CU12**.
-* **Todo lo posterior a CU12:** Eran maquetas/demos no definitivas que deben ser desarrolladas formalmente desde cero paso a paso.
-* **Foco Inmediato Siguiente:** **CU13** (Generar Backend Spring Boot (4 Capas en ZIP)).
+* **Realizados Correctamente y Validados:** Exclusivamente hasta el **CU14**.
+* **Todo lo posterior a CU14:** Eran maquetas/demos no definitivas que deben ser desarrolladas formalmente desde cero paso a paso.
+* **Foco Inmediato Siguiente:** **CU15** (Generar Colección de Pruebas Postman v2.1).
 
 ### Matriz de Estado de Casos de Uso por Ciclos
 
@@ -31,8 +31,8 @@ El desarrollo del sistema se ejecuta **estrictamente Caso de Uso por Caso de Uso
 | **CU10** | Validar Normalización Lógica (1NF a 3NF) | Ciclo 1 | `A2: Arquitecto` / `A3: Colaborador` | **Implementado** | Motor heurístico de auditoría de normalización relacional (TOM y Codd). Detección de claves primarias faltantes en 1NF con inyección asistida de `{PK}`, atributos multivaluados y repetitivos, verificación de FKs en relaciones $1..*$ en 2NF, descomposición de relaciones $*..*$ en clases intermedias asociativas en 3NF, dependencias transitivas y campos calculados. Semáforo de calidad (0 a 100%), modal interactivo con filtros, certificación de auditoría inmutable en backend (`audit_logs`) y suite de pruebas unitarias al 100%. |
 | **CU11** | Exportar Modelo y Documentación Técnica | Ciclo 2 | `A2: Arquitecto` / `A3: Colaborador` | **Implementado** | 4 formatos canónicos: OMG XMI 2.1 (ArchiTec/StarUML), PNG alta resolución (1x, 2x, 3x Ultra HD con fondos configurables), Memoria Técnica PDF ejecutiva con diagrama rasterizado incrustado, y Libro Excel (.xlsx) de 3 hojas con tipos PostgreSQL 17 / Java 21 JPA. Modal ergonómico, validación preventiva de modelo vacío (E1) y auditoría inmutable en `audit_logs`. |
 | **CU12** | Importar Modelo desde XMI (ArchiTec) | Ciclo 2 | `A2: Arquitecto` | **Implementado** | Parser bidireccional XML/XMI OMG (ArchiTec, Enterprise Architect, StarUML) con protección XXE, extracción completa de clases, visibilidad, PKs, NOT NULL, métodos y relaciones, motor de auto-layout jerárquico por capas (LayoutEngineUtil), opción dual (Nuevo Proyecto vs Incorporar), modal drag & drop y registro en audit_logs. |
-| **CU13** | Generar Backend Spring Boot (4 Capas en ZIP) | Ciclo 2 | `A2: Arquitecto` | **Pendiente** | Generación automatizada de código Java 21: Entities JPA, Repositories, Services y Controllers empaquetados en `.zip`. |
-| **CU14** | Generar Esquema DDL SQL (PostgreSQL 17) | Ciclo 2 | `A2: Arquitecto` | **Pendiente** | Exportación de script SQL DDL para Supabase con tablas, PKs, FKs, tipos de datos y restricciones de integridad. |
+| **CU13** | Generar Backend Spring Boot (4 Capas en ZIP) | Ciclo 2 | `A2: Arquitecto` | **Implementado** | Generación automatizada de código Java 21: Entities JPA, Repositories, Services y Controllers empaquetados en `.zip` con Maven Wrapper, Swagger y perfiles H2/PostgreSQL. |
+| **CU14** | Generar Esquema DDL SQL (PostgreSQL 17) | Ciclo 2 | `A2: Arquitecto` | **Implementado** | Exportación de script SQL DDL para Supabase/PostgreSQL 17 con tablas, PKs autoincrementales IDENTITY, FKs con ON DELETE CASCADE, tablas intermedias N:N, índices B-Tree, comentarios y auditoría inmutable. |
 | **CU15** | Generar Colección de Pruebas Postman v2.1 | Ciclo 2 | `A2: Arquitecto` | **Pendiente** | Generación de archivo JSON con colección de peticiones HTTP REST CRUD para cada entidad del diagrama. |
 | **CU16** | Modelar por Dictado de Voz (IA PLN) | Ciclo 3 | `A2: Arquitecto (Host)` | **Pendiente** | Entrada por micrófono (Web Speech API / Whisper), procesamiento semántico con Gemini Flash y modelado automático. |
 | **CU17** | Digitalizar Foto de Pizarra (IA Visión) | Ciclo 3 | `A2: Arquitecto (Host)` | **Pendiente** | Subida de fotografía de boceto en pizarra física, inferencia con Gemini 2.5 Flash y vectorización a nodos UML. |

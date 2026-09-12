@@ -623,6 +623,38 @@ public class XmiImportService {
             ClassNode tgt = xmiIdToEntityMap.get(rawRel.targetXmiId);
 
             if (src != null && tgt != null) {
+                String sourceHandle;
+                String targetHandle;
+
+                if (src.getId() != null && src.getId().equals(tgt.getId())) {
+                    // Recursive relationship (self-association): loop from right to top
+                    sourceHandle = "right";
+                    targetHandle = "top";
+                } else {
+                    double dx = tgt.getPositionX() - src.getPositionX();
+                    double dy = tgt.getPositionY() - src.getPositionY();
+
+                    if (Math.abs(dy) >= Math.abs(dx)) {
+                        // Dominant vertical relation
+                        if (dy >= 0) {
+                            sourceHandle = "bottom";
+                            targetHandle = "top";
+                        } else {
+                            sourceHandle = "top";
+                            targetHandle = "bottom";
+                        }
+                    } else {
+                        // Dominant horizontal relation
+                        if (dx >= 0) {
+                            sourceHandle = "right";
+                            targetHandle = "left";
+                        } else {
+                            sourceHandle = "left";
+                            targetHandle = "right";
+                        }
+                    }
+                }
+
                 Relationship rel = Relationship.builder()
                         .project(project)
                         .sourceClass(src)
@@ -632,8 +664,8 @@ public class XmiImportService {
                         .targetCardinality(rawRel.targetCardinality)
                         .sourceRole(rawRel.sourceRole)
                         .targetRole(rawRel.targetRole)
-                        .sourceHandle("bottom")
-                        .targetHandle("top")
+                        .sourceHandle(sourceHandle)
+                        .targetHandle(targetHandle)
                         .label(rawRel.label)
                         .routing("smoothstep")
                         .build();

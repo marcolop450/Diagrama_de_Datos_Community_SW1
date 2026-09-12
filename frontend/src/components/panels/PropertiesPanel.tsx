@@ -18,7 +18,7 @@ import { ClassAttribute, ClassMethod } from '../../types/diagram';
 import toast from 'react-hot-toast';
 
 const CARDINALITY_OPTIONS = ['1', '0..1', '1..*', '0..*', '*'];
-const COMMON_TYPES = ['Long', 'Integer', 'Double', 'BigDecimal', 'String', 'Boolean', 'LocalDate', 'LocalDateTime', 'UUID', 'String[]', 'Integer[]', 'List<String>', 'byte[]'];
+const BACKEND_BD_TYPES = ['Long', 'Integer', 'String', 'Double', 'BigDecimal', 'Boolean', 'LocalDate', 'LocalDateTime', 'UUID', 'byte[]'];
 const COMMON_RETURN_TYPES = ['void', 'String', 'Long', 'Integer', 'Double', 'Boolean', 'UUID', 'List<T>', 'List<String>', 'Optional<T>'];
 
 const PropertiesPanel: React.FC = () => {
@@ -412,13 +412,13 @@ const PropertiesPanel: React.FC = () => {
                   ) : (
                     selectedNode.data.attributes.map((attr) => (
                       <div key={attr.id} className="p-3 bg-slate-900/90 border border-slate-800/90 hover:border-slate-700/80 rounded-xl space-y-2.5 transition-colors shadow-xs">
-                        {/* Row 1: Visibility, Name, PK Toggle, Trash */}
-                        <div className="flex items-center gap-1.5">
+                        {/* Row 1: Visibility, Name (Amplio Espacio) y Eliminar */}
+                        <div className="flex items-center gap-2">
                           {/* Visibility dropdown */}
                           <select
                             value={attr.visibility}
                             onChange={(e) => handleUpdateAttribute(attr.id, { visibility: e.target.value as any })}
-                            className={`rounded-lg px-2 py-1 text-xs font-mono font-bold border transition-colors cursor-pointer ${
+                            className={`w-24 shrink-0 rounded-lg px-2 py-1.5 text-xs font-mono font-bold border transition-colors cursor-pointer ${
                               attr.visibility === 'public'
                                 ? 'bg-emerald-950/40 border-emerald-700/60 text-emerald-400'
                                 : attr.visibility === 'private'
@@ -435,66 +435,14 @@ const PropertiesPanel: React.FC = () => {
                             <option value="package" className="bg-slate-950 text-sky-400">~ Package</option>
                           </select>
 
-                          {/* Attribute Name Input */}
+                          {/* Attribute Name Input - ESPACIO PRINCIPAL COMPLETO */}
                           <input
                             type="text"
                             value={attr.name}
                             onChange={(e) => handleUpdateAttribute(attr.id, { name: e.target.value })}
-                            className="flex-1 min-w-0 bg-slate-950 border border-slate-700/80 focus:border-blue-500 rounded-lg px-2.5 py-1 text-xs font-mono text-slate-100 placeholder:text-slate-600 focus:outline-none transition-colors"
+                            className="flex-1 min-w-0 bg-slate-950 border border-slate-700/80 focus:border-blue-500 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-100 placeholder:text-slate-600 focus:outline-none transition-colors"
                             placeholder="nombreAtributo"
                           />
-
-                          {/* PK Toggle Button */}
-                          <button
-                            type="button"
-                            onClick={() => handleToggleAttributeId(attr.id)}
-                            className={`px-2 py-1 rounded-lg text-[10px] font-mono font-bold border transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
-                              (attr.isId || attr.isPrimaryKey)
-                                ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 ring-1 ring-amber-400/40 shadow-xs'
-                                : 'bg-slate-950 border-slate-800 text-slate-500 hover:text-slate-300 hover:border-slate-700'
-                            }`}
-                            title={(attr.isId || attr.isPrimaryKey) ? 'Clave Primaria activa ({PK})' : 'Marcar como Clave Primaria ({PK})'}
-                          >
-                            <Key size={10} className={(attr.isId || attr.isPrimaryKey) ? 'text-amber-400' : 'text-slate-500'} />
-                            <span>PK</span>
-                          </button>
-
-                          {/* NN (NOT NULL) Toggle Button */}
-                          <button
-                            type="button"
-                            onClick={() => handleToggleAttributeNotNull(attr.id)}
-                            disabled={Boolean(attr.isId || attr.isPrimaryKey)}
-                            className={`px-2 py-1 rounded-lg text-[10px] font-mono font-bold border transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
-                              (attr.isId || attr.isPrimaryKey)
-                                ? 'bg-blue-500/10 border-blue-500/30 text-blue-400/60 cursor-not-allowed opacity-75'
-                                : attr.isNotNull
-                                  ? 'bg-blue-500/20 border-blue-500/60 text-blue-300 ring-1 ring-blue-400/40 shadow-xs'
-                                  : 'bg-slate-950 border-slate-800 text-slate-500 hover:text-slate-300 hover:border-slate-700'
-                            }`}
-                            title={
-                              (attr.isId || attr.isPrimaryKey)
-                                ? 'Las claves primarias son siempre obligatorias (NOT NULL)'
-                                : attr.isNotNull
-                                  ? 'Campo obligatorio ({NN} - NOT NULL)'
-                                  : 'Campo opcional (NULLABLE). Clic para marcar NOT NULL'
-                            }
-                          >
-                            <span>NN</span>
-                          </button>
-
-                          {/* Static Toggle Button */}
-                          <button
-                            type="button"
-                            onClick={() => handleUpdateAttribute(attr.id, { isStatic: !attr.isStatic })}
-                            className={`px-2 py-1 rounded-lg text-[10px] font-mono font-semibold border transition-all cursor-pointer shrink-0 ${
-                              attr.isStatic
-                                ? 'bg-purple-500/20 border-purple-500/50 text-purple-300 ring-1 ring-purple-400/40 shadow-xs'
-                                : 'bg-slate-950 border-slate-800 text-slate-500 hover:text-slate-300 hover:border-slate-700'
-                            }`}
-                            title={attr.isStatic ? 'Atributo estático (subrayado OMG UML 2.5)' : 'Marcar como estático (UML)'}
-                          >
-                            <span className="underline">_S_</span>
-                          </button>
 
                           {/* Delete Button */}
                           <button 
@@ -503,40 +451,104 @@ const PropertiesPanel: React.FC = () => {
                             className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-950/30 rounded-lg transition-colors cursor-pointer shrink-0"
                             title="Eliminar atributo"
                           >
-                            <Trash2 size={13} />
+                            <Trash2 size={14} />
                           </button>
                         </div>
 
-                        {/* Row 2: Type Input & Quick Types Pills */}
-                        <div className="space-y-1.5">
-                          <div className="flex items-center gap-2">
+                        {/* Row 2: Tipo de dato (Selector) y Modificadores (PK, NN, Static) */}
+                        <div className="flex items-center justify-between gap-2 pt-0.5">
+                          <div className="flex-1 min-w-0 flex items-center gap-1.5">
                             <span className="text-[10px] text-slate-400 uppercase font-mono tracking-wider shrink-0">Tipo:</span>
-                            <input
-                              type="text"
+                            <select
                               value={attr.type}
                               onChange={(e) => handleUpdateAttribute(attr.id, { type: e.target.value })}
-                              className="flex-1 min-w-0 bg-slate-950 border border-slate-700/80 focus:border-blue-500 rounded-lg px-2.5 py-0.5 text-xs font-mono text-sky-300 placeholder:text-slate-600 focus:outline-none transition-colors"
-                              placeholder="Long, String, etc."
-                            />
+                              className="flex-1 min-w-0 bg-slate-950 border border-slate-700/80 focus:border-blue-500 rounded-lg px-2 py-1 text-xs font-mono text-sky-300 focus:outline-none transition-colors cursor-pointer"
+                            >
+                              {BACKEND_BD_TYPES.map((t) => (
+                                <option key={t} value={t} className="bg-slate-950 text-slate-200 font-mono">
+                                  {t}
+                                </option>
+                              ))}
+                              {!BACKEND_BD_TYPES.includes(attr.type) && (
+                                <option value={attr.type} className="bg-slate-950 text-amber-300 font-mono">
+                                  {attr.type} (Personalizado)
+                                </option>
+                              )}
+                            </select>
                           </div>
 
-                          {/* Quick Type Pills */}
-                          <div className="flex flex-wrap items-center gap-1 pl-8">
-                            {COMMON_TYPES.map((t) => (
-                              <button
-                                key={t}
-                                type="button"
-                                onClick={() => handleUpdateAttribute(attr.id, { type: t })}
-                                className={`text-[10px] font-mono px-1.5 py-0.2 rounded transition-colors cursor-pointer ${
-                                  attr.type === t
-                                    ? 'bg-blue-600/30 text-blue-300 border border-blue-500/40'
-                                    : 'bg-slate-950/80 text-slate-400 hover:text-slate-200 border border-slate-800'
-                                }`}
-                              >
-                                {t}
-                              </button>
-                            ))}
+                          {/* Modificadores */}
+                          <div className="flex items-center gap-1 shrink-0">
+                            {/* PK Toggle Button */}
+                            <button
+                              type="button"
+                              onClick={() => handleToggleAttributeId(attr.id)}
+                              className={`px-2 py-1 rounded-lg text-[10px] font-mono font-bold border transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
+                                (attr.isId || attr.isPrimaryKey)
+                                  ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 ring-1 ring-amber-400/40 shadow-xs'
+                                  : 'bg-slate-950 border-slate-800 text-slate-500 hover:text-slate-300 hover:border-slate-700'
+                              }`}
+                              title={(attr.isId || attr.isPrimaryKey) ? 'Clave Primaria activa ({PK})' : 'Marcar como Clave Primaria ({PK})'}
+                            >
+                              <Key size={10} className={(attr.isId || attr.isPrimaryKey) ? 'text-amber-400' : 'text-slate-500'} />
+                              <span>PK</span>
+                            </button>
+
+                            {/* NN (NOT NULL) Toggle Button */}
+                            <button
+                              type="button"
+                              onClick={() => handleToggleAttributeNotNull(attr.id)}
+                              disabled={Boolean(attr.isId || attr.isPrimaryKey)}
+                              className={`px-2 py-1 rounded-lg text-[10px] font-mono font-bold border transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
+                                (attr.isId || attr.isPrimaryKey)
+                                  ? 'bg-blue-500/10 border-blue-500/30 text-blue-400/60 cursor-not-allowed opacity-75'
+                                  : attr.isNotNull
+                                    ? 'bg-blue-500/20 border-blue-500/60 text-blue-300 ring-1 ring-blue-400/40 shadow-xs'
+                                    : 'bg-slate-950 border-slate-800 text-slate-500 hover:text-slate-300 hover:border-slate-700'
+                              }`}
+                              title={
+                                (attr.isId || attr.isPrimaryKey)
+                                  ? 'Las claves primarias son siempre obligatorias (NOT NULL)'
+                                  : attr.isNotNull
+                                    ? 'Campo obligatorio ({NN} - NOT NULL)'
+                                    : 'Campo opcional (NULLABLE). Clic para marcar NOT NULL'
+                              }
+                            >
+                              <span>NN</span>
+                            </button>
+
+                            {/* Static Toggle Button */}
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateAttribute(attr.id, { isStatic: !attr.isStatic })}
+                              className={`px-2 py-1 rounded-lg text-[10px] font-mono font-semibold border transition-all cursor-pointer shrink-0 ${
+                                attr.isStatic
+                                  ? 'bg-purple-500/20 border-purple-500/50 text-purple-300 ring-1 ring-purple-400/40 shadow-xs'
+                                  : 'bg-slate-950 border-slate-800 text-slate-500 hover:text-slate-300 hover:border-slate-700'
+                              }`}
+                              title={attr.isStatic ? 'Atributo estático (subrayado OMG UML 2.5)' : 'Marcar como estático (UML)'}
+                            >
+                              <span className="underline">_S_</span>
+                            </button>
                           </div>
+                        </div>
+
+                        {/* Row 3: Quick Type Pills */}
+                        <div className="flex flex-wrap items-center gap-1 pl-9">
+                          {BACKEND_BD_TYPES.map((t) => (
+                            <button
+                              key={t}
+                              type="button"
+                              onClick={() => handleUpdateAttribute(attr.id, { type: t })}
+                              className={`text-[10px] font-mono px-1.5 py-0.5 rounded transition-colors cursor-pointer ${
+                                attr.type === t
+                                  ? 'bg-sky-600/30 text-sky-300 border border-sky-500/40'
+                                  : 'bg-slate-950/80 text-slate-400 hover:text-slate-200 border border-slate-800'
+                              }`}
+                            >
+                              {t}
+                            </button>
+                          ))}
                         </div>
                       </div>
                     ))
@@ -578,13 +590,13 @@ const PropertiesPanel: React.FC = () => {
                   ) : (
                     selectedNode.data.methods.map((method) => (
                       <div key={method.id} className="p-3 bg-slate-900/90 border border-slate-800/90 hover:border-slate-700/80 rounded-xl space-y-2.5 transition-colors shadow-xs">
-                        {/* Row 1: Visibility, Name, Trash */}
-                        <div className="flex items-center gap-1.5">
+                        {/* Row 1: Visibility, Name (Amplio Espacio) y Eliminar */}
+                        <div className="flex items-center gap-2">
                           {/* Visibility dropdown */}
                           <select
                             value={method.visibility}
                             onChange={(e) => handleUpdateMethod(method.id, { visibility: e.target.value as any })}
-                            className={`rounded-lg px-2 py-1 text-xs font-mono font-bold border transition-colors cursor-pointer ${
+                            className={`w-24 shrink-0 rounded-lg px-2 py-1.5 text-xs font-mono font-bold border transition-colors cursor-pointer ${
                               method.visibility === 'public'
                                 ? 'bg-emerald-950/40 border-emerald-700/60 text-emerald-400'
                                 : method.visibility === 'private'
@@ -601,42 +613,14 @@ const PropertiesPanel: React.FC = () => {
                             <option value="package" className="bg-slate-950 text-sky-400">~ Package</option>
                           </select>
 
-                          {/* Method Name Input */}
+                          {/* Method Name Input - ESPACIO PRINCIPAL COMPLETO */}
                           <input
                             type="text"
                             value={method.name}
                             onChange={(e) => handleUpdateMethod(method.id, { name: e.target.value })}
-                            className="flex-1 min-w-0 bg-slate-950 border border-slate-700/80 focus:border-blue-500 rounded-lg px-2.5 py-1 text-xs font-mono text-slate-100 placeholder:text-slate-600 focus:outline-none transition-colors"
+                            className="flex-1 min-w-0 bg-slate-950 border border-slate-700/80 focus:border-blue-500 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-100 placeholder:text-slate-600 focus:outline-none transition-colors"
                             placeholder="nombreMetodo"
                           />
-
-                          {/* Static Toggle Button */}
-                          <button
-                            type="button"
-                            onClick={() => handleUpdateMethod(method.id, { isStatic: !method.isStatic })}
-                            className={`px-2 py-1 rounded-lg text-[10px] font-mono font-semibold border transition-all cursor-pointer shrink-0 ${
-                              method.isStatic
-                                ? 'bg-purple-500/20 border-purple-500/50 text-purple-300 ring-1 ring-purple-400/40 shadow-xs'
-                                : 'bg-slate-950 border-slate-800 text-slate-500 hover:text-slate-300 hover:border-slate-700'
-                            }`}
-                            title={method.isStatic ? 'Método estático (subrayado OMG UML 2.5)' : 'Marcar como estático'}
-                          >
-                            <span className="underline">_S_</span>
-                          </button>
-
-                          {/* Abstract Toggle Button */}
-                          <button
-                            type="button"
-                            onClick={() => handleUpdateMethod(method.id, { isAbstract: !method.isAbstract })}
-                            className={`px-2 py-1 rounded-lg text-[10px] font-mono font-semibold border transition-all cursor-pointer shrink-0 ${
-                              method.isAbstract
-                                ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 ring-1 ring-amber-400/40 shadow-xs'
-                                : 'bg-slate-950 border-slate-800 text-slate-500 hover:text-slate-300 hover:border-slate-700'
-                            }`}
-                            title={method.isAbstract ? 'Método abstracto (cursiva OMG UML 2.5)' : 'Marcar como abstracto'}
-                          >
-                            <span className="italic">_A_</span>
-                          </button>
 
                           {/* Delete Button */}
                           <button 
@@ -645,22 +629,53 @@ const PropertiesPanel: React.FC = () => {
                             className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-950/30 rounded-lg transition-colors cursor-pointer shrink-0"
                             title="Eliminar método"
                           >
-                            <Trash2 size={13} />
+                            <Trash2 size={14} />
                           </button>
                         </div>
 
-                        {/* Row 2: Return Type Input & Quick Types Pills */}
-                        <div className="space-y-1.5">
-                          <div className="flex items-center gap-2">
+                        {/* Row 2: Retorno y Modificadores (Static, Abstract) */}
+                        <div className="flex items-center justify-between gap-2 pt-0.5">
+                          <div className="flex-1 min-w-0 flex items-center gap-1.5">
                             <span className="text-[10px] text-slate-400 uppercase font-mono tracking-wider shrink-0">Retorno:</span>
                             <input
                               type="text"
                               value={method.returnType}
                               onChange={(e) => handleUpdateMethod(method.id, { returnType: e.target.value })}
-                              className="flex-1 min-w-0 bg-slate-950 border border-slate-700/80 focus:border-blue-500 rounded-lg px-2.5 py-0.5 text-xs font-mono text-emerald-300 placeholder:text-slate-600 focus:outline-none transition-colors"
+                              className="flex-1 min-w-0 bg-slate-950 border border-slate-700/80 focus:border-blue-500 rounded-lg px-2 py-1 text-xs font-mono text-emerald-300 placeholder:text-slate-600 focus:outline-none transition-colors"
                               placeholder="void, String, etc."
                             />
                           </div>
+
+                          <div className="flex items-center gap-1 shrink-0">
+                            {/* Static Toggle Button */}
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateMethod(method.id, { isStatic: !method.isStatic })}
+                              className={`px-2 py-1 rounded-lg text-[10px] font-mono font-semibold border transition-all cursor-pointer shrink-0 ${
+                                method.isStatic
+                                  ? 'bg-purple-500/20 border-purple-500/50 text-purple-300 ring-1 ring-purple-400/40 shadow-xs'
+                                  : 'bg-slate-950 border-slate-800 text-slate-500 hover:text-slate-300 hover:border-slate-700'
+                              }`}
+                              title={method.isStatic ? 'Método estático (subrayado OMG UML 2.5)' : 'Marcar como estático'}
+                            >
+                              <span className="underline">_S_</span>
+                            </button>
+
+                            {/* Abstract Toggle Button */}
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateMethod(method.id, { isAbstract: !method.isAbstract })}
+                              className={`px-2 py-1 rounded-lg text-[10px] font-mono font-semibold border transition-all cursor-pointer shrink-0 ${
+                                method.isAbstract
+                                  ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 ring-1 ring-amber-400/40 shadow-xs'
+                                  : 'bg-slate-950 border-slate-800 text-slate-500 hover:text-slate-300 hover:border-slate-700'
+                              }`}
+                              title={method.isAbstract ? 'Método abstracto (cursiva OMG UML 2.5)' : 'Marcar como abstracto'}
+                            >
+                              <span className="italic">_A_</span>
+                            </button>
+                          </div>
+                        </div>
 
                           {/* Quick Return Type Pills */}
                           <div className="flex flex-wrap items-center gap-1 pl-12">
@@ -679,7 +694,6 @@ const PropertiesPanel: React.FC = () => {
                               </button>
                             ))}
                           </div>
-                        </div>
 
                         {/* Row 3: Parameter Manager */}
                         <div className="pt-2 border-t border-slate-800/80 space-y-1.5">

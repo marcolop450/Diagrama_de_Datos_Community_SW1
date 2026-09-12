@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import { useDiagramStore } from '../../stores/diagramStore';
@@ -12,8 +12,12 @@ import {
   PanelLeft,
   Settings,
   ArrowLeft,
-  HelpCircle
+  HelpCircle,
+  Download,
+  Upload
 } from 'lucide-react';
+import { ExportModal } from '../modals/ExportModal';
+import { ImportModal } from '../modals/ImportModal';
 import toast from 'react-hot-toast';
 
 const Header: React.FC = () => {
@@ -21,6 +25,9 @@ const Header: React.FC = () => {
   const { project, saveDiagram } = useDiagramStore();
   const { toggleSidebar, sidebarOpen, openOnboarding } = useUiStore();
   const location = useLocation();
+
+  const [isExportOpen, setIsExportOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
 
   const isEditor = location.pathname.startsWith('/editor');
   const isSubPage = location.pathname !== '/dashboard';
@@ -111,7 +118,32 @@ const Header: React.FC = () => {
       <div className="flex items-center gap-2 md:gap-3 shrink-0">
         {/* Editor Actions (visible only when in canvas and role != SUPER_ADMIN) */}
         {isEditor && user?.role !== 'SUPER_ADMIN' && (
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {/* Import Model from XMI Button */}
+            <button
+              onClick={() => setIsImportOpen(true)}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-semibold text-slate-300 hover:text-white bg-slate-900/90 hover:bg-slate-850 border border-slate-700/80 hover:border-slate-600 transition-all active:scale-95 cursor-pointer shrink-0"
+              title="Importar modelo desde archivo XMI (ArchiTec / StarUML)"
+            >
+              <Upload size={13} className="text-emerald-400" />
+              <span className="hidden sm:inline">Importar</span>
+            </button>
+
+            {/* Export Model Button */}
+            <button
+              onClick={() => setIsExportOpen(true)}
+              disabled={!project?.id}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-semibold transition-all shrink-0 ${
+                project?.id
+                  ? 'text-slate-300 hover:text-white bg-slate-900/90 hover:bg-slate-850 border border-slate-700/80 hover:border-slate-600 active:scale-95 cursor-pointer'
+                  : 'bg-slate-900/50 text-slate-600 border border-slate-800 cursor-not-allowed opacity-50'
+              }`}
+              title={project?.id ? "Exportar modelo a XMI, PNG, PDF o Excel" : "Abre o crea un proyecto para exportar"}
+            >
+              <Download size={13} className={project?.id ? "text-blue-400" : "text-slate-600"} />
+              <span className="hidden sm:inline">Exportar</span>
+            </button>
+
             {/* Save Diagram Button */}
             <button 
               onClick={handleSave}
@@ -186,6 +218,18 @@ const Header: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Export Model & Documentation Modal (CU11) */}
+      <ExportModal
+        isOpen={isExportOpen}
+        onClose={() => setIsExportOpen(false)}
+      />
+
+      {/* Import Model from XMI Modal (CU12) */}
+      <ImportModal
+        isOpen={isImportOpen}
+        onClose={() => setIsImportOpen(false)}
+      />
     </header>
   );
 };

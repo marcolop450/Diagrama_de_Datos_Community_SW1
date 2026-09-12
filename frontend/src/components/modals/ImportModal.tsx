@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Upload, FileCode, X, Layers, RefreshCw, FolderPlus, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
@@ -116,8 +117,8 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => 
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs animate-fade-in">
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm animate-fade-in">
       <div 
         className="border rounded-lg w-full max-w-xl shadow-2xl flex flex-col overflow-hidden transition-colors duration-200"
         style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
@@ -340,6 +341,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => 
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

@@ -198,6 +198,12 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
 
   onConnect: (connection: Connection) => {
     if (!connection.source || !connection.target) return;
+
+    // Disallow connecting the exact same handle to itself
+    if (connection.source === connection.target && connection.sourceHandle === connection.targetHandle) {
+      toast.error('Una relación reflexiva debe conectar dos puertos o extremos distintos');
+      return;
+    }
     
     get().takeSnapshot();
 
@@ -525,14 +531,20 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
   reconnectRelationship: (oldEdge: Edge<RelationshipData>, newConnection: Connection) => {
     if (!newConnection.source || !newConnection.target) return false;
 
-    // Prevent connecting to self
-    if (newConnection.source === newConnection.target) {
-      toast.error('Una relación debe conectar dos clases o extremos distintos');
+    const relType = (oldEdge.data?.type || 'association').toLowerCase();
+    const isInheritance = relType === 'inheritance' || relType === 'generalization';
+
+    // A class cannot inherit from itself (UML 2.5)
+    if (isInheritance && newConnection.source === newConnection.target) {
+      toast.error('Una clase no puede heredar de sí misma en UML 2.5');
       return false;
     }
 
-    const relType = (oldEdge.data?.type || 'association').toLowerCase();
-    const isInheritance = relType === 'inheritance' || relType === 'generalization';
+    // A reflexive relationship must connect two different handles/ports
+    if (newConnection.source === newConnection.target && newConnection.sourceHandle === newConnection.targetHandle) {
+      toast.error('Una relación reflexiva debe conectar dos puertos o extremos distintos');
+      return false;
+    }
 
     // Check circular inheritance if this is an inheritance relation
     if (isInheritance) {

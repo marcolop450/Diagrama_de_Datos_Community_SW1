@@ -14,17 +14,15 @@ import {
   Database,
   Undo2,
   Redo2,
-  ShieldCheck,
-  Download,
-  Upload
+  ShieldCheck
 } from 'lucide-react';
 import { useUiStore } from '../../stores/uiStore';
 import { useDiagramStore } from '../../stores/diagramStore';
 import { useReactFlow } from '@xyflow/react';
 import { ProjectHistoryModal } from '../history/ProjectHistoryModal';
 import { NormalizationReportModal } from '../modals/NormalizationReportModal';
-import { ExportModal } from '../modals/ExportModal';
-import { ImportModal } from '../modals/ImportModal';
+import { GenerateBackendModal } from '../modals/GenerateBackendModal';
+import { SqlDdlModal } from '../modals/SqlDdlModal';
 import { analyzeDiagramNormalization } from '../../services/normalizationEngine';
 import toast from 'react-hot-toast';
 
@@ -34,9 +32,9 @@ export const Toolbar: React.FC = () => {
   const { zoomIn, zoomOut, fitView, getViewport } = useReactFlow();
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isNormalizationOpen, setIsNormalizationOpen] = useState(false);
-  const [isExportOpen, setIsExportOpen] = useState(false);
-  const [isImportOpen, setIsImportOpen] = useState(false);
-  const [hoverTooltip, setHoverTooltip] = useState<{ text: string; top: number } | null>(null);
+  const [isGenerateBackendOpen, setIsGenerateBackendOpen] = useState(false);
+  const [isSqlDdlOpen, setIsSqlDdlOpen] = useState(false);
+  const [hoverTooltip, setHoverTooltip] = useState<{ text: string; top: number; left: number } | null>(null);
 
   const normReport = useMemo(() => {
     return analyzeDiagramNormalization(nodes, edges);
@@ -44,7 +42,11 @@ export const Toolbar: React.FC = () => {
 
   const showTip = (text: string) => (e: React.MouseEvent) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    setHoverTooltip({ text, top: rect.top + rect.height / 2 });
+    setHoverTooltip({ 
+      text, 
+      top: rect.top + rect.height / 2,
+      left: rect.right + 10 
+    });
   };
 
   const hideTip = () => {
@@ -249,46 +251,24 @@ export const Toolbar: React.FC = () => {
             <History size={16} />
           </button>
 
-          {/* Exportar Modelo y Documentación Técnica (CU11) */}
+          {/* Generate Backend Spring Boot (CU13) */}
           <button
-            onClick={() => setIsExportOpen(true)}
-            onMouseEnter={showTip('Exportar Modelo')}
-            onMouseLeave={hideTip}
-            className="p-2 rounded-md text-slate-400 hover:text-blue-400 hover:bg-blue-950/30 transition-all cursor-pointer"
-            title="Exportar Modelo y Documentación Técnica"
-          >
-            <Download size={16} />
-          </button>
-
-          {/* Importar Modelo desde XMI (CU12) */}
-          <button
-            onClick={() => setIsImportOpen(true)}
-            onMouseEnter={showTip('Importar Modelo XMI')}
-            onMouseLeave={hideTip}
-            className="p-2 rounded-md text-slate-400 hover:text-emerald-400 hover:bg-emerald-950/30 transition-all cursor-pointer"
-            title="Importar Modelo desde XMI (ArchiTec / StarUML / EA)"
-          >
-            <Upload size={16} />
-          </button>
-
-          {/* Generate Backend Spring Boot */}
-          <button
-            onClick={() => toast('Generador de Backend Spring Boot (4 Capas en ZIP) en preparación')}
+            onClick={() => setIsGenerateBackendOpen(true)}
             onMouseEnter={showTip('Generar Backend Spring Boot')}
             onMouseLeave={hideTip}
             className="p-2 rounded-md text-slate-400 hover:text-blue-400 hover:bg-blue-950/30 transition-all cursor-pointer"
-            title="Generar Backend Spring Boot"
+            title="Generar Backend Spring Boot (4 Capas en ZIP)"
           >
             <Code2 size={16} />
           </button>
 
-          {/* Generate SQL DDL Script PostgreSQL 17 */}
+          {/* Generate SQL DDL Script PostgreSQL 17 (CU14) */}
           <button
-            onClick={() => toast('Generador de Esquema DDL SQL para PostgreSQL 17 en preparación')}
+            onClick={() => setIsSqlDdlOpen(true)}
             onMouseEnter={showTip('Generar Script SQL DDL')}
             onMouseLeave={hideTip}
             className="p-2 rounded-md text-slate-400 hover:text-emerald-400 hover:bg-emerald-950/30 transition-all cursor-pointer"
-            title="Generar Script SQL DDL"
+            title="Generar Script SQL DDL (PostgreSQL 17)"
           >
             <Database size={16} />
           </button>
@@ -331,8 +311,8 @@ export const Toolbar: React.FC = () => {
       {/* Floating tooltip outside the scroll container */}
       {hoverTooltip && (
         <div 
-          style={{ top: hoverTooltip.top }} 
-          className="fixed left-14 -translate-y-1/2 ml-2 px-2.5 py-1 bg-slate-900 text-slate-200 text-[11px] font-medium rounded-md shadow-xl border border-slate-800 whitespace-nowrap pointer-events-none z-50 animate-fade-in"
+          style={{ top: hoverTooltip.top, left: hoverTooltip.left }} 
+          className="fixed -translate-y-1/2 px-2.5 py-1 bg-slate-900 text-slate-200 text-[11px] font-medium rounded-md shadow-xl border border-slate-800 whitespace-nowrap pointer-events-none z-50 animate-fade-in"
         >
           {hoverTooltip.text}
         </div>
@@ -354,16 +334,16 @@ export const Toolbar: React.FC = () => {
         onClose={() => setIsNormalizationOpen(false)}
       />
 
-      {/* Export Model & Documentation Modal (CU11) */}
-      <ExportModal
-        isOpen={isExportOpen}
-        onClose={() => setIsExportOpen(false)}
+      {/* Generate Backend Spring Boot Modal (CU13) */}
+      <GenerateBackendModal
+        isOpen={isGenerateBackendOpen}
+        onClose={() => setIsGenerateBackendOpen(false)}
       />
 
-      {/* Import Model from XMI Modal (CU12) */}
-      <ImportModal
-        isOpen={isImportOpen}
-        onClose={() => setIsImportOpen(false)}
+      {/* Generate SQL DDL Modal (CU14) */}
+      <SqlDdlModal
+        isOpen={isSqlDdlOpen}
+        onClose={() => setIsSqlDdlOpen(false)}
       />
     </aside>
   );

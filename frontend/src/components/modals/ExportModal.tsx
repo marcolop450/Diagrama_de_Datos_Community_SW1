@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Download, 
   FileCode2, 
@@ -10,7 +11,8 @@ import {
   AlertTriangle,
   Layers,
   Settings2,
-  TableProperties
+  TableProperties,
+  Database
 } from 'lucide-react';
 import { useDiagramStore } from '../../stores/diagramStore';
 import { 
@@ -19,9 +21,10 @@ import {
   exportDiagramExcel, 
   exportDiagramPdf 
 } from '../../services/exportService';
+import { downloadSqlDdl } from '../../services/generatorService';
 import toast from 'react-hot-toast';
 
-export type ExportFormat = 'XMI' | 'PNG' | 'PDF' | 'EXCEL';
+export type ExportFormat = 'XMI' | 'PNG' | 'PDF' | 'EXCEL' | 'SQL';
 
 interface ExportModalProps {
   isOpen: boolean;
@@ -77,6 +80,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
           includeRelationships: pdfIncludeRelationships,
         });
         toast.success('Memoria técnica PDF generada exitosamente');
+      } else if (selectedFormat === 'SQL') {
+        await downloadSqlDdl(project.id, project.name);
+        toast.success('Esquema DDL SQL (PostgreSQL 17) exportado exitosamente');
       }
       onClose();
     } catch (err: any) {
@@ -98,8 +104,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs">
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm animate-fade-in">
       <div 
         className="border rounded-lg w-full max-w-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden transition-colors duration-200"
         style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
@@ -256,6 +262,33 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
                   </p>
                 </div>
               </button>
+
+              {/* Option 5: PostgreSQL 17 SQL DDL (CU14) */}
+              <button
+                type="button"
+                onClick={() => setSelectedFormat('SQL')}
+                className={`p-3.5 rounded-lg border text-left transition-all cursor-pointer flex items-start gap-3 sm:col-span-2 ${
+                  selectedFormat === 'SQL'
+                    ? 'border-emerald-500 bg-emerald-950/30 shadow-xs ring-1 ring-emerald-500/50'
+                    : 'border-slate-800 bg-slate-900/60 hover:bg-slate-900 hover:border-slate-700'
+                }`}
+              >
+                <div className={`p-2 rounded-md shrink-0 ${
+                  selectedFormat === 'SQL' ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'
+                }`}>
+                  <Database size={20} />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-semibold text-slate-200">Esquema DDL SQL</span>
+                    <span className="text-[10px] px-1.5 py-0.2 bg-emerald-500/20 text-emerald-300 rounded font-mono">PostgreSQL 17</span>
+                    <span className="text-[10px] px-1.5 py-0.2 bg-blue-500/20 text-blue-300 rounded font-mono">Supabase</span>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Script SQL completo con sentencias CREATE TABLE, IDENTITY, claves foráneas, tablas intermedias N:N e índices B-Tree.
+                  </p>
+                </div>
+              </button>
             </div>
           </div>
 
@@ -397,6 +430,21 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
                 </p>
               </div>
             )}
+
+            {selectedFormat === 'SQL' && (
+              <div className="space-y-2 text-xs text-slate-300">
+                <div className="flex items-center gap-2 font-semibold">
+                  <Database size={14} className="text-emerald-400" />
+                  <span>Especificación DDL PostgreSQL 17 (Supabase)</span>
+                </div>
+                <p className="text-[11px] text-slate-400 leading-relaxed">
+                  Genera el archivo <span className="text-emerald-300 font-mono">schema.sql</span> con sentencias DDL nativas de PostgreSQL 17: identidades estándar SQL:2008+, tablas intermedias para relaciones N:N, claves foráneas con ON DELETE CASCADE e índices B-Tree.
+                </p>
+                <div className="p-2 rounded bg-emerald-950/20 border border-emerald-800/30 text-[11px] text-emerald-300">
+                  Tip: Para previsualizar el código SQL generado, copiarlo al portapapeles o ajustar opciones avanzadas (DROP TABLE, esquemas), usa la herramienta SQL en la barra lateral del lienzo.
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -447,6 +495,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
