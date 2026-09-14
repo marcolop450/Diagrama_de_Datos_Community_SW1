@@ -12,7 +12,8 @@ import {
   Layers,
   Settings2,
   TableProperties,
-  Database
+  Database,
+  Send
 } from 'lucide-react';
 import { useDiagramStore } from '../../stores/diagramStore';
 import { 
@@ -21,10 +22,10 @@ import {
   exportDiagramExcel, 
   exportDiagramPdf 
 } from '../../services/exportService';
-import { downloadSqlDdl } from '../../services/generatorService';
+import { downloadSqlDdl, downloadPostmanCollection } from '../../services/generatorService';
 import toast from 'react-hot-toast';
 
-export type ExportFormat = 'XMI' | 'PNG' | 'PDF' | 'EXCEL' | 'SQL';
+export type ExportFormat = 'XMI' | 'PNG' | 'PDF' | 'EXCEL' | 'SQL' | 'POSTMAN';
 
 interface ExportModalProps {
   isOpen: boolean;
@@ -83,6 +84,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
       } else if (selectedFormat === 'SQL') {
         await downloadSqlDdl(project.id, project.name);
         toast.success('Esquema DDL SQL (PostgreSQL 17) exportado exitosamente');
+      } else if (selectedFormat === 'POSTMAN') {
+        await downloadPostmanCollection(project.id, project.name);
+        toast.success('Colección Postman v2.1 exportada exitosamente');
       }
       onClose();
     } catch (err: any) {
@@ -267,7 +271,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
               <button
                 type="button"
                 onClick={() => setSelectedFormat('SQL')}
-                className={`p-3.5 rounded-lg border text-left transition-all cursor-pointer flex items-start gap-3 sm:col-span-2 ${
+                className={`p-3.5 rounded-lg border text-left transition-all cursor-pointer flex items-start gap-3 ${
                   selectedFormat === 'SQL'
                     ? 'border-emerald-500 bg-emerald-950/30 shadow-xs ring-1 ring-emerald-500/50'
                     : 'border-slate-800 bg-slate-900/60 hover:bg-slate-900 hover:border-slate-700'
@@ -281,11 +285,36 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5">
                     <span className="text-sm font-semibold text-slate-200">Esquema DDL SQL</span>
-                    <span className="text-[10px] px-1.5 py-0.2 bg-emerald-500/20 text-emerald-300 rounded font-mono">PostgreSQL 17</span>
-                    <span className="text-[10px] px-1.5 py-0.2 bg-blue-500/20 text-blue-300 rounded font-mono">Supabase</span>
+                    <span className="text-[10px] px-1.5 py-0.2 bg-emerald-500/20 text-emerald-300 rounded font-mono">Postgres 17</span>
                   </div>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Script SQL completo con sentencias CREATE TABLE, IDENTITY, claves foráneas, tablas intermedias N:N e índices B-Tree.
+                  <p className="text-xs text-slate-400 mt-1 line-clamp-2">
+                    Script SQL completo con sentencias CREATE TABLE, IDENTITY, claves foráneas e índices.
+                  </p>
+                </div>
+              </button>
+
+              {/* Option 6: Postman Collection v2.1 (CU15) */}
+              <button
+                type="button"
+                onClick={() => setSelectedFormat('POSTMAN')}
+                className={`p-3.5 rounded-lg border text-left transition-all cursor-pointer flex items-start gap-3 ${
+                  selectedFormat === 'POSTMAN'
+                    ? 'border-amber-500 bg-amber-950/30 shadow-xs ring-1 ring-amber-500/50'
+                    : 'border-slate-800 bg-slate-900/60 hover:bg-slate-900 hover:border-slate-700'
+                }`}
+              >
+                <div className={`p-2 rounded-md shrink-0 ${
+                  selectedFormat === 'POSTMAN' ? 'bg-amber-600 text-white' : 'bg-slate-800 text-slate-400'
+                }`}>
+                  <Send size={20} />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-semibold text-slate-200">Colección Postman</span>
+                    <span className="text-[10px] px-1.5 py-0.2 bg-amber-500/20 text-amber-300 rounded font-mono">v2.1</span>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-1 line-clamp-2">
+                    Suite JSON con 5 requests CRUD por entidad, scripts pm.test y payloads mock simulados.
                   </p>
                 </div>
               </button>
@@ -442,6 +471,21 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
                 </p>
                 <div className="p-2 rounded bg-emerald-950/20 border border-emerald-800/30 text-[11px] text-emerald-300">
                   Tip: Para previsualizar el código SQL generado, copiarlo al portapapeles o ajustar opciones avanzadas (DROP TABLE, esquemas), usa la herramienta SQL en la barra lateral del lienzo.
+                </div>
+              </div>
+            )}
+
+            {selectedFormat === 'POSTMAN' && (
+              <div className="space-y-2 text-xs text-slate-300">
+                <div className="flex items-center gap-2 font-semibold">
+                  <Send size={14} className="text-amber-400" />
+                  <span>Colección Automatizada Postman v2.1.0</span>
+                </div>
+                <p className="text-[11px] text-slate-400 leading-relaxed">
+                  Genera el archivo <span className="text-amber-300 font-mono">postman-collection.json</span> con endpoints CRUD estructurados en carpetas por entidad, variable <span className="text-amber-300 font-mono">{"{{baseUrl}}"}</span> y aserciones de prueba automáticas para Postman Runner o Newman.
+                </p>
+                <div className="p-2 rounded bg-amber-950/20 border border-amber-800/30 text-[11px] text-amber-300">
+                  Tip: Para previsualizar el código JSON generado, copiarlo al portapapeles o ajustar la URL base, usa la herramienta Postman en la barra lateral del lienzo.
                 </div>
               </div>
             )}

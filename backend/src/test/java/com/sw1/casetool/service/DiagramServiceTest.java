@@ -788,4 +788,118 @@ public class DiagramServiceTest {
                 "dicta".equals(r.getLabel())
         ));
     }
+
+    @Test
+    @DisplayName("CU07: Scaffolding de proyecto desde plantilla preserva dimensiones, roles y handles de anclaje")
+    void testCreateProjectFromTemplate_ScaffoldsNodesAndEdges_WithHandlesAndRoles() {
+        when(userProfileRepository.findByEmailIgnoreCase("architect@casetool.com"))
+                .thenReturn(Optional.of(mockUser));
+
+        when(projectRepository.save(any(DiagramProject.class))).thenAnswer(invocation -> {
+            DiagramProject p = invocation.getArgument(0);
+            p.setId(projectId);
+            p.setVersion("v1.0.0");
+            return p;
+        });
+
+        Map<String, Object> node1 = new LinkedHashMap<>();
+        node1.put("id", "c1");
+        node1.put("name", "Carrera");
+        node1.put("stereotype", "entity");
+        node1.put("isAbstract", false);
+        node1.put("position", Map.of("x", 60.0, "y", 60.0));
+        node1.put("width", 260.0);
+        node1.put("height", 200.0);
+        Map<String, Object> attr1 = new HashMap<>();
+        attr1.put("id", "a1");
+        attr1.put("name", "id");
+        attr1.put("type", "Long");
+        attr1.put("isPrimaryKey", true);
+        node1.put("attributes", List.of(attr1));
+        node1.put("methods", Collections.emptyList());
+
+        Map<String, Object> node2 = new LinkedHashMap<>();
+        node2.put("id", "c2");
+        node2.put("name", "Estudiante");
+        node2.put("stereotype", "entity");
+        node2.put("isAbstract", false);
+        node2.put("position", Map.of("x", 480.0, "y", 60.0));
+        node2.put("width", 280.0);
+        node2.put("height", 240.0);
+        node2.put("attributes", Collections.emptyList());
+        node2.put("methods", Collections.emptyList());
+
+        Map<String, Object> edge1 = new LinkedHashMap<>();
+        edge1.put("id", "e101");
+        edge1.put("source", "c1");
+        edge1.put("target", "c2");
+        edge1.put("type", "association");
+        edge1.put("sourceCardinality", "1");
+        edge1.put("targetCardinality", "0..*");
+        edge1.put("label", "inscribeA");
+        edge1.put("sourceRole", "carrera");
+        edge1.put("targetRole", "estudiantes");
+        edge1.put("sourceHandle", "right");
+        edge1.put("targetHandle", "left");
+
+        Map<String, Object> schema = new LinkedHashMap<>();
+        schema.put("nodes", List.of(node1, node2));
+        schema.put("edges", List.of(edge1));
+
+        DomainTemplate template = DomainTemplate.builder()
+                .id("TEMPLATE_COLEGIO")
+                .name("Sistema Académico Universitario")
+                .category("Educación")
+                .initialSchema(schema)
+                .build();
+
+        when(domainTemplateRepository.findById("TEMPLATE_COLEGIO"))
+                .thenReturn(Optional.of(template));
+
+        when(classNodeRepository.save(any(ClassNode.class))).thenAnswer(invocation -> {
+            ClassNode cn = invocation.getArgument(0);
+            cn.setId(UUID.randomUUID());
+            return cn;
+        });
+
+        when(relationshipRepository.save(any(Relationship.class))).thenAnswer(invocation -> {
+            Relationship r = invocation.getArgument(0);
+            r.setId(UUID.randomUUID());
+            return r;
+        });
+
+        CreateProjectRequest request = CreateProjectRequest.builder()
+                .name("Nuevo Sistema Academico")
+                .description("Modelo inicial")
+                .version("v1.0.0")
+                .templateId("TEMPLATE_COLEGIO")
+                .build();
+
+        ProjectResponse response = diagramService.createProject(request, "architect@casetool.com", "127.0.0.1", "JUnit");
+
+        assertNotNull(response);
+        assertEquals("Nuevo Sistema Academico", response.getName());
+
+        // Verify ClassNodes saved with dimensions and PK
+        verify(classNodeRepository, times(2)).save(any(ClassNode.class));
+        verify(classNodeRepository).save(argThat(cn ->
+                "Carrera".equals(cn.getName()) &&
+                cn.getWidth() == 260.0 &&
+                cn.getHeight() == 200.0 &&
+                Boolean.TRUE.equals(cn.getAttributes().get(0).get("isPrimaryKey")) &&
+                Boolean.TRUE.equals(cn.getAttributes().get(0).get("isNotNull"))
+        ));
+
+        // Verify Relationship saved with handles and roles
+        verify(relationshipRepository, times(1)).save(argThat(rel ->
+                "association".equals(rel.getType()) &&
+                "1".equals(rel.getSourceCardinality()) &&
+                "0..*".equals(rel.getTargetCardinality()) &&
+                "inscribeA".equals(rel.getLabel()) &&
+                "carrera".equals(rel.getSourceRole()) &&
+                "estudiantes".equals(rel.getTargetRole()) &&
+                "right".equals(rel.getSourceHandle()) &&
+                "left".equals(rel.getTargetHandle())
+        ));
+    }
 }

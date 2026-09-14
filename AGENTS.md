@@ -10,9 +10,9 @@
 ## 1. Enfoque de Desarrollo y Estado Real de los Casos de Uso (CU)
 
 El desarrollo del sistema se ejecuta **estrictamente Caso de Uso por Caso de Uso (CU por CU)** bajo el Proceso Unificado de Desarrollo de Software (PUDS).
-* **Realizados Correctamente y Validados:** Exclusivamente hasta el **CU14**.
-* **Todo lo posterior a CU14:** Eran maquetas/demos no definitivas que deben ser desarrolladas formalmente desde cero paso a paso.
-* **Foco Inmediato Siguiente:** **CU15** (Generar Colección de Pruebas Postman v2.1).
+* **Realizados Correctamente y Validados:** Exclusivamente hasta el **CU15** (Fin del Ciclo 2).
+* **Todo lo posterior a CU15:** Eran maquetas/demos no definitivas que deben ser desarrolladas formalmente desde cero paso a paso.
+* **Foco Inmediato Siguiente:** **CU16** (Modelar por Dictado de Voz — IA PLN).
 
 ### Matriz de Estado de Casos de Uso por Ciclos
 
@@ -33,7 +33,7 @@ El desarrollo del sistema se ejecuta **estrictamente Caso de Uso por Caso de Uso
 | **CU12** | Importar Modelo desde XMI (ArchiTec) | Ciclo 2 | `A2: Arquitecto` | **Implementado** | Parser bidireccional XML/XMI OMG (ArchiTec, Enterprise Architect, StarUML) con protección XXE, extracción completa de clases, visibilidad, PKs, NOT NULL, métodos y relaciones, motor de auto-layout jerárquico por capas (LayoutEngineUtil), opción dual (Nuevo Proyecto vs Incorporar), modal drag & drop y registro en audit_logs. |
 | **CU13** | Generar Backend Spring Boot (4 Capas en ZIP) | Ciclo 2 | `A2: Arquitecto` | **Implementado** | Generación automatizada de código Java 21: Entities JPA, Repositories, Services y Controllers empaquetados en `.zip` con Maven Wrapper, Swagger y perfiles H2/PostgreSQL. |
 | **CU14** | Generar Esquema DDL SQL (PostgreSQL 17) | Ciclo 2 | `A2: Arquitecto` | **Implementado** | Exportación de script SQL DDL para Supabase/PostgreSQL 17 con tablas, PKs autoincrementales IDENTITY, FKs con ON DELETE CASCADE, tablas intermedias N:N, índices B-Tree, comentarios y auditoría inmutable. |
-| **CU15** | Generar Colección de Pruebas Postman v2.1 | Ciclo 2 | `A2: Arquitecto` | **Pendiente** | Generación de archivo JSON con colección de peticiones HTTP REST CRUD para cada entidad del diagrama. |
+| **CU15** | Generar Colección de Pruebas Postman v2.1 | Ciclo 2 | `A2: Arquitecto` | **Implementado** | Colección JSON oficial Postman v2.1.0 con carpetas por entidad, suite REST CRUD completa (5 requests/entidad), tests automáticos pm.test (status 200/201/204, <1000ms), captura de IDs en variables de entorno, generación semántica de datos mock, variable {{baseUrl}}, visor de código y auditoría inmutable. |
 | **CU16** | Modelar por Dictado de Voz (IA PLN) | Ciclo 3 | `A2: Arquitecto (Host)` | **Pendiente** | Entrada por micrófono (Web Speech API / Whisper), procesamiento semántico con Gemini Flash y modelado automático. |
 | **CU17** | Digitalizar Foto de Pizarra (IA Visión) | Ciclo 3 | `A2: Arquitecto (Host)` | **Pendiente** | Subida de fotografía de boceto en pizarra física, inferencia con Gemini 2.5 Flash y vectorización a nodos UML. |
 | **CU18** | Sincronizar Sesión Colaborativa (WSS + DNI) | Ciclo 3 | `A2: Host` / `A3: Guest` | **Pendiente** | Salas concurrentes en tiempo real vía WebSockets STOMP sobre SockJS (< 50ms latencia) ingresando con DNI/nombre. |
@@ -171,5 +171,14 @@ El desarrollo del sistema se ejecuta **estrictamente Caso de Uso por Caso de Uso
   3. En `MainLayout.tsx`, al navegar a `/editor` sin ID de ruta, se consulta `localStorage.getItem('case_last_project_id')`. Si existe, redirige y carga dicho proyecto; si no existe, permanece en el lienzo limpio mostrando un estado vacío profesional ("Ningún modelo UML abierto") con acciones para ir a "Mis Proyectos" o "Crear Modelo".
   4. Se corrigió el posicionamiento del sidebar en `MainLayout.tsx` y `AppLayout.tsx` a `fixed top-14 bottom-0 left-0 z-40 md:relative md:top-0 md:h-full md:z-20` (y el backdrop móvil a `fixed top-14 bottom-0 inset-x-0`), garantizando que la barra lateral comience exactamente a 56px debajo del navbar y nunca sea solapada.
   5. En `Sidebar.tsx`, el card "Modelo Activo" valida la existencia de un proyecto real; en su ausencia muestra "Ningún modelo activo" con un botón de acceso directo a "Ver Mis Proyectos".
+
+### Incidente GEN-01: Heurísticas Débiles de Subcadena en Generación de Mocks y Prioridad Invertida sobre Tipos Fuertes
+* **Síntoma:** Al ejecutar la suite Postman generada (CU15) contra el backend Spring Boot (CU13) del Sistema Académico Universitario, 20 peticiones pasaron con 200 OK, pero `POST /api/inscripcions` devolvió HTTP 500: `JSON parse error: Cannot deserialize value of type java.time.LocalDate from String "84729103"`.
+* **Causa Raíz:** En `PostmanGeneratorService.java`, el método `generateMockValue` evaluaba heurísticas de nombres antes del tipo de dato: `if (name.contains("ci") || name.contains("dni") ...) return "84729103";`. En español, el sustantivo `inscripcion` contiene la subcadena `"ci"` (`in-s-ci-o-n`), provocando que cualquier campo como `fechaInscripcion` fuera evaluado como un documento de identidad antes de comprobar si era un `LocalDate`. Jackson rechazó correctamente el formato no ISO.
+* **Regla Preventiva Inviolable para Todo Generador:**
+  1. **Precedencia de Tipos Estrictos:** El tipo de dato fuerte Java / SQL (`LocalDate`, `LocalDateTime`, `BigDecimal`, `Boolean`, `UUID`, etc.) SIEMPRE tiene precedencia absoluta sobre cualquier heurística de nombre.
+  2. **Delimitación Estricta de Palabras (Token Boundaries):** Queda terminantemente prohibido usar `name.contains("ci")` o subcadenas cortas de 2 o 3 caracteres para nombres de campos. Se debe usar coincidencia exacta (`name.equals("ci")`), delimitadores con guión bajo (`name.startsWith("ci_")`, `name.endsWith("_ci")`) o palabras completas (`cedula`, `dni`, `documento`).
+  3. **Pruebas de Deserialización Automatizadas:** Todo generador de mocks debe incluir pruebas unitarias con campos de entidades reales que validen la deserialización contra Jackson en `mvn test`.
+
 
 

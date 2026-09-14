@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { 
   MousePointer2, 
+  BoxSelect,
   Box, 
   Layers, 
   Component, 
@@ -14,7 +15,9 @@ import {
   Database,
   Undo2,
   Redo2,
-  ShieldCheck
+  Trash2,
+  ShieldCheck,
+  Send
 } from 'lucide-react';
 import { useUiStore } from '../../stores/uiStore';
 import { useDiagramStore } from '../../stores/diagramStore';
@@ -23,17 +26,35 @@ import { ProjectHistoryModal } from '../history/ProjectHistoryModal';
 import { NormalizationReportModal } from '../modals/NormalizationReportModal';
 import { GenerateBackendModal } from '../modals/GenerateBackendModal';
 import { SqlDdlModal } from '../modals/SqlDdlModal';
+import { PostmanModal } from '../modals/PostmanModal';
 import { analyzeDiagramNormalization } from '../../services/normalizationEngine';
 import toast from 'react-hot-toast';
 
 export const Toolbar: React.FC = () => {
   const { activeTool, setActiveTool } = useUiStore();
-  const { project, nodes, edges, createNewClass, undo, redo, canUndo, canRedo } = useDiagramStore();
+  const { 
+    project, 
+    nodes, 
+    edges, 
+    selectedNode, 
+    selectedEdge, 
+    createNewClass, 
+    undo, 
+    redo, 
+    canUndo, 
+    canRedo, 
+    deleteSelectedElements 
+  } = useDiagramStore();
   const { zoomIn, zoomOut, fitView, getViewport } = useReactFlow();
+
+  const hasSelection = useMemo(() => {
+    return nodes.some(n => n.selected) || edges.some(e => e.selected) || !!selectedNode || !!selectedEdge;
+  }, [nodes, edges, selectedNode, selectedEdge]);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isNormalizationOpen, setIsNormalizationOpen] = useState(false);
   const [isGenerateBackendOpen, setIsGenerateBackendOpen] = useState(false);
   const [isSqlDdlOpen, setIsSqlDdlOpen] = useState(false);
+  const [isPostmanOpen, setIsPostmanOpen] = useState(false);
   const [hoverTooltip, setHoverTooltip] = useState<{ text: string; top: number; left: number } | null>(null);
 
   const normReport = useMemo(() => {
@@ -94,20 +115,47 @@ export const Toolbar: React.FC = () => {
       style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
     >
       <div className="flex flex-col items-center gap-1.5 w-full min-h-max pb-4">
-        {/* Selection pointer */}
-        <button
-          onClick={() => setActiveTool('pointer')}
-          onMouseEnter={showTip('Modo Selección • V')}
-          onMouseLeave={hideTip}
-          className={`p-2 rounded-md transition-all cursor-pointer ${
-            activeTool === 'pointer'
-              ? 'bg-blue-600 text-white shadow-xs ring-1 ring-blue-400'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-          }`}
-          title="Modo Selección"
-        >
-          <MousePointer2 size={16} />
-        </button>
+        {/* Selection & Navigation tools */}
+        <div className="flex flex-col items-center gap-1">
+          <button
+            onClick={() => {
+              setActiveTool('pointer');
+              toast('Modo Puntero activo');
+            }}
+            onMouseEnter={showTip('Puntero de Navegación • V')}
+            onMouseLeave={hideTip}
+            className={`p-2 rounded-md transition-all cursor-pointer ${
+              activeTool === 'pointer'
+                ? 'bg-blue-600 text-white shadow-xs ring-1 ring-blue-400'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+            }`}
+            title="Puntero de Navegación"
+          >
+            <MousePointer2 size={16} />
+          </button>
+
+          <button
+            onClick={() => {
+              if (activeTool === 'select-area') {
+                setActiveTool('pointer');
+                toast('Modo Puntero activo');
+              } else {
+                setActiveTool('select-area');
+                toast.success('Selección por Área activa: arrastra en el lienzo para seleccionar');
+              }
+            }}
+            onMouseEnter={showTip('Selección por Área • S')}
+            onMouseLeave={hideTip}
+            className={`p-2 rounded-md transition-all cursor-pointer ${
+              activeTool === 'select-area'
+                ? 'bg-blue-600 text-white shadow-xs ring-1 ring-blue-400'
+                : 'text-slate-400 hover:text-blue-400 hover:bg-slate-900'
+            }`}
+            title="Seleccionar con Mouse en Área"
+          >
+            <BoxSelect size={16} />
+          </button>
+        </div>
 
         {/* Undo & Redo Controls */}
         <div className="flex flex-col items-center gap-1">
@@ -139,6 +187,21 @@ export const Toolbar: React.FC = () => {
             title="Rehacer"
           >
             <Redo2 size={15} />
+          </button>
+
+          <button
+            onClick={() => deleteSelectedElements()}
+            onMouseEnter={showTip('Eliminar Selección • Supr')}
+            onMouseLeave={hideTip}
+            disabled={!hasSelection}
+            className={`p-2 rounded-md transition-all cursor-pointer ${
+              hasSelection
+                ? 'text-rose-400 hover:text-rose-200 hover:bg-rose-950/40 active:scale-95 ring-1 ring-rose-500/30'
+                : 'text-slate-600 cursor-not-allowed opacity-35'
+            }`}
+            title="Eliminar Selección"
+          >
+            <Trash2 size={15} />
           </button>
         </div>
 
@@ -272,6 +335,17 @@ export const Toolbar: React.FC = () => {
           >
             <Database size={16} />
           </button>
+
+          {/* Generate Postman Collection v2.1 (CU15) */}
+          <button
+            onClick={() => setIsPostmanOpen(true)}
+            onMouseEnter={showTip('Generar Colección Postman')}
+            onMouseLeave={hideTip}
+            className="p-2 rounded-md text-slate-400 hover:text-amber-400 hover:bg-amber-950/30 transition-all cursor-pointer"
+            title="Generar Colección Postman v2.1"
+          >
+            <Send size={16} />
+          </button>
         </div>
 
         <div className="w-7 h-px bg-slate-800 my-1" />
@@ -344,6 +418,12 @@ export const Toolbar: React.FC = () => {
       <SqlDdlModal
         isOpen={isSqlDdlOpen}
         onClose={() => setIsSqlDdlOpen(false)}
+      />
+
+      {/* Generate Postman Collection Modal (CU15) */}
+      <PostmanModal
+        isOpen={isPostmanOpen}
+        onClose={() => setIsPostmanOpen(false)}
       />
     </aside>
   );

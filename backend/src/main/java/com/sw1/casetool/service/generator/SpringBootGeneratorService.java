@@ -398,7 +398,7 @@ public class SpringBootGeneratorService {
                             .targetClassName(src.getClassName())
                             .fieldName(toCamelCase(src.getClassName()))
                             .joinColumnName(toSnakeCase(src.getClassName()) + "_id")
-                            .nullable(!srcCard.equals("1"))
+                            .nullable(true)
                             .build());
 
                     // Source has @OneToMany -> Target
@@ -417,7 +417,7 @@ public class SpringBootGeneratorService {
                             .targetClassName(tgt.getClassName())
                             .fieldName(toCamelCase(tgt.getClassName()))
                             .joinColumnName(toSnakeCase(tgt.getClassName()) + "_id")
-                            .nullable(!tgtCard.equals("1"))
+                            .nullable(true)
                             .build());
 
                     // Target has @OneToMany -> Source
@@ -643,14 +643,16 @@ public class SpringBootGeneratorService {
         if (raw == null || raw.isBlank()) return "String";
         String clean = raw.trim();
         if (clean.equalsIgnoreCase("int") || clean.equalsIgnoreCase("Integer")) return "Integer";
+        if (clean.equalsIgnoreCase("short") || clean.equalsIgnoreCase("Short")) return "Integer";
         if (clean.equalsIgnoreCase("Long")) return "Long";
         if (clean.equalsIgnoreCase("Double")) return "Double";
-        if (clean.equalsIgnoreCase("BigDecimal") || clean.equalsIgnoreCase("decimal") || clean.equalsIgnoreCase("numeric")) return "BigDecimal";
+        if (clean.equalsIgnoreCase("Float") || clean.equalsIgnoreCase("float")) return "Double";
+        if (clean.equalsIgnoreCase("BigDecimal") || clean.equalsIgnoreCase("decimal") || clean.equalsIgnoreCase("numeric") || clean.equalsIgnoreCase("moneda") || clean.equalsIgnoreCase("precio")) return "BigDecimal";
         if (clean.equalsIgnoreCase("Boolean") || clean.equalsIgnoreCase("bool")) return "Boolean";
-        if (clean.equalsIgnoreCase("LocalDate") || clean.equalsIgnoreCase("Date")) return "LocalDate";
+        if (clean.equalsIgnoreCase("LocalDate") || clean.equalsIgnoreCase("Date") || clean.equalsIgnoreCase("fecha")) return "LocalDate";
         if (clean.equalsIgnoreCase("LocalDateTime") || clean.equalsIgnoreCase("Timestamp") || clean.equalsIgnoreCase("DateTime")) return "LocalDateTime";
         if (clean.equalsIgnoreCase("UUID")) return "UUID";
-        if (clean.equalsIgnoreCase("byte[]") || clean.equalsIgnoreCase("bytearray") || clean.equalsIgnoreCase("blob")) return "byte[]";
+        if (clean.equalsIgnoreCase("byte[]") || clean.equalsIgnoreCase("bytearray") || clean.equalsIgnoreCase("blob") || clean.equalsIgnoreCase("foto") || clean.equalsIgnoreCase("imagen")) return "byte[]";
         return "String"; // Default E1
     }
 }

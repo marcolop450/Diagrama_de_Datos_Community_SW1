@@ -78,6 +78,7 @@ interface DiagramState {
   createNewClass: (name?: string, stereotype?: string, isAbstract?: boolean, position?: { x: number; y: number }) => void;
   updateClassNode: (id: string, data: Partial<ClassNodeData>) => void;
   deleteClassNode: (id: string) => void;
+  deleteSelectedElements: () => boolean;
   cloneClassNode: (id: string) => Promise<void>;
   isClassNameTaken: (name: string, excludeId?: string) => boolean;
   
@@ -117,6 +118,20 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
 
   takeSnapshot: () => {
     const { nodes, edges, historyPast } = get();
+
+    // Prevent duplicate consecutive snapshots if state hasn't changed
+    if (historyPast.length > 0) {
+      const last = historyPast[historyPast.length - 1];
+      if (
+        last.nodes.length === nodes.length &&
+        last.edges.length === edges.length &&
+        JSON.stringify(last.nodes) === JSON.stringify(nodes) &&
+        JSON.stringify(last.edges) === JSON.stringify(edges)
+      ) {
+        return;
+      }
+    }
+
     const snapshot: DiagramSnapshot = {
       nodes: JSON.parse(JSON.stringify(nodes)),
       edges: JSON.parse(JSON.stringify(edges)),
@@ -142,9 +157,13 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
     };
     const newFuture = [currentSnapshot, ...historyFuture.slice(0, 29)];
 
+    // Clear selection on restored elements to prevent accidental immediate re-deletion
+    const restoredNodes = previousSnapshot.nodes.map(n => ({ ...n, selected: false }));
+    const restoredEdges = previousSnapshot.edges.map(e => ({ ...e, selected: false }));
+
     set({
-      nodes: previousSnapshot.nodes,
-      edges: previousSnapshot.edges,
+      nodes: restoredNodes,
+      edges: restoredEdges,
       selectedNode: null,
       selectedEdge: null,
       historyPast: newPast,
@@ -167,9 +186,12 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
     };
     const newPast = [...historyPast.slice(-29), currentSnapshot];
 
+    const restoredNodes = nextSnapshot.nodes.map(n => ({ ...n, selected: false }));
+    const restoredEdges = nextSnapshot.edges.map(e => ({ ...e, selected: false }));
+
     set({
-      nodes: nextSnapshot.nodes,
-      edges: nextSnapshot.edges,
+      nodes: restoredNodes,
+      edges: restoredEdges,
       selectedNode: null,
       selectedEdge: null,
       historyPast: newPast,
@@ -185,12 +207,18 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
   },
 
   onNodesChange: (changes) => {
+    if (changes.some((c) => c.type === 'remove')) {
+      get().takeSnapshot();
+    }
     set({
       nodes: applyNodeChanges(changes, get().nodes) as Node<ClassNodeData>[],
     });
   },
 
   onEdgesChange: (changes) => {
+    if (changes.some((c) => c.type === 'remove')) {
+      get().takeSnapshot();
+    }
     set({
       edges: applyEdgeChanges(changes, get().edges) as Edge<RelationshipData>[],
     });
@@ -401,6 +429,71 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       edges: state.edges.filter(edge => edge.source !== id && edge.target !== id),
       selectedNode: state.selectedNode?.id === id ? null : state.selectedNode
     }));
+  },
+
+  deleteSelectedElements: () => {
+    const { nodes, edges, selectedNode, selectedEdge } = get();
+
+    const selectedNodeIds = new Set<string>();
+    nodes.forEach((n) => {
+      if (n.selected) {
+        selectedNodeIds.add(n.id);
+      }
+    });
+    if (selectedNode) {
+      selectedNodeIds.add(selectedNode.id);
+    }
+
+    const selectedEdgeIds = new Set<string>();
+    edges.forEach((e) => {
+      if (e.selected) {
+        selectedEdgeIds.add(e.id);
+      }
+    });
+    if (selectedEdge) {
+      selectedEdgeIds.add(selectedEdge.id);
+    }
+
+    if (selectedNodeIds.size === 0 && selectedEdgeIds.size === 0) {
+      return false;
+    }
+
+    // Capture snapshot BEFORE deleting anything so Ctrl+Z can restore all elements
+    get().takeSnapshot();
+
+    const remainingNodes = nodes.filter((n) => !selectedNodeIds.has(n.id));
+    const remainingEdges = edges.filter(
+      (e) =>
+        !selectedEdgeIds.has(e.id) &&
+        !selectedNodeIds.has(e.source) &&
+        !selectedNodeIds.has(e.target)
+    );
+
+    const deletedNodesCount = nodes.length - remainingNodes.length;
+    const deletedEdgesCount = edges.length - remainingEdges.length;
+
+    set({
+      nodes: remainingNodes,
+      edges: remainingEdges,
+      selectedNode: null,
+      selectedEdge: null,
+    });
+
+    if (deletedNodesCount > 0 && deletedEdgesCount > 0) {
+      toast.success(
+        `${deletedNodesCount} ${deletedNodesCount === 1 ? 'clase' : 'clases'} y ${deletedEdgesCount} ${deletedEdgesCount === 1 ? 'relación eliminada' : 'relaciones eliminadas'}`
+      );
+    } else if (deletedNodesCount > 0) {
+      toast.success(
+        `${deletedNodesCount} ${deletedNodesCount === 1 ? 'clase eliminada' : 'clases eliminadas'}`
+      );
+    } else if (deletedEdgesCount > 0) {
+      toast.success(
+        `${deletedEdgesCount} ${deletedEdgesCount === 1 ? 'relación eliminada' : 'relaciones eliminadas'}`
+      );
+    }
+
+    return true;
   },
 
   addRelationship: (edge) => {

@@ -36,6 +36,22 @@ export interface SqlDdlResponse {
   totalIndexes: number;
 }
 
+export interface GeneratePostmanConfig {
+  baseUrl?: string;
+  includeTests?: boolean;
+  includeMockData?: boolean;
+  authType?: string;
+}
+
+export interface PostmanResponse {
+  projectName: string;
+  fileName: string;
+  json: string;
+  totalFolders: number;
+  totalRequests: number;
+  totalTests: number;
+}
+
 export const getBackendPreview = async (
   projectId: string,
   config: GenerateBackendConfig
@@ -106,6 +122,46 @@ export const downloadSqlDdl = async (
   const filename = `${cleanProjectName}-schema.sql`;
 
   const blob = new Blob([response.data], { type: 'application/sql' });
+  const downloadUrl = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = downloadUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(downloadUrl);
+};
+
+export const generatePostmanCollection = async (
+  projectId: string,
+  config?: GeneratePostmanConfig
+): Promise<PostmanResponse> => {
+  const response = await apiClient.post<{ success: boolean; data: PostmanResponse }>(
+    `/projects/${projectId}/generate/postman`,
+    config || {}
+  );
+  return response.data.data;
+};
+
+export const downloadPostmanCollection = async (
+  projectId: string,
+  projectName: string,
+  config?: GeneratePostmanConfig
+): Promise<void> => {
+  const response = await apiClient.post(
+    `/projects/${projectId}/generate/postman/download`,
+    config || {},
+    {
+      responseType: 'blob',
+    }
+  );
+
+  const cleanProjectName = (projectName || 'postman')
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, '-');
+  const filename = `${cleanProjectName}-postman-collection.json`;
+
+  const blob = new Blob([response.data], { type: 'application/json' });
   const downloadUrl = window.URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = downloadUrl;

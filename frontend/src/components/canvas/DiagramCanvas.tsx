@@ -10,7 +10,8 @@ import {
   EdgeTypes,
   useReactFlow,
   ConnectionMode,
-  Connection
+  Connection,
+  SelectionMode
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useDiagramStore } from '../../stores/diagramStore';
@@ -21,7 +22,7 @@ import ClassNodeComponent from './ClassNodeComponent';
 import RelationshipEdge from './RelationshipEdge';
 import { ClassNodeData, RelationshipData } from '../../types/diagram';
 import { getCanvasTheme } from '../../constants/canvasThemes';
-import { Info, MousePointerClick, X, FolderKanban, FolderPlus, Layers } from 'lucide-react';
+import { Info, MousePointerClick, BoxSelect, X, FolderKanban, FolderPlus, Layers } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const nodeTypes: NodeTypes = {
@@ -48,6 +49,8 @@ export default function DiagramCanvas() {
     setSelectedEdge,
     deleteClassNode,
     deleteRelationship,
+    deleteSelectedElements,
+    takeSnapshot,
     reconnectRelationship,
     createNewClass,
     cloneClassNode,
@@ -88,8 +91,9 @@ export default function DiagramCanvas() {
   }, [user?.preferences?.defaultZoom, zoomTo]);
 
   const isPlacementMode = activeTool === 'add-class' || activeTool === 'add-interface' || activeTool === 'add-abstract';
+  const isAreaSelectMode = activeTool === 'select-area';
 
-  // Global Keyboard Shortcuts (Ctrl+Z, Ctrl+Y / Ctrl+Shift+Z, Delete, Escape) with input immunity
+  // Global Keyboard Shortcuts (Ctrl+Z, Ctrl+Y / Ctrl+Shift+Z, Delete, Escape, S, V) with input immunity
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const activeEl = document.activeElement;
@@ -100,6 +104,22 @@ export default function DiagramCanvas() {
         (activeEl as HTMLElement).isContentEditable
       );
       if (isInputActive) return;
+
+      // S: Toggle Area Selection
+      if (!e.ctrlKey && !e.metaKey && !e.altKey && (e.key === 's' || e.key === 'S')) {
+        e.preventDefault();
+        setActiveTool(isAreaSelectMode ? 'pointer' : 'select-area');
+        toast(isAreaSelectMode ? 'Modo Puntero activo' : 'Selección por Área activa');
+        return;
+      }
+
+      // V: Switch to Pointer Navigation
+      if (!e.ctrlKey && !e.metaKey && !e.altKey && (e.key === 'v' || e.key === 'V')) {
+        e.preventDefault();
+        setActiveTool('pointer');
+        toast('Modo Puntero activo');
+        return;
+      }
 
       // Ctrl+Z: Undo
       if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (e.key === 'z' || e.key === 'Z')) {
@@ -148,25 +168,25 @@ export default function DiagramCanvas() {
         return;
       }
 
-      // Delete / Backspace: Delete selected element
+      // Delete / Backspace: Delete selected elements (single or multiple via area selection)
       if (e.key === 'Delete' || e.key === 'Backspace') {
-        if (selectedNode) {
+        const hasSelectedNodes = nodes.some(n => n.selected) || !!selectedNode;
+        const hasSelectedEdges = edges.some(e => e.selected) || !!selectedEdge;
+
+        if (hasSelectedNodes || hasSelectedEdges) {
           e.preventDefault();
-          deleteClassNode(selectedNode.id);
-          toast.success(`Clase '${selectedNode.data.name}' eliminada`);
-        } else if (selectedEdge) {
-          e.preventDefault();
-          deleteRelationship(selectedEdge.id);
-          toast.success('Relación eliminada');
+          e.stopPropagation();
+          deleteSelectedElements();
+          setPropertiesPanelOpen(false);
+          return;
         }
-        return;
       }
 
-      // Escape: Cancel placement or deselect
+      // Escape: Cancel placement or exit area selection or deselect
       if (e.key === 'Escape') {
-        if (isPlacementMode) {
+        if (isPlacementMode || isAreaSelectMode) {
           setActiveTool('pointer');
-          toast('Colocación cancelada');
+          toast('Modo Puntero activo');
         } else if (selectedNode || selectedEdge) {
           setSelectedNode(null);
           setSelectedEdge(null);
@@ -179,6 +199,8 @@ export default function DiagramCanvas() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [
+    nodes,
+    edges,
     canUndo, 
     canRedo, 
     undo, 
@@ -187,10 +209,12 @@ export default function DiagramCanvas() {
     selectedEdge, 
     deleteClassNode, 
     deleteRelationship, 
+    deleteSelectedElements,
     cloneClassNode,
     copyClassNode,
     pasteClassNode,
     isPlacementMode, 
+    isAreaSelectMode,
     setActiveTool, 
     setSelectedNode, 
     setSelectedEdge, 
@@ -285,7 +309,7 @@ export default function DiagramCanvas() {
   return (
     <div 
       data-tour="diagram-canvas"
-      className={`w-full h-full relative select-none transition-colors duration-200 ${isPlacementMode ? 'cursor-crosshair' : ''}`} 
+      className={`w-full h-full relative select-none transition-colors duration-200 ${isPlacementMode || isAreaSelectMode ? 'cursor-crosshair' : ''}`} 
       style={{ backgroundColor: currentTheme.canvasBg }}
       ref={reactFlowWrapper}
     >
@@ -351,6 +375,16 @@ export default function DiagramCanvas() {
         edgesReconnectable={true}
         reconnectRadius={24}
         onReconnect={handleReconnect}
+        selectionOnDrag={isAreaSelectMode}
+        panOnDrag={isAreaSelectMode ? [1, 2] : true}
+        selectionMode={SelectionMode.Partial}
+        deleteKeyCode={null}
+        onBeforeDelete={async ({ nodes: delNodes, edges: delEdges }) => {
+          if (delNodes.length > 0 || delEdges.length > 0) {
+            takeSnapshot();
+          }
+          return true;
+        }}
         minZoom={0.15}
         maxZoom={2.5}
         snapToGrid={user?.preferences?.snapToGrid ?? true}
@@ -383,8 +417,8 @@ export default function DiagramCanvas() {
           </>
         )}
 
-        {/* Top Info Banner / Placement Banner */}
-        {(isPlacementMode || showBanner) && (
+        {/* Top Info Banner / Placement Banner / Area Selection Banner */}
+        {(isPlacementMode || isAreaSelectMode || showBanner) && (
           <Panel position="top-center" className="!m-3">
             {isPlacementMode ? (
               <div className="flex items-center gap-2.5 px-4 py-2 bg-gradient-to-r from-blue-900/90 to-indigo-900/90 border border-blue-400/50 text-blue-100 rounded-md text-xs font-mono shadow-2xl backdrop-blur-md animate-bounce">
@@ -394,6 +428,18 @@ export default function DiagramCanvas() {
                   onClick={() => setActiveTool('pointer')}
                   className="p-1 hover:bg-white/10 rounded ml-1 cursor-pointer"
                   title="Cancelar • Esc"
+                >
+                  <X size={13} />
+                </button>
+              </div>
+            ) : isAreaSelectMode ? (
+              <div className="flex items-center gap-2.5 px-4 py-2 bg-gradient-to-r from-blue-900/90 to-indigo-900/90 border border-blue-400/50 text-blue-100 rounded-md text-xs font-mono shadow-2xl backdrop-blur-md">
+                <BoxSelect size={15} className="text-blue-300 animate-pulse" />
+                <span>Modo Selección por Área: Arrastra con el mouse en el lienzo para seleccionar múltiples elementos</span>
+                <button 
+                  onClick={() => setActiveTool('pointer')}
+                  className="p-1 hover:bg-white/10 rounded ml-1 cursor-pointer"
+                  title="Volver a Puntero • Esc"
                 >
                   <X size={13} />
                 </button>

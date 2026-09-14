@@ -97,12 +97,27 @@ public class DiagramService {
                                     if (posMap.get("y") instanceof Number numY) posY = numY.doubleValue();
                                 }
 
+                                double width = 260.0;
+                                double height = 180.0;
+                                if (nodeMap.get("width") instanceof Number numW) width = numW.doubleValue();
+                                if (nodeMap.get("height") instanceof Number numH) height = numH.doubleValue();
+
                                 List<Map<String, Object>> attributes = new ArrayList<>();
                                 if (nodeMap.get("attributes") instanceof List<?> attrList) {
                                     for (Object a : attrList) {
                                         if (a instanceof Map<?, ?> am) {
                                             Map<String, Object> attrClean = new HashMap<>();
                                             am.forEach((k, v) -> attrClean.put(k.toString(), v));
+                                            boolean isPk = Boolean.TRUE.equals(attrClean.get("isPrimaryKey")) 
+                                                    || Boolean.TRUE.equals(attrClean.get("isId"))
+                                                    || Boolean.TRUE.equals(attrClean.get("isPk"))
+                                                    || "true".equalsIgnoreCase(String.valueOf(attrClean.get("isPrimaryKey")))
+                                                    || "true".equalsIgnoreCase(String.valueOf(attrClean.get("isId")));
+                                            if (isPk) {
+                                                attrClean.put("isPrimaryKey", true);
+                                                attrClean.put("isId", true);
+                                                attrClean.put("isNotNull", true);
+                                            }
                                             attributes.add(attrClean);
                                         }
                                     }
@@ -126,8 +141,8 @@ public class DiagramService {
                                         .abstractClass(isAbstract)
                                         .positionX(posX)
                                         .positionY(posY)
-                                        .width(260.0)
-                                        .height(180.0)
+                                        .width(width)
+                                        .height(height)
                                         .attributes(attributes)
                                         .methods(methods)
                                         .build();
@@ -155,6 +170,12 @@ public class DiagramService {
                                     String srcCard = edgeMap.get("sourceCardinality") != null ? edgeMap.get("sourceCardinality").toString() : "1";
                                     String tgtCard = edgeMap.get("targetCardinality") != null ? edgeMap.get("targetCardinality").toString() : "1";
                                     String label = edgeMap.get("label") != null ? edgeMap.get("label").toString() : null;
+                                    String srcRole = edgeMap.get("sourceRole") != null ? edgeMap.get("sourceRole").toString() : null;
+                                    String tgtRole = edgeMap.get("targetRole") != null ? edgeMap.get("targetRole").toString() : null;
+                                    String srcHandle = edgeMap.get("sourceHandle") != null ? edgeMap.get("sourceHandle").toString() : null;
+                                    String tgtHandle = edgeMap.get("targetHandle") != null ? edgeMap.get("targetHandle").toString() : null;
+                                    String routing = edgeMap.get("routing") != null ? edgeMap.get("routing").toString() : null;
+                                    String waypoints = edgeMap.get("waypoints") != null ? edgeMap.get("waypoints").toString() : null;
 
                                     Relationship rel = Relationship.builder()
                                             .project(saved)
@@ -164,6 +185,12 @@ public class DiagramService {
                                             .sourceCardinality(srcCard)
                                             .targetCardinality(tgtCard)
                                             .label(label)
+                                            .sourceRole(srcRole)
+                                            .targetRole(tgtRole)
+                                            .sourceHandle(srcHandle)
+                                            .targetHandle(tgtHandle)
+                                            .routing(routing)
+                                            .waypoints(waypoints)
                                             .build();
 
                                     relationshipRepository.save(rel);

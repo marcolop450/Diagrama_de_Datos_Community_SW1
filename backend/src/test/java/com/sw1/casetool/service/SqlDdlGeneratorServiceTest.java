@@ -343,4 +343,50 @@ class SqlDdlGeneratorServiceTest {
         assertTrue(sql.contains("datos_extra JSONB"));
         assertTrue(sql.contains("archivo_binario BYTEA"));
     }
+
+    @Test
+    @DisplayName("Debe generar tabla asociativa N:N preservando tipos UUID y nombres personalizados de PK")
+    void testGenerateSqlDdl_ManyToMany_WithUuidPrimaryKeys_PreservesTypesAndCustomColumns() {
+        ClassNode doctorNode = ClassNode.builder()
+                .id(UUID.randomUUID())
+                .project(sampleProject)
+                .name("Doctor")
+                .attributes(Collections.singletonList(Map.of("name", "matriculaId", "type", "UUID", "isPrimaryKey", true)))
+                .build();
+
+        ClassNode pacienteNode = ClassNode.builder()
+                .id(UUID.randomUUID())
+                .project(sampleProject)
+                .name("Paciente")
+                .attributes(Collections.singletonList(Map.of("name", "historiaId", "type", "UUID", "isPrimaryKey", true)))
+                .build();
+
+        Relationship relDoctorPaciente = Relationship.builder()
+                .id(UUID.randomUUID())
+                .project(sampleProject)
+                .sourceClass(doctorNode)
+                .targetClass(pacienteNode)
+                .type("association")
+                .sourceCardinality("*")
+                .targetCardinality("*")
+                .build();
+
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(sampleProject));
+        when(classNodeRepository.findByProjectId(projectId)).thenReturn(Arrays.asList(doctorNode, pacienteNode));
+        when(relationshipRepository.findByProjectId(projectId)).thenReturn(Collections.singletonList(relDoctorPaciente));
+
+        SqlDdlResponse response = sqlDdlGeneratorService.generateSqlDdl(
+                projectId,
+                GenerateSqlDdlRequest.builder().dropTables(false).createIndexes(true).build(),
+                "test@sw1.com",
+                "127.0.0.1",
+                "TestClient"
+        );
+
+        String sql = response.getSql();
+        assertTrue(sql.contains("doctor_id UUID NOT NULL"), "La columna en tabla de unión debe ser UUID");
+        assertTrue(sql.contains("paciente_id UUID NOT NULL"), "La columna en tabla de unión debe ser UUID");
+        assertTrue(sql.contains("REFERENCES doctor (matricula_id)"), "Debe referenciar el PK personalizado matricula_id");
+        assertTrue(sql.contains("REFERENCES paciente (historia_id)"), "Debe referenciar el PK personalizado historia_id");
+    }
 }

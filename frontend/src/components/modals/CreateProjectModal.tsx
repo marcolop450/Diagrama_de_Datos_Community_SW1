@@ -38,15 +38,15 @@ const DEFAULT_FALLBACK_TEMPLATES: DomainTemplate[] = [
     id: 'TEMPLATE_COLEGIO',
     name: 'Sistema Académico Universitario',
     category: 'Educación',
-    description: 'Modelo con Estudiantes, Docentes, Materias, Inscripciones y Carreras.',
+    description: 'Modelo con Carrera, Estudiantes, Docentes, Materias e Inscripciones bajo OMG UML 2.5.',
     nodeCount: 5,
-    edgeCount: 4
+    edgeCount: 5
   },
   {
     id: 'TEMPLATE_CLINICA',
     name: 'Sistema Hospitalario y Clínico',
     category: 'Salud',
-    description: 'Modelo clínico con Pacientes, Médicos, Consultas, Especialidades e Historiales.',
+    description: 'Modelo clínico con Pacientes, Médicos, Especialidades, Consultas Médicas e Historiales bajo OMG UML 2.5.',
     nodeCount: 5,
     edgeCount: 4
   },
@@ -54,7 +54,7 @@ const DEFAULT_FALLBACK_TEMPLATES: DomainTemplate[] = [
     id: 'TEMPLATE_CONTABILIDAD',
     name: 'Sistema Contable y Facturación E-Commerce',
     category: 'Finanzas',
-    description: 'Modelo comercial transaccional con Clientes, Facturas, Detalles, Productos y Pagos.',
+    description: 'Modelo comercial transaccional con Clientes, Facturas, Detalles, Productos y Pagos bajo OMG UML 2.5.',
     nodeCount: 5,
     edgeCount: 4
   }

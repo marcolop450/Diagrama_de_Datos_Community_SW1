@@ -96,8 +96,12 @@ public class SqlDdlGeneratorService {
         private String quotedTableName;
         private String sourceTable;
         private String sourceColumn;
+        private String sourceColumnType;
+        private String sourcePkColumn;
         private String targetTable;
         private String targetColumn;
+        private String targetColumnType;
+        private String targetPkColumn;
         private String sourceFkConstraint;
         private String targetFkConstraint;
         private String comment;
@@ -386,8 +390,12 @@ public class SqlDdlGeneratorService {
                             .quotedTableName(quoteIdentifierIfNeeded(jName))
                             .sourceTable(src.getQuotedTableName())
                             .sourceColumn(srcCol)
+                            .sourceColumnType(getFkColumnType(src.getPrimaryKeyColumn()))
+                            .sourcePkColumn(quoteIdentifierIfNeeded(src.getPrimaryKeyColumn().getColumnName()))
                             .targetTable(tgt.getQuotedTableName())
                             .targetColumn(tgtCol)
+                            .targetColumnType(getFkColumnType(tgt.getPrimaryKeyColumn()))
+                            .targetPkColumn(quoteIdentifierIfNeeded(tgt.getPrimaryKeyColumn().getColumnName()))
                             .sourceFkConstraint(fkSrc)
                             .targetFkConstraint(fkTgt)
                             .comment("Tabla asociativa para relación N:N entre " + src.getOriginalClassName() + " y " + tgt.getOriginalClassName())
@@ -552,8 +560,10 @@ public class SqlDdlGeneratorService {
             for (JunctionTableMeta jm : junctionTables) {
                 String pkName = safeConstraintName("pk_" + jm.getTableName());
                 sb.append("CREATE TABLE IF NOT EXISTS ").append(jm.getQuotedTableName()).append(" (\n");
-                sb.append("    ").append(quoteIdentifierIfNeeded(jm.getSourceColumn())).append(" BIGINT NOT NULL,\n");
-                sb.append("    ").append(quoteIdentifierIfNeeded(jm.getTargetColumn())).append(" BIGINT NOT NULL,\n");
+                sb.append("    ").append(quoteIdentifierIfNeeded(jm.getSourceColumn())).append(" ")
+                        .append(jm.getSourceColumnType() != null ? jm.getSourceColumnType() : "BIGINT").append(" NOT NULL,\n");
+                sb.append("    ").append(quoteIdentifierIfNeeded(jm.getTargetColumn())).append(" ")
+                        .append(jm.getTargetColumnType() != null ? jm.getTargetColumnType() : "BIGINT").append(" NOT NULL,\n");
                 sb.append("    CONSTRAINT ").append(pkName).append(" PRIMARY KEY (")
                         .append(quoteIdentifierIfNeeded(jm.getSourceColumn())).append(", ")
                         .append(quoteIdentifierIfNeeded(jm.getTargetColumn())).append(")\n");
@@ -577,17 +587,20 @@ public class SqlDdlGeneratorService {
             }
 
             for (JunctionTableMeta jm : junctionTables) {
+                String srcPk = jm.getSourcePkColumn() != null ? jm.getSourcePkColumn() : "id";
+                String tgtPk = jm.getTargetPkColumn() != null ? jm.getTargetPkColumn() : "id";
+
                 sb.append("ALTER TABLE ").append(jm.getQuotedTableName()).append("\n");
                 sb.append("    ADD CONSTRAINT ").append(jm.getSourceFkConstraint()).append("\n");
                 sb.append("    FOREIGN KEY (").append(quoteIdentifierIfNeeded(jm.getSourceColumn())).append(")\n");
-                sb.append("    REFERENCES ").append(jm.getSourceTable()).append(" (id)\n");
+                sb.append("    REFERENCES ").append(jm.getSourceTable()).append(" (").append(srcPk).append(")\n");
                 sb.append("    ON DELETE CASCADE\n");
                 sb.append("    ON UPDATE CASCADE;\n\n");
 
                 sb.append("ALTER TABLE ").append(jm.getQuotedTableName()).append("\n");
                 sb.append("    ADD CONSTRAINT ").append(jm.getTargetFkConstraint()).append("\n");
                 sb.append("    FOREIGN KEY (").append(quoteIdentifierIfNeeded(jm.getTargetColumn())).append(")\n");
-                sb.append("    REFERENCES ").append(jm.getTargetTable()).append(" (id)\n");
+                sb.append("    REFERENCES ").append(jm.getTargetTable()).append(" (").append(tgtPk).append(")\n");
                 sb.append("    ON DELETE CASCADE\n");
                 sb.append("    ON UPDATE CASCADE;\n\n");
             }

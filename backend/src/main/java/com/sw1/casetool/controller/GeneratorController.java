@@ -2,9 +2,12 @@ package com.sw1.casetool.controller;
 
 import com.sw1.casetool.dto.ApiResponse;
 import com.sw1.casetool.dto.generator.GenerateBackendRequest;
+import com.sw1.casetool.dto.generator.GeneratePostmanRequest;
 import com.sw1.casetool.dto.generator.GenerateSqlDdlRequest;
 import com.sw1.casetool.dto.generator.GenerationPreviewResponse;
+import com.sw1.casetool.dto.generator.PostmanResponse;
 import com.sw1.casetool.dto.generator.SqlDdlResponse;
+import com.sw1.casetool.service.generator.PostmanGeneratorService;
 import com.sw1.casetool.service.generator.SpringBootGeneratorService;
 import com.sw1.casetool.service.generator.SqlDdlGeneratorService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,11 +25,12 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/projects/{projectId}/generate")
 @RequiredArgsConstructor
-@Tag(name = "Generador CASE (CU13 & CU14)", description = "Generación de backend Spring Boot y Esquemas DDL SQL PostgreSQL 17")
+@Tag(name = "Generador CASE (CU13, CU14, CU15)", description = "Generación de backend Spring Boot, Esquemas DDL SQL PostgreSQL 17 y Colecciones Postman v2.1")
 public class GeneratorController {
 
     private final SpringBootGeneratorService generatorService;
     private final SqlDdlGeneratorService sqlDdlGeneratorService;
+    private final PostmanGeneratorService postmanGeneratorService;
 
     @PostMapping("/backend/preview")
     @Operation(summary = "Obtener vista previa de la estructura de archivos que generará el backend")
@@ -119,6 +123,58 @@ public class GeneratorController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
                 .contentType(MediaType.parseMediaType("application/sql"))
                 .body(sqlBytes);
+    }
+
+    @PostMapping("/postman")
+    @Operation(summary = "Generar colección de pruebas Postman v2.1.0 con 5 peticiones CRUD por entidad y scripts de test")
+    public ResponseEntity<ApiResponse<PostmanResponse>> generatePostman(
+            @PathVariable UUID projectId,
+            @RequestBody(required = false) GeneratePostmanRequest request,
+            @AuthenticationPrincipal String email,
+            HttpServletRequest servletRequest
+    ) {
+        GeneratePostmanRequest finalReq = request != null ? request : new GeneratePostmanRequest();
+        String ip = extractIp(servletRequest);
+        String userAgent = servletRequest.getHeader(HttpHeaders.USER_AGENT);
+
+        PostmanResponse response = postmanGeneratorService.generatePostmanCollection(
+                projectId,
+                finalReq,
+                email,
+                ip,
+                userAgent
+        );
+
+        return ResponseEntity.ok(ApiResponse.success("Colección Postman v2.1 generada exitosamente", response));
+    }
+
+    @PostMapping(value = "/postman/download", produces = "application/json")
+    @Operation(summary = "Descargar archivo .json de la colección Postman v2.1.0 lista para importar")
+    public ResponseEntity<byte[]> downloadPostman(
+            @PathVariable UUID projectId,
+            @RequestBody(required = false) GeneratePostmanRequest request,
+            @AuthenticationPrincipal String email,
+            HttpServletRequest servletRequest
+    ) {
+        GeneratePostmanRequest finalReq = request != null ? request : new GeneratePostmanRequest();
+        String ip = extractIp(servletRequest);
+        String userAgent = servletRequest.getHeader(HttpHeaders.USER_AGENT);
+
+        PostmanResponse response = postmanGeneratorService.generatePostmanCollection(
+                projectId,
+                finalReq,
+                email,
+                ip,
+                userAgent
+        );
+
+        byte[] jsonBytes = response.getJson().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        String filename = response.getFileName() != null ? response.getFileName() : "postman-collection.json";
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .contentType(MediaType.parseMediaType("application/json"))
+                .body(jsonBytes);
     }
 
     private String extractIp(HttpServletRequest request) {
