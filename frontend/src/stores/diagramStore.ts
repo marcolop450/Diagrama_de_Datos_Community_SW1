@@ -125,7 +125,7 @@ interface DiagramState {
   setSelectedNode: (node: Node<ClassNodeData> | null) => void;
   setSelectedEdge: (edge: Edge<RelationshipData> | null) => void;
   
-  applyVoiceMutations: (mutations: UmlMutationDto[]) => { appliedCount: number; message: string };
+  applyVoiceMutations: (mutations: UmlMutationDto[], options?: { clearFirst?: boolean }) => { appliedCount: number; message: string };
 
   loadDiagram: (projectId?: string) => Promise<void>;
   saveDiagram: () => Promise<void>;
@@ -1171,7 +1171,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
     }
   },
 
-  applyVoiceMutations: (mutations: UmlMutationDto[]) => {
+  applyVoiceMutations: (mutations: UmlMutationDto[], options?: { clearFirst?: boolean }) => {
     if (!mutations || mutations.length === 0) {
       return { appliedCount: 0, message: 'Sin mutaciones que aplicar' };
     }
@@ -1179,8 +1179,8 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
     // Capture snapshot for full Ctrl+Z reversibility
     get().takeSnapshot();
 
-    let currentNodes = [...get().nodes];
-    let currentEdges = [...get().edges];
+    let currentNodes = options?.clearFirst ? [] : [...get().nodes];
+    let currentEdges = options?.clearFirst ? [] : [...get().edges];
     let appliedCount = 0;
 
     for (const mut of mutations) {
@@ -1244,8 +1244,16 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
           const count = currentNodes.length;
           const col = count % 3;
           const row = Math.floor(count / 3);
-          const posX = 120 + col * 340;
-          const posY = 100 + row * 270;
+          const posX = typeof (cData as any).x === 'number'
+            ? (cData as any).x
+            : typeof (cData as any).position?.x === 'number'
+              ? (cData as any).position.x
+              : 120 + col * 340;
+          const posY = typeof (cData as any).y === 'number'
+            ? (cData as any).y
+            : typeof (cData as any).position?.y === 'number'
+              ? (cData as any).position.y
+              : 100 + row * 270;
 
           const formattedAttributes = (cData.attributes || []).map((attr: any, idx: number) => ({
             id: attr.id || `a-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 5)}`,

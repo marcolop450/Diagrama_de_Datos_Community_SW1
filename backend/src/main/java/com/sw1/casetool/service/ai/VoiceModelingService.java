@@ -66,7 +66,7 @@ public class VoiceModelingService {
         return response;
     }
 
-    private void postProcessMutations(VoiceModelingResponse response) {
+    public void postProcessMutations(VoiceModelingResponse response) {
         if (response == null || response.getMutations() == null) {
             return;
         }

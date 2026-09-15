@@ -10,9 +10,9 @@
 ## 1. Enfoque de Desarrollo y Estado Real de los Casos de Uso (CU)
 
 El desarrollo del sistema se ejecuta **estrictamente Caso de Uso por Caso de Uso (CU por CU)** bajo el Proceso Unificado de Desarrollo de Software (PUDS).
-* **Realizados Correctamente y Validados:** Exclusivamente hasta el **CU16** (Ciclo 3 en progreso).
-* **Todo lo posterior a CU16:** Eran maquetas/demos no definitivas que deben ser desarrolladas formalmente desde cero paso a paso.
-* **Foco Inmediato Siguiente:** **CU17** (Digitalizar Foto de Pizarra — IA Visión).
+* **Realizados Correctamente y Validados:** Exclusivamente hasta el **CU17** (Ciclo 3 en progreso).
+* **Todo lo posterior a CU17:** Eran maquetas/demos no definitivas que deben ser desarrolladas formalmente desde cero paso a paso.
+* **Foco Inmediato Siguiente:** **CU18** (Sincronizar Sesión Colaborativa — WSS + DNI).
 
 ### Matriz de Estado de Casos de Uso por Ciclos
 
@@ -35,7 +35,7 @@ El desarrollo del sistema se ejecuta **estrictamente Caso de Uso por Caso de Uso
 | **CU14** | Generar Esquema DDL SQL (PostgreSQL 17) | Ciclo 2 | `A2: Arquitecto` | **Implementado** | Exportación de script SQL DDL para Supabase/PostgreSQL 17 con tablas, PKs autoincrementales IDENTITY, FKs con ON DELETE CASCADE, tablas intermedias N:N, índices B-Tree, comentarios y auditoría inmutable. |
 | **CU15** | Generar Colección de Pruebas Postman v2.1 | Ciclo 2 | `A2: Arquitecto` | **Implementado** | Colección JSON oficial Postman v2.1.0 con carpetas por entidad, suite REST CRUD completa (5 requests/entidad), tests automáticos pm.test (status 200/201/204, <1000ms), captura de IDs en variables de entorno, generación semántica de datos mock, variable {{baseUrl}}, visor de código y auditoría inmutable. |
 | **CU16** | Modelar por Dictado de Voz (IA PLN) | Ciclo 3 | `A2: Arquitecto` / `A3: Colaborador` | **Implementado** | Entrada por micrófono (Web Speech API) y texto libre, arquitectura de resiliencia Circuit Breaker en 4 niveles (Gemini Flash, Groq Llama 3.3, OpenRouter y Motor Heurístico Local Offline), mutaciones incrementales en React Flow, reversibilidad total con Ctrl+Z/Ctrl+Y, y persistencia inmutable en `ai_prompt_logs` y `audit_logs`. |
-| **CU17** | Digitalizar Foto de Pizarra (IA Visión) | Ciclo 3 | `A2: Arquitecto (Host)` | **Pendiente** | Subida de fotografía de boceto en pizarra física, inferencia con Gemini 2.5 Flash y vectorización a nodos UML. |
+| **CU17** | Digitalizar Foto de Pizarra (IA Visión) | Ciclo 3 | `A2: Arquitecto (Host)` | **Implementado** | Subida Drag & Drop y captura por cámara web, Circuit Breaker multimodal (Gemini 3.6 Flash, OpenRouter Vision y Fallback Local), motor de auto-layout jerárquico no colisionante (LayoutEngineUtil), defensa preventiva 1NF relacional ({PK} id: Long), opción dual Reemplazar vs Fusionar, reversibilidad total con Ctrl+Z, y auditoría inmutable en `ai_prompt_logs` y `audit_logs`. |
 | **CU18** | Sincronizar Sesión Colaborativa (WSS + DNI) | Ciclo 3 | `A2: Host` / `A3: Guest` | **Pendiente** | Salas concurrentes en tiempo real vía WebSockets STOMP sobre SockJS (< 50ms latencia) ingresando con DNI/nombre. |
 
 ---

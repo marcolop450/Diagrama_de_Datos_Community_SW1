@@ -6,7 +6,7 @@ import {
   Layers, 
   Component, 
   Mic, 
-  Image as ImageIcon,
+  Camera,
   ZoomIn, 
   ZoomOut, 
   Maximize,
@@ -28,6 +28,7 @@ import { GenerateBackendModal } from '../modals/GenerateBackendModal';
 import { SqlDdlModal } from '../modals/SqlDdlModal';
 import { PostmanModal } from '../modals/PostmanModal';
 import { VoiceModelingModal } from '../voice/VoiceModelingModal';
+import { WhiteboardVisionModal } from '../vision/WhiteboardVisionModal';
 import { analyzeDiagramNormalization } from '../../services/normalizationEngine';
 import toast from 'react-hot-toast';
 
@@ -56,6 +57,7 @@ export const Toolbar: React.FC = () => {
   const [isSqlDdlOpen, setIsSqlDdlOpen] = useState(false);
   const [isPostmanOpen, setIsPostmanOpen] = useState(false);
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
+  const [isVisionModalOpen, setIsVisionModalOpen] = useState(false);
   const [hoverTooltip, setHoverTooltip] = useState<{ text: string; top: number; left: number } | null>(null);
 
   const normReport = useMemo(() => {
@@ -98,7 +100,11 @@ export const Toolbar: React.FC = () => {
   };
 
   const handlePhotoImport = () => {
-    toast('Reconocimiento OCR de foto disponible en Fase 3');
+    if (!project) {
+      toast.error('Abre o crea un modelo para digitalizar una pizarra');
+      return;
+    }
+    setIsVisionModalOpen(true);
   };
 
   return (
@@ -266,12 +272,16 @@ export const Toolbar: React.FC = () => {
 
           <button
             onClick={handlePhotoImport}
-            onMouseEnter={showTip('Digitalizar Pizarra')}
+            onMouseEnter={showTip('Digitalizar Foto de Pizarra')}
             onMouseLeave={hideTip}
-            className="p-2 rounded-md text-slate-400 hover:text-emerald-400 hover:bg-slate-900 transition-all cursor-pointer"
-            title="Digitalizar Pizarra"
+            className={`p-2 rounded-md transition-all cursor-pointer ${
+              isVisionModalOpen
+                ? 'bg-amber-600 text-white shadow-xs ring-1 ring-amber-400'
+                : 'text-slate-400 hover:text-amber-400 hover:bg-slate-900'
+            }`}
+            title="Digitalizar Foto de Pizarra"
           >
-            <ImageIcon size={16} />
+            <Camera size={16} />
           </button>
         </div>
 
@@ -428,6 +438,13 @@ export const Toolbar: React.FC = () => {
       <VoiceModelingModal
         isOpen={isVoiceModalOpen}
         onClose={() => setIsVoiceModalOpen(false)}
+      />
+
+      {/* Whiteboard Vision Modal (CU17) */}
+      <WhiteboardVisionModal
+        isOpen={isVisionModalOpen}
+        onClose={() => setIsVisionModalOpen(false)}
+        onApplied={() => fitView({ padding: 0.25 })}
       />
     </aside>
   );
