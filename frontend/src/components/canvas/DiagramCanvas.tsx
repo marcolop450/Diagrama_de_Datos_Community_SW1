@@ -379,6 +379,7 @@ export default function DiagramCanvas() {
         panOnDrag={isAreaSelectMode ? [1, 2] : true}
         selectionMode={SelectionMode.Partial}
         deleteKeyCode={null}
+        panActivationKeyCode={null}
         onBeforeDelete={async ({ nodes: delNodes, edges: delEdges }) => {
           if (delNodes.length > 0 || delEdges.length > 0) {
             takeSnapshot();

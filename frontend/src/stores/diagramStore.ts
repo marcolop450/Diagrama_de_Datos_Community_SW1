@@ -11,6 +11,7 @@ import {
 } from '@xyflow/react';
 import { DiagramProject, ClassNodeData, RelationshipData } from '../types/diagram';
 import { api } from '../services/api';
+import { UmlMutationDto } from '../services/aiVoiceService';
 import toast from 'react-hot-toast';
 
 export interface DiagramSnapshot {
@@ -40,9 +41,9 @@ const hasInheritancePath = (
     if (curr === target) return true;
 
     for (const edge of edges) {
-      if (edge.id === excludeEdgeId) continue;
-      const relType = edge.data?.type?.toLowerCase();
-      if (relType === 'inheritance' || relType === 'generalization') {
+      if (excludeEdgeId && edge.id === excludeEdgeId) continue;
+      const type = (edge.data?.type || '').toLowerCase();
+      if (type === 'inheritance' || type === 'generalization') {
         if (edge.source === curr && !visited.has(edge.target)) {
           visited.add(edge.target);
           queue.push(edge.target);
@@ -51,6 +52,33 @@ const hasInheritancePath = (
     }
   }
   return false;
+};
+
+// Normalización fonética y semántica para coincidencia de clases en español (singular/plural, tildes)
+const normalizeClassName = (name?: string): string => {
+  if (!name) return '';
+  let s = name.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (s.endsWith('es') && s.length > 3) s = s.slice(0, -2);
+  else if (s.endsWith('s') && s.length > 2) s = s.slice(0, -1);
+  return s;
+};
+
+const matchesClassName = (nameA?: string, nameB?: string): boolean => {
+  if (!nameA || !nameB) return false;
+  const a = nameA.trim().toLowerCase();
+  const b = nameB.trim().toLowerCase();
+  if (a === b) return true;
+  return normalizeClassName(a) === normalizeClassName(b);
+};
+
+const normalizeUmlCardinality = (card?: string, isInheritance: boolean = false): string => {
+  if (isInheritance) return '';
+  if (!card) return '1';
+  let c = card.trim();
+  if (/^[nm]$/i.test(c) || /^many$/i.test(c) || /^muchos$/i.test(c)) return '*';
+  if (/^uno$/i.test(c)) return '1';
+  c = c.replace(/\.\.[nm]/gi, '..*');
+  return c;
 };
 
 interface DiagramState {
@@ -64,15 +92,14 @@ interface DiagramState {
   historyFuture: DiagramSnapshot[];
   canUndo: boolean;
   canRedo: boolean;
-  
   takeSnapshot: () => void;
   undo: () => void;
   redo: () => void;
-  onNodeDragStart: () => void;
-  
+
   onNodesChange: OnNodesChange;
   onEdgesChange: OnEdgesChange;
   onConnect: OnConnect;
+  onNodeDragStart: () => void;
   
   addClassNode: (node: Node<ClassNodeData>) => void;
   createNewClass: (name?: string, stereotype?: string, isAbstract?: boolean, position?: { x: number; y: number }) => void;
@@ -98,6 +125,8 @@ interface DiagramState {
   setSelectedNode: (node: Node<ClassNodeData> | null) => void;
   setSelectedEdge: (edge: Edge<RelationshipData> | null) => void;
   
+  applyVoiceMutations: (mutations: UmlMutationDto[]) => { appliedCount: number; message: string };
+
   loadDiagram: (projectId?: string) => Promise<void>;
   saveDiagram: () => Promise<void>;
   resetDiagram: () => void;
@@ -1140,6 +1169,380 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
         edges: mappedEdges.length > 0 ? mappedEdges : state.edges
       }));
     }
+  },
+
+  applyVoiceMutations: (mutations: UmlMutationDto[]) => {
+    if (!mutations || mutations.length === 0) {
+      return { appliedCount: 0, message: 'Sin mutaciones que aplicar' };
+    }
+
+    // Capture snapshot for full Ctrl+Z reversibility
+    get().takeSnapshot();
+
+    let currentNodes = [...get().nodes];
+    let currentEdges = [...get().edges];
+    let appliedCount = 0;
+
+    for (const mut of mutations) {
+      if (mut.action === 'CREATE_CLASS' && mut.classData) {
+        const cData = mut.classData;
+        const requestedName = (cData.name || 'NuevaClase').trim();
+        const existingNodeIndex = currentNodes.findIndex(
+          (n) => matchesClassName(n.data?.name, requestedName)
+        );
+
+        if (existingNodeIndex >= 0) {
+          // La clase ya existe en el lienzo: enriquecer y actualizar en lugar de crear un clon duplicado Clase1
+          const targetNode = currentNodes[existingNodeIndex];
+          const existingAttrNames = new Set((targetNode.data.attributes || []).map((a) => a.name.toLowerCase()));
+          const existingMethodNames = new Set((targetNode.data.methods || []).map((m) => m.name.toLowerCase()));
+
+          const newAttrs = (cData.attributes || [])
+            .filter((a: any) => !existingAttrNames.has((a.name || '').toLowerCase()))
+            .map((attr: any, idx: number) => ({
+              id: attr.id || `a-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 5)}`,
+              name: attr.name,
+              type: attr.type || 'String',
+              visibility: attr.visibility || '-',
+              isStatic: false,
+              isId: !!attr.isPrimaryKey || !!attr.isId,
+              isPrimaryKey: !!attr.isPrimaryKey || !!attr.isId,
+              isNotNull: attr.isNotNull !== false,
+              isNullable: !attr.isPrimaryKey && !attr.isNotNull
+            }));
+
+          const newMethods = (cData.methods || [])
+            .filter((m: any) => !existingMethodNames.has((m.name || '').toLowerCase()))
+            .map((m: any, idx: number) => ({
+              id: m.id || `m-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 5)}`,
+              name: m.name,
+              returnType: m.returnType || 'void',
+              visibility: m.visibility || '+',
+              isStatic: false,
+              isAbstract: false,
+              parameters: (m.parameters || []).map((p: any) => ({
+                name: p.name,
+                type: p.type || 'String'
+              }))
+            }));
+
+          currentNodes[existingNodeIndex] = {
+            ...targetNode,
+            data: {
+              ...targetNode.data,
+              isAbstract: cData.isAbstract !== undefined ? !!cData.isAbstract : targetNode.data.isAbstract,
+              stereotype: cData.stereotype !== undefined ? (cData.stereotype || undefined) : targetNode.data.stereotype,
+              attributes: [...(targetNode.data.attributes || []), ...newAttrs],
+              methods: [...(targetNode.data.methods || []), ...newMethods]
+            }
+          };
+
+          appliedCount += (newAttrs.length + newMethods.length > 0 ? (newAttrs.length + newMethods.length) : 1);
+        } else {
+          // Clase nueva: instanciar nodo en el lienzo con distribución espacial inteligente
+          const newId = `c-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+          const count = currentNodes.length;
+          const col = count % 3;
+          const row = Math.floor(count / 3);
+          const posX = 120 + col * 340;
+          const posY = 100 + row * 270;
+
+          const formattedAttributes = (cData.attributes || []).map((attr: any, idx: number) => ({
+            id: attr.id || `a-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 5)}`,
+            name: attr.name,
+            type: attr.type || 'String',
+            visibility: attr.visibility || '-',
+            isStatic: false,
+            isId: !!attr.isPrimaryKey || !!attr.isId,
+            isPrimaryKey: !!attr.isPrimaryKey || !!attr.isId,
+            isNotNull: attr.isNotNull !== false,
+            isNullable: !attr.isPrimaryKey && !attr.isNotNull
+          }));
+
+          const formattedMethods = (cData.methods || []).map((m: any, idx: number) => ({
+            id: m.id || `m-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 5)}`,
+            name: m.name,
+            returnType: m.returnType || 'void',
+            visibility: m.visibility || '+',
+            isStatic: false,
+            isAbstract: false,
+            parameters: (m.parameters || []).map((p: any) => ({
+              name: p.name,
+              type: p.type || 'String'
+            }))
+          }));
+
+          const newNode: Node<ClassNodeData> = {
+            id: newId,
+            type: 'classNode',
+            position: { x: posX, y: posY },
+            data: {
+              id: newId,
+              name: requestedName,
+              stereotype: cData.stereotype || undefined,
+              isAbstract: !!cData.isAbstract,
+              attributes: formattedAttributes,
+              methods: formattedMethods
+            }
+          };
+
+          currentNodes.push(newNode);
+          appliedCount++;
+        }
+
+        // Si la mutación de clase traía además relationshipData (comportamiento de LLMs como Llama 3.1)
+        if (mut.relationshipData) {
+          const rData = mut.relationshipData;
+          const srcNode = currentNodes.find((n) => matchesClassName(n.data?.name, rData.sourceClass));
+          const tgtNode = currentNodes.find((n) => matchesClassName(n.data?.name, rData.targetClass));
+
+          if (srcNode && tgtNode) {
+            const relType = (rData.type || 'association').toLowerCase();
+            const isInheritance = relType === 'generalization' || relType === 'inheritance';
+
+            if (isInheritance) {
+              if (srcNode.id === tgtNode.id) {
+                toast.error(`Una clase (${srcNode.data.name}) no puede heredar de sí misma`);
+                continue;
+              }
+              if (hasInheritancePath(currentEdges, tgtNode.id, srcNode.id)) {
+                toast.error(`Herencia circular evitada: ${srcNode.data.name} no puede heredar de ${tgtNode.data.name}`);
+                continue;
+              }
+            }
+
+            let relLabel = (rData.label || '').trim();
+            let sRole = (rData.sourceRole || '').trim();
+            let tRole = (rData.targetRole || '').trim();
+
+            if (!relLabel && sRole && sRole.toLowerCase() === tRole.toLowerCase()) {
+              relLabel = sRole;
+              sRole = '';
+              tRole = '';
+            }
+
+            const commonVerbs = ['uso', 'usa', 'tiene', 'inscribe', 'matricula', 'pertenece', 'asocia', 'asociacion', 'contiene', 'gestiona', 'posee', 'trabaja_en'];
+            if (!relLabel) {
+              if (sRole && commonVerbs.includes(sRole.toLowerCase())) {
+                relLabel = sRole;
+                sRole = '';
+              } else if (tRole && commonVerbs.includes(tRole.toLowerCase())) {
+                relLabel = tRole;
+                tRole = '';
+              }
+            }
+
+            if (sRole && srcNode.data.name && sRole.toLowerCase() === srcNode.data.name.toLowerCase()) {
+              sRole = '';
+            }
+            if (tRole && tgtNode.data.name && tRole.toLowerCase() === tgtNode.data.name.toLowerCase()) {
+              tRole = '';
+            }
+
+            const edgeId = `e-${srcNode.id}-${tgtNode.id}-${Date.now()}`;
+            const newEdge: Edge<RelationshipData> = {
+              id: edgeId,
+              source: srcNode.id,
+              target: tgtNode.id,
+              sourceHandle: 'right',
+              targetHandle: 'left',
+              type: 'umlEdge',
+              data: {
+                id: edgeId,
+                type: (relType as any) || 'association',
+                label: relLabel,
+                sourceCardinality: normalizeUmlCardinality(rData.sourceCardinality, isInheritance),
+                targetCardinality: isInheritance ? '' : normalizeUmlCardinality(rData.targetCardinality || '*', false),
+                sourceRole: sRole,
+                targetRole: tRole,
+                routing: 'smoothstep',
+                isDirected: true
+              }
+            };
+
+            currentEdges.push(newEdge);
+            appliedCount++;
+          }
+        }
+      } else if (mut.action === 'ADD_ATTRIBUTES' && mut.targetClassName && mut.classData?.attributes) {
+        currentNodes = currentNodes.map((n) => {
+          if (matchesClassName(n.data?.name, mut.targetClassName)) {
+            const existingAttrNames = new Set((n.data.attributes || []).map((a) => a.name.toLowerCase()));
+            const newAttrs = (mut.classData!.attributes || [])
+              .filter((a: any) => !existingAttrNames.has((a.name || '').toLowerCase()))
+              .map((attr: any, idx: number) => ({
+                id: attr.id || `a-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 5)}`,
+                name: attr.name,
+                type: attr.type || 'String',
+                visibility: attr.visibility || '-',
+                isStatic: false,
+                isId: !!attr.isPrimaryKey || !!attr.isId,
+                isPrimaryKey: !!attr.isPrimaryKey || !!attr.isId,
+                isNotNull: attr.isNotNull !== false,
+                isNullable: !attr.isPrimaryKey && !attr.isNotNull
+              }));
+
+            appliedCount += newAttrs.length;
+            return {
+              ...n,
+              data: {
+                ...n.data,
+                attributes: [...(n.data.attributes || []), ...newAttrs]
+              }
+            };
+          }
+          return n;
+        });
+      } else if (mut.action === 'ADD_METHODS' && mut.targetClassName && mut.classData?.methods) {
+        currentNodes = currentNodes.map((n) => {
+          if (matchesClassName(n.data?.name, mut.targetClassName)) {
+            const newMethods = (mut.classData!.methods || []).map((m: any, idx: number) => ({
+              id: m.id || `m-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 5)}`,
+              name: m.name,
+              returnType: m.returnType || 'void',
+              visibility: m.visibility || '+',
+              isStatic: false,
+              isAbstract: false,
+              parameters: (m.parameters || []).map((p: any) => ({
+                name: p.name,
+                type: p.type || 'String'
+              }))
+            }));
+
+            appliedCount += newMethods.length;
+            return {
+              ...n,
+              data: {
+                ...n.data,
+                methods: [...(n.data.methods || []), ...newMethods]
+              }
+            };
+          }
+          return n;
+        });
+      } else if (mut.action === 'CREATE_RELATIONSHIP' && mut.relationshipData) {
+        const rData = mut.relationshipData;
+        const srcNode = currentNodes.find((n) => matchesClassName(n.data?.name, rData.sourceClass));
+        const tgtNode = currentNodes.find((n) => matchesClassName(n.data?.name, rData.targetClass));
+
+        if (srcNode && tgtNode) {
+          const relType = (rData.type || 'association').toLowerCase();
+          const isInheritance = relType === 'generalization' || relType === 'inheritance';
+
+          if (isInheritance) {
+            if (srcNode.id === tgtNode.id) {
+              toast.error(`Una clase (${srcNode.data.name}) no puede heredar de sí misma`);
+              continue;
+            }
+            if (hasInheritancePath(currentEdges, tgtNode.id, srcNode.id)) {
+              toast.error(`Herencia circular evitada: ${srcNode.data.name} no puede heredar de ${tgtNode.data.name}`);
+              continue;
+            }
+          }
+
+          let relLabel = (rData.label || '').trim();
+          let sRole = (rData.sourceRole || '').trim();
+          let tRole = (rData.targetRole || '').trim();
+
+          if (!relLabel && sRole && sRole.toLowerCase() === tRole.toLowerCase()) {
+            relLabel = sRole;
+            sRole = '';
+            tRole = '';
+          }
+
+          const commonVerbs = ['uso', 'usa', 'tiene', 'inscribe', 'matricula', 'pertenece', 'asocia', 'asociacion', 'contiene', 'gestiona', 'posee', 'trabaja_en'];
+          if (!relLabel) {
+            if (sRole && commonVerbs.includes(sRole.toLowerCase())) {
+              relLabel = sRole;
+              sRole = '';
+            } else if (tRole && commonVerbs.includes(tRole.toLowerCase())) {
+              relLabel = tRole;
+              tRole = '';
+            }
+          }
+
+          if (sRole && srcNode.data.name && sRole.toLowerCase() === srcNode.data.name.toLowerCase()) {
+            sRole = '';
+          }
+          if (tRole && tgtNode.data.name && tRole.toLowerCase() === tgtNode.data.name.toLowerCase()) {
+            tRole = '';
+          }
+
+          const edgeId = `e-${srcNode.id}-${tgtNode.id}-${Date.now()}`;
+          const newEdge: Edge<RelationshipData> = {
+            id: edgeId,
+            source: srcNode.id,
+            target: tgtNode.id,
+            sourceHandle: 'right',
+            targetHandle: 'left',
+            type: 'umlEdge',
+            data: {
+              id: edgeId,
+              type: (relType as any) || 'association',
+              label: relLabel,
+              sourceCardinality: normalizeUmlCardinality(rData.sourceCardinality, isInheritance),
+              targetCardinality: isInheritance ? '' : normalizeUmlCardinality(rData.targetCardinality || '*', false),
+              sourceRole: sRole,
+              targetRole: tRole,
+              routing: 'smoothstep',
+              isDirected: true
+            }
+          };
+
+          currentEdges.push(newEdge);
+          appliedCount++;
+        }
+      } else if (mut.action === 'UPDATE_CLASS' && mut.targetClassName && mut.classData) {
+        currentNodes = currentNodes.map((n) => {
+          if (matchesClassName(n.data?.name, mut.targetClassName)) {
+            appliedCount++;
+            const existingAttrNames = new Set((n.data.attributes || []).map((a) => a.name.toLowerCase()));
+            const newAttrs = (mut.classData!.attributes || [])
+              .filter((a: any) => !existingAttrNames.has((a.name || '').toLowerCase()))
+              .map((attr: any, idx: number) => ({
+                id: attr.id || `a-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 5)}`,
+                name: attr.name,
+                type: attr.type || 'String',
+                visibility: attr.visibility || '-',
+                isStatic: false,
+                isId: !!attr.isPrimaryKey || !!attr.isId,
+                isPrimaryKey: !!attr.isPrimaryKey || !!attr.isId,
+                isNotNull: attr.isNotNull !== false,
+                isNullable: !attr.isPrimaryKey && !attr.isNotNull
+              }));
+
+            return {
+              ...n,
+              data: {
+                ...n.data,
+                isAbstract: mut.classData!.isAbstract !== undefined ? !!mut.classData!.isAbstract : n.data.isAbstract,
+                stereotype: mut.classData!.stereotype !== undefined ? (mut.classData!.stereotype || undefined) : n.data.stereotype,
+                attributes: newAttrs.length > 0 ? [...(n.data.attributes || []), ...newAttrs] : n.data.attributes
+              }
+            };
+          }
+          return n;
+        });
+      } else if (mut.action === 'DELETE_ELEMENT' && mut.targetClassName) {
+        const targetNode = currentNodes.find((n) => matchesClassName(n.data?.name, mut.targetClassName));
+        if (targetNode) {
+          currentNodes = currentNodes.filter((n) => n.id !== targetNode.id);
+          currentEdges = currentEdges.filter((e) => e.source !== targetNode.id && e.target !== targetNode.id);
+          appliedCount++;
+        }
+      }
+    }
+
+    set({
+      nodes: currentNodes,
+      edges: currentEdges,
+      selectedNode: null,
+      selectedEdge: null
+    });
+
+    const msg = `${appliedCount} ${appliedCount === 1 ? 'mutación aplicada' : 'mutaciones aplicadas'} por asistente de voz`;
+    toast.success(msg);
+    return { appliedCount, message: msg };
   },
 
   resetDiagram: () => {

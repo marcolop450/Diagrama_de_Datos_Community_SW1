@@ -2,10 +2,13 @@
 node_modules/
 target/
 
-# Environment
+# Environment & Secrets
 .env
 .env.local
 .env.*.local
+application-secrets.yml
+*-secrets.yml
+*-secrets.properties
 
 # IDE
 .idea/

@@ -5,6 +5,9 @@ server:
     max-swallow-size: 25MB
 
 spring:
+  config:
+    import:
+      - optional:classpath:application-secrets.yml
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:local}
   jpa:

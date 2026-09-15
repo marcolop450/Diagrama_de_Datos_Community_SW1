@@ -27,6 +27,7 @@ import { NormalizationReportModal } from '../modals/NormalizationReportModal';
 import { GenerateBackendModal } from '../modals/GenerateBackendModal';
 import { SqlDdlModal } from '../modals/SqlDdlModal';
 import { PostmanModal } from '../modals/PostmanModal';
+import { VoiceModelingModal } from '../voice/VoiceModelingModal';
 import { analyzeDiagramNormalization } from '../../services/normalizationEngine';
 import toast from 'react-hot-toast';
 
@@ -38,14 +39,13 @@ export const Toolbar: React.FC = () => {
     edges, 
     selectedNode, 
     selectedEdge, 
-    createNewClass, 
     undo, 
     redo, 
     canUndo, 
     canRedo, 
     deleteSelectedElements 
   } = useDiagramStore();
-  const { zoomIn, zoomOut, fitView, getViewport } = useReactFlow();
+  const { zoomIn, zoomOut, fitView } = useReactFlow();
 
   const hasSelection = useMemo(() => {
     return nodes.some(n => n.selected) || edges.some(e => e.selected) || !!selectedNode || !!selectedEdge;
@@ -55,6 +55,7 @@ export const Toolbar: React.FC = () => {
   const [isGenerateBackendOpen, setIsGenerateBackendOpen] = useState(false);
   const [isSqlDdlOpen, setIsSqlDdlOpen] = useState(false);
   const [isPostmanOpen, setIsPostmanOpen] = useState(false);
+  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const [hoverTooltip, setHoverTooltip] = useState<{ text: string; top: number; left: number } | null>(null);
 
   const normReport = useMemo(() => {
@@ -90,17 +91,10 @@ export const Toolbar: React.FC = () => {
 
   const handleVoiceCommand = () => {
     if (!project) {
-      toast.error('Abre o crea un modelo para usar el dictado');
+      toast.error('Abre o crea un modelo para usar el dictado de voz');
       return;
     }
-    // Voice placement helper: computes center of current viewport
-    const vp = getViewport();
-    // Center point in flow coords
-    const centerX = (-vp.x + window.innerWidth / 2) / vp.zoom - 100;
-    const centerY = (-vp.y + window.innerHeight / 2) / vp.zoom - 80;
-
-    createNewClass('EntidadPorVoz', 'entity', false, { x: centerX, y: centerY });
-    toast.success('Clase generada y ubicada automáticamente por dictado IA');
+    setIsVoiceModalOpen((prev) => !prev);
   };
 
   const handlePhotoImport = () => {
@@ -258,10 +252,14 @@ export const Toolbar: React.FC = () => {
         <div data-tour="toolbar-ai-tools" className="flex flex-col items-center gap-1.5">
           <button
             onClick={handleVoiceCommand}
-            onMouseEnter={showTip('Modelado por Voz')}
+            onMouseEnter={showTip('Modelar por Voz (PLN)')}
             onMouseLeave={hideTip}
-            className="p-2 rounded-md text-slate-400 hover:text-purple-400 hover:bg-slate-900 transition-all cursor-pointer"
-            title="Modelado por Voz"
+            className={`p-2 rounded-md transition-all cursor-pointer ${
+              isVoiceModalOpen
+                ? 'bg-purple-600 text-white shadow-xs ring-1 ring-purple-400'
+                : 'text-slate-400 hover:text-purple-400 hover:bg-slate-900'
+            }`}
+            title="Modelar por Voz (PLN)"
           >
             <Mic size={16} />
           </button>
@@ -424,6 +422,12 @@ export const Toolbar: React.FC = () => {
       <PostmanModal
         isOpen={isPostmanOpen}
         onClose={() => setIsPostmanOpen(false)}
+      />
+
+      {/* Voice Modeling Modal (CU16) */}
+      <VoiceModelingModal
+        isOpen={isVoiceModalOpen}
+        onClose={() => setIsVoiceModalOpen(false)}
       />
     </aside>
   );
