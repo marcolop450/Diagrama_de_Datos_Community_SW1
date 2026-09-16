@@ -59,6 +59,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Public auth endpoints
                 .requestMatchers("/api/auth/**").permitAll()
+                // Colaboracion en vivo - consulta de estado de sala
+                .requestMatchers("/api/collaboration/*/status").permitAll()
                 // WebSockets handshake
                 .requestMatchers("/ws/**", "/ws-case/**").permitAll()
                 // Swagger & OpenAPI

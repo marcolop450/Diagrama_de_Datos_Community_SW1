@@ -19,9 +19,12 @@ import {
   Clock,
   ChevronRight,
   RefreshCw,
-  Sparkles
+  Sparkles,
+  Radio,
+  Loader2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useCollabStore } from '../stores/collabStore';
 
 interface AdminMetrics {
   totalUsers: number;
@@ -36,7 +39,11 @@ interface AdminMetrics {
 export const DashboardPage: React.FC = () => {
   const { user } = useAuthStore();
   const { loadDiagram } = useDiagramStore();
+  const { joinSession } = useCollabStore();
   const navigate = useNavigate();
+
+  const [collabRoomCode, setCollabRoomCode] = useState('');
+  const [isJoiningCollab, setIsJoiningCollab] = useState(false);
 
   const [projects, setProjects] = useState<DiagramProject[]>([]);
   const [trashProjects, setTrashProjects] = useState<DiagramProject[]>([]);
@@ -89,6 +96,29 @@ export const DashboardPage: React.FC = () => {
     loadDiagram(id);
     navigate(`/editor/${id}`);
     toast.success(`Cargando modelo: ${name}`);
+  };
+
+  const handleJoinCollabSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!collabRoomCode.trim()) {
+      toast.error('Por favor ingresa el código de sala (ej. SW1-902)');
+      return;
+    }
+    const cleanCode = collabRoomCode.trim().toUpperCase();
+    setIsJoiningCollab(true);
+    try {
+      const success = await joinSession(cleanCode);
+      if (success) {
+        const activeSession = useCollabStore.getState().session;
+        if (activeSession?.projectId) {
+          navigate(`/editor/${activeSession.projectId}`);
+        } else {
+          navigate('/editor');
+        }
+      }
+    } finally {
+      setIsJoiningCollab(false);
+    }
   };
 
   // Aggregated stats for Architect / Collaborator
@@ -416,6 +446,56 @@ export const DashboardPage: React.FC = () => {
                   <ChevronRight size={13} />
                 </div>
               </Link>
+            </div>
+
+            {/* Live Collaboration Quick Join Card (CU18) */}
+            <div className="p-4 sm:p-5 rounded-xl bg-gradient-to-r from-amber-500/10 via-slate-900/90 to-indigo-950/40 border border-amber-500/30 shadow-md relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="flex items-start sm:items-center gap-3.5 min-w-0">
+                <div className="p-2.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-400 shadow-inner shrink-0">
+                  <Radio className="w-5 h-5 animate-pulse text-amber-400" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-slate-100 tracking-wide">
+                      Unirse a Sala Colaborativa en Vivo
+                    </h3>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                      WSS Activo
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-0.5 max-w-xl leading-relaxed">
+                    Ingresa el código de sesión (ej. SW1-902) proporcionado por el Arquitecto para sincronizarte en tiempo real con bloqueo optimista y chat en vivo.
+                  </p>
+                </div>
+              </div>
+
+              <form 
+                onSubmit={handleJoinCollabSubmit}
+                className="flex items-center gap-2 w-full md:w-auto shrink-0"
+              >
+                <div className="relative flex-1 md:w-44">
+                  <input
+                    type="text"
+                    value={collabRoomCode}
+                    onChange={(e) => setCollabRoomCode(e.target.value.toUpperCase())}
+                    placeholder="SW1-XXX"
+                    maxLength={10}
+                    className="w-full px-3 py-2 rounded-lg bg-slate-950/80 border border-slate-700 text-slate-100 placeholder-slate-500 font-mono text-center text-xs font-bold tracking-widest uppercase focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition-all"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={isJoiningCollab}
+                  className="px-4 py-2 rounded-lg text-xs font-semibold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-sm shadow-amber-500/20 transition-all flex items-center gap-1.5 shrink-0 cursor-pointer disabled:opacity-50"
+                >
+                  {isJoiningCollab ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Radio className="w-3.5 h-3.5" />
+                  )}
+                  <span>{isJoiningCollab ? 'Conectando...' : 'Unirse a la Sala'}</span>
+                </button>
+              </form>
             </div>
 
             {/* Quick Actions & Recent Projects Section */}

@@ -13,11 +13,47 @@ import { DiagramProject, ClassNodeData, RelationshipData } from '../types/diagra
 import { api } from '../services/api';
 import { UmlMutationDto } from '../services/aiVoiceService';
 import toast from 'react-hot-toast';
+import { useCollabStore } from './collabStore';
 
 export interface DiagramSnapshot {
   nodes: Node<ClassNodeData>[];
   edges: Edge<RelationshipData>[];
 }
+
+const emitCollab = (
+  type: 'NODE_CREATE' | 'NODE_UPDATE' | 'NODE_DELETE' | 'EDGE_CREATE' | 'EDGE_UPDATE' | 'EDGE_DELETE' | 'SYNC_STATE',
+  payload: any
+) => {
+  try {
+    const collabStore = (useCollabStore as any)?.getState?.();
+    if (!collabStore?.isLive) return;
+    switch (type) {
+      case 'NODE_CREATE':
+        collabStore.broadcastNodeCreate?.(payload);
+        break;
+      case 'NODE_UPDATE':
+        collabStore.broadcastNodeUpdate?.(payload.id, payload.data);
+        break;
+      case 'NODE_DELETE':
+        collabStore.broadcastNodeDelete?.(payload);
+        break;
+      case 'EDGE_CREATE':
+        collabStore.broadcastEdgeCreate?.(payload);
+        break;
+      case 'EDGE_UPDATE':
+        collabStore.broadcastEdgeUpdate?.(payload.id, payload.data);
+        break;
+      case 'EDGE_DELETE':
+        collabStore.broadcastEdgeDelete?.(payload);
+        break;
+      case 'SYNC_STATE':
+        collabStore.broadcastSyncState?.(payload.nodes, payload.edges);
+        break;
+    }
+  } catch (err) {
+    console.warn('Collab broadcast error:', err);
+  }
+};
 
 const isUUID = (str?: string | null): boolean => {
   if (!str) return false;
@@ -129,7 +165,11 @@ interface DiagramState {
 
   loadDiagram: (projectId?: string) => Promise<void>;
   saveDiagram: () => Promise<void>;
+  isSaving: boolean;
   resetDiagram: () => void;
+  setNodes: (nodes: Node<ClassNodeData>[] | ((prev: Node<ClassNodeData>[]) => Node<ClassNodeData>[])) => void;
+  setEdges: (edges: Edge<RelationshipData>[] | ((prev: Edge<RelationshipData>[]) => Edge<RelationshipData>[])) => void;
+  setCurrentProject: (project: DiagramProject | null) => void;
 }
 
 export const useDiagramStore = create<DiagramState>((set, get) => ({
@@ -138,7 +178,24 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
   selectedNode: null,
   selectedEdge: null,
   project: null,
+  isSaving: false,
   copiedClassNode: null,
+
+  setNodes: (nodesOrFn) => {
+    set((state) => ({
+      nodes: typeof nodesOrFn === 'function' ? nodesOrFn(state.nodes) : nodesOrFn,
+    }));
+  },
+
+  setEdges: (edgesOrFn) => {
+    set((state) => ({
+      edges: typeof edgesOrFn === 'function' ? edgesOrFn(state.edges) : edgesOrFn,
+    }));
+  },
+
+  setCurrentProject: (project) => {
+    set({ project });
+  },
 
   historyPast: [],
   historyFuture: [],
@@ -200,6 +257,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       canUndo: newPast.length > 0,
       canRedo: true,
     });
+    emitCollab('SYNC_STATE', { nodes: restoredNodes, edges: restoredEdges });
     toast('Acción deshecha');
   },
 
@@ -228,6 +286,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       canUndo: true,
       canRedo: newFuture.length > 0,
     });
+    emitCollab('SYNC_STATE', { nodes: restoredNodes, edges: restoredEdges });
     toast('Acción rehecha');
   },
 
@@ -295,6 +354,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       selectedEdge: newEdge,
       selectedNode: null
     });
+    emitCollab('EDGE_CREATE', newEdge);
     toast.success('Relación conectada');
   },
 
@@ -309,6 +369,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
   addClassNode: (node) => {
     get().takeSnapshot();
     set((state) => ({ nodes: [...state.nodes, node] }));
+    emitCollab('NODE_CREATE', node);
   },
   
   createNewClass: (name = 'NuevaClase', stereotype = 'entity', isAbstract = false, position?: { x: number; y: number }) => {
@@ -348,6 +409,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       selectedNode: newNode,
       selectedEdge: null
     }));
+    emitCollab('NODE_CREATE', newNode);
   },
 
   cloneClassNode: async (id: string) => {
@@ -384,6 +446,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
             selectedNode: newNode,
             selectedEdge: null
           }));
+          emitCollab('NODE_CREATE', newNode);
           return;
         }
       } catch (err: any) {
@@ -432,6 +495,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       selectedNode: newNode,
       selectedEdge: null
     }));
+    emitCollab('NODE_CREATE', newNode);
   },
 
   updateClassNode: (id, data) => {
@@ -449,6 +513,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
         selectedNode: updatedSelectedNode
       };
     });
+    emitCollab('NODE_UPDATE', { id, data });
   },
   
   deleteClassNode: (id) => {
@@ -458,6 +523,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       edges: state.edges.filter(edge => edge.source !== id && edge.target !== id),
       selectedNode: state.selectedNode?.id === id ? null : state.selectedNode
     }));
+    emitCollab('NODE_DELETE', id);
   },
 
   deleteSelectedElements: () => {
@@ -508,6 +574,9 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       selectedEdge: null,
     });
 
+    selectedNodeIds.forEach((nid) => emitCollab('NODE_DELETE', nid));
+    selectedEdgeIds.forEach((eid) => emitCollab('EDGE_DELETE', eid));
+
     if (deletedNodesCount > 0 && deletedEdgesCount > 0) {
       toast.success(
         `${deletedNodesCount} ${deletedNodesCount === 1 ? 'clase' : 'clases'} y ${deletedEdgesCount} ${deletedEdgesCount === 1 ? 'relación eliminada' : 'relaciones eliminadas'}`
@@ -528,6 +597,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
   addRelationship: (edge) => {
     get().takeSnapshot();
     set((state) => ({ edges: [...state.edges, edge] }));
+    emitCollab('EDGE_CREATE', edge);
   },
   
   updateRelationship: (id, data) => {
@@ -581,6 +651,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
         selectedEdge: updatedSelectedEdge
       };
     });
+    emitCollab('EDGE_UPDATE', { id, data: patchData });
   },
 
   updateRelationshipLive: (id: string, data: Partial<RelationshipData>) => {
@@ -647,6 +718,11 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       };
     });
 
+    const flippedEdge = get().edges.find(e => e.id === id);
+    if (flippedEdge) {
+      emitCollab('EDGE_UPDATE', { id, data: flippedEdge.data });
+    }
+
     toast.success('Dirección de relación invertida');
   },
 
@@ -698,6 +774,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       selectedEdge: updatedEdge,
       selectedNode: null
     });
+    emitCollab('EDGE_UPDATE', { id: oldEdge.id, data: updatedEdge.data });
 
     toast.success('Relación reconectada exitosamente');
     return true;
@@ -709,6 +786,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       edges: state.edges.filter(edge => edge.id !== id),
       selectedEdge: state.selectedEdge?.id === id ? null : state.selectedEdge
     }));
+    emitCollab('EDGE_DELETE', id);
   },
 
   addPrimaryKeyToClass: (classId: string) => {
@@ -778,6 +856,12 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
         selectedNode: updatedSelectedNode,
       };
     });
+
+    const targetNode = get().nodes.find(n => n.id === classId);
+    if (targetNode) {
+      emitCollab('NODE_UPDATE', { id: classId, data: targetNode.data });
+    }
+
     toast.success('Clave primaria (+ id : Long {PK}) asignada exitosamente');
   },
 
@@ -791,19 +875,15 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
 
     get().takeSnapshot();
 
-    const srcName = sourceNode.data.name;
-    const tgtName = targetNode.data.name;
-    let intermediateName = `${srcName}${tgtName}`;
-    let counter = 1;
-    while (get().isClassNameTaken(intermediateName)) {
-      intermediateName = `${srcName}${tgtName}${counter++}`;
-    }
+    const srcName = sourceNode.data.name || 'EntidadA';
+    const tgtName = targetNode.data.name || 'EntidadB';
+    const intermediateName = `${srcName}${tgtName}`;
 
-    // Place intermediate node midpoint between source and target with slight offset
+    // Intermediate Class ID & Coordinates
+    const intermediateId = `c-${Date.now()}`;
     const midX = Math.round((sourceNode.position.x + targetNode.position.x) / 2);
-    const midY = Math.round((sourceNode.position.y + targetNode.position.y) / 2);
+    const midY = Math.round((sourceNode.position.y + targetNode.position.y) / 2) + 60;
 
-    const intermediateId = crypto.randomUUID();
     const intermediateNode: Node<ClassNodeData> = {
       id: intermediateId,
       type: 'classNode',
@@ -811,7 +891,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       data: {
         id: intermediateId,
         name: intermediateName,
-        stereotype: 'associative',
+        stereotype: 'association',
         isAbstract: false,
         attributes: [
           {
@@ -902,6 +982,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       selectedNode: intermediateNode,
       selectedEdge: null,
     }));
+    emitCollab('SYNC_STATE', { nodes: get().nodes, edges: get().edges });
 
     toast.success(`Relación descompuesta en clase asociativa '${intermediateName}' con enlaces 1..*`);
   },
@@ -970,6 +1051,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       selectedNode: newNode,
       selectedEdge: null
     }));
+    emitCollab('NODE_CREATE', newNode);
 
     toast.success(`Clase '${candidateName}' pegada exitosamente`);
   },
@@ -980,6 +1062,12 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
   loadDiagram: async (projectId) => {
     if (!projectId || !isUUID(projectId)) return;
     try {
+      import('./collabStore').then(({ useCollabStore }) => {
+        const collab = useCollabStore.getState();
+        if (collab.isLive && collab.session?.projectId && collab.session.projectId !== projectId) {
+          collab.leaveSession();
+        }
+      }).catch(() => {});
       const res = await api.getFullDiagram(projectId);
       if (res && res.data) {
         const payload = res.data;
@@ -1064,110 +1152,117 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
   },
   
   saveDiagram: async () => {
-    const { project, nodes, edges } = get();
+    const { isSaving, project, nodes, edges } = get();
 
+    if (isSaving) return;
     if (!project?.id || !isUUID(project.id)) {
       throw new Error('No hay un proyecto activo para guardar');
     }
 
-    const payloadNodes = nodes.map((n) => ({
-      id: n.id,
-      name: n.data.name || 'Clase',
-      stereotype: n.data.stereotype || undefined,
-      isAbstract: !!(n.data.isAbstract || n.data.stereotype?.toLowerCase() === 'abstract'),
-      positionX: Math.round(n.position.x),
-      positionY: Math.round(n.position.y),
-      width: n.measured?.width || 240,
-      height: n.measured?.height || 180,
-      attributes: n.data.attributes || [],
-      methods: n.data.methods || []
-    }));
-
-    const payloadEdges = edges.map((e) => ({
-      id: e.id,
-      source: e.source,
-      target: e.target,
-      sourceHandle: e.sourceHandle || (e.data as any)?.sourceHandle || null,
-      targetHandle: e.targetHandle || (e.data as any)?.targetHandle || null,
-      type: e.data?.type || 'association',
-      sourceCardinality: e.data?.sourceCardinality || '1',
-      targetCardinality: e.data?.targetCardinality || '1',
-      label: e.data?.label || '',
-      sourceRole: e.data?.sourceRole || '',
-      targetRole: e.data?.targetRole || '',
-      routing: e.data?.routing || 'smoothstep',
-      waypoints: e.data?.waypoints && e.data.waypoints.length > 0 ? JSON.stringify(e.data.waypoints) : null
-    }));
-
-    const res = await api.syncDiagram(project.id, {
-      nodes: payloadNodes,
-      edges: payloadEdges
-    });
-
-    if (res?.success && res.data) {
-      const payload = res.data;
-      const currentEdges = get().edges;
-      const mappedNodes: Node<ClassNodeData>[] = (payload.classNodes || []).map((cn: any) => ({
-        id: cn.id,
-        type: 'classNode',
-        position: { x: cn.positionX || 100, y: cn.positionY || 100 },
-        data: {
-          id: cn.id,
-          name: cn.name,
-          stereotype: cn.stereotype,
-          isAbstract: cn.abstractClass || cn.isAbstract || false,
-          attributes: cn.attributes || [],
-          methods: cn.methods || []
-        }
+    set({ isSaving: true });
+    try {
+      const payloadNodes = nodes.map((n) => ({
+        id: n.id,
+        name: n.data.name || 'Clase',
+        stereotype: n.data.stereotype || undefined,
+        isAbstract: !!(n.data.isAbstract || n.data.stereotype?.toLowerCase() === 'abstract'),
+        positionX: Math.round(n.position.x),
+        positionY: Math.round(n.position.y),
+        width: n.measured?.width || 240,
+        height: n.measured?.height || 180,
+        attributes: n.data.attributes || [],
+        methods: n.data.methods || []
       }));
 
-      const mappedEdges: Edge<RelationshipData>[] = (payload.relationships || []).map((rel: any) => {
-        const srcId = rel.sourceClass?.id || rel.sourceClassId;
-        const tgtId = rel.targetClass?.id || rel.targetClassId;
-        const existingEdge = currentEdges.find((e) => 
-          e.id === rel.id || (e.source === srcId && e.target === tgtId)
-        );
-        const sHandle = rel.sourceHandle || existingEdge?.sourceHandle || (existingEdge?.data as any)?.sourceHandle || null;
-        const tHandle = rel.targetHandle || existingEdge?.targetHandle || (existingEdge?.data as any)?.targetHandle || null;
+      const payloadEdges = edges.map((e) => ({
+        id: e.id,
+        source: e.source,
+        target: e.target,
+        sourceHandle: e.sourceHandle || (e.data as any)?.sourceHandle || null,
+        targetHandle: e.targetHandle || (e.data as any)?.targetHandle || null,
+        type: e.data?.type || 'association',
+        sourceCardinality: e.data?.sourceCardinality || '1',
+        targetCardinality: e.data?.targetCardinality || '1',
+        label: e.data?.label || '',
+        sourceRole: e.data?.sourceRole || '',
+        targetRole: e.data?.targetRole || '',
+        routing: e.data?.routing || 'smoothstep',
+        waypoints: e.data?.waypoints && e.data.waypoints.length > 0 ? JSON.stringify(e.data.waypoints) : null
+      }));
 
-        let waypoints: any[] = existingEdge?.data?.waypoints || [];
-        if (rel.waypoints) {
-          try {
-            waypoints = typeof rel.waypoints === 'string' ? JSON.parse(rel.waypoints) : rel.waypoints;
-          } catch (e) {
-            waypoints = existingEdge?.data?.waypoints || [];
-          }
-        }
-
-        return {
-          id: rel.id,
-          source: srcId,
-          target: tgtId,
-          sourceHandle: sHandle,
-          targetHandle: tHandle,
-          type: 'umlEdge',
-          data: {
-            id: rel.id,
-            type: rel.type || 'association',
-            sourceCardinality: rel.sourceCardinality || '1',
-            targetCardinality: rel.targetCardinality || '1',
-            label: rel.label || '',
-            sourceRole: rel.sourceRole || '',
-            targetRole: rel.targetRole || '',
-            sourceHandle: sHandle,
-            targetHandle: tHandle,
-            routing: rel.routing || existingEdge?.data?.routing || 'smoothstep',
-            isDirected: existingEdge?.data?.isDirected ?? true,
-            waypoints: Array.isArray(waypoints) ? waypoints : []
-          }
-        };
+      const res = await api.syncDiagram(project.id, {
+        nodes: payloadNodes,
+        edges: payloadEdges
       });
 
-      set((state) => ({
-        project: payload.project ? { ...state.project, ...payload.project } : state.project,
-        nodes: mappedNodes.length > 0 ? mappedNodes : state.nodes,
-        edges: mappedEdges.length > 0 ? mappedEdges : state.edges
-      }));
+      if (res?.success && res.data) {
+        const payload = res.data;
+        const currentEdges = get().edges;
+        const mappedNodes: Node<ClassNodeData>[] = (payload.classNodes || []).map((cn: any) => ({
+          id: cn.id,
+          type: 'classNode',
+          position: { x: cn.positionX || 100, y: cn.positionY || 100 },
+          data: {
+            id: cn.id,
+            name: cn.name,
+            stereotype: cn.stereotype,
+            isAbstract: cn.abstractClass || cn.isAbstract || false,
+            attributes: cn.attributes || [],
+            methods: cn.methods || []
+          }
+        }));
+
+        const mappedEdges: Edge<RelationshipData>[] = (payload.relationships || []).map((rel: any) => {
+          const srcId = rel.sourceClass?.id || rel.sourceClassId;
+          const tgtId = rel.targetClass?.id || rel.targetClassId;
+          const existingEdge = currentEdges.find((e) => 
+            e.id === rel.id || (e.source === srcId && e.target === tgtId)
+          );
+          const sHandle = rel.sourceHandle || existingEdge?.sourceHandle || (existingEdge?.data as any)?.sourceHandle || null;
+          const tHandle = rel.targetHandle || existingEdge?.targetHandle || (existingEdge?.data as any)?.targetHandle || null;
+
+          let waypoints: any[] = existingEdge?.data?.waypoints || [];
+          if (rel.waypoints) {
+            try {
+              waypoints = typeof rel.waypoints === 'string' ? JSON.parse(rel.waypoints) : rel.waypoints;
+            } catch (e) {
+              waypoints = existingEdge?.data?.waypoints || [];
+            }
+          }
+
+          return {
+            id: rel.id,
+            source: srcId,
+            target: tgtId,
+            sourceHandle: sHandle,
+            targetHandle: tHandle,
+            type: 'umlEdge',
+            data: {
+              id: rel.id,
+              type: rel.type || 'association',
+              sourceCardinality: rel.sourceCardinality || '1',
+              targetCardinality: rel.targetCardinality || '1',
+              label: rel.label || '',
+              sourceRole: rel.sourceRole || '',
+              targetRole: rel.targetRole || '',
+              sourceHandle: sHandle,
+              targetHandle: tHandle,
+              routing: rel.routing || existingEdge?.data?.routing || 'smoothstep',
+              isDirected: existingEdge?.data?.isDirected ?? true,
+              waypoints: Array.isArray(waypoints) ? waypoints : []
+            }
+          };
+        });
+
+        set((state) => ({
+          project: payload.project ? { ...state.project, ...payload.project } : state.project,
+          nodes: mappedNodes.length > 0 ? mappedNodes : state.nodes,
+          edges: mappedEdges.length > 0 ? mappedEdges : state.edges
+        }));
+        emitCollab('SYNC_STATE', { nodes: get().nodes, edges: get().edges });
+      }
+    } finally {
+      set({ isSaving: false });
     }
   },
 
@@ -1547,6 +1642,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       selectedNode: null,
       selectedEdge: null
     });
+    emitCollab('SYNC_STATE', { nodes: currentNodes, edges: currentEdges });
 
     const msg = `${appliedCount} ${appliedCount === 1 ? 'mutación aplicada' : 'mutaciones aplicadas'} por asistente de voz`;
     toast.success(msg);

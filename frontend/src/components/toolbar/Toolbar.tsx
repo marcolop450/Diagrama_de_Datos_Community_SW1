@@ -17,10 +17,13 @@ import {
   Redo2,
   Trash2,
   ShieldCheck,
-  Send
+  Send,
+  Users
 } from 'lucide-react';
 import { useUiStore } from '../../stores/uiStore';
 import { useDiagramStore } from '../../stores/diagramStore';
+import { useCollabStore } from '../../stores/collabStore';
+import { useAuthStore } from '../../stores/authStore';
 import { useReactFlow } from '@xyflow/react';
 import { ProjectHistoryModal } from '../history/ProjectHistoryModal';
 import { NormalizationReportModal } from '../modals/NormalizationReportModal';
@@ -29,6 +32,7 @@ import { SqlDdlModal } from '../modals/SqlDdlModal';
 import { PostmanModal } from '../modals/PostmanModal';
 import { VoiceModelingModal } from '../voice/VoiceModelingModal';
 import { WhiteboardVisionModal } from '../vision/WhiteboardVisionModal';
+import { LiveCollabModal } from '../collab/LiveCollabModal';
 import { analyzeDiagramNormalization } from '../../services/normalizationEngine';
 import toast from 'react-hot-toast';
 
@@ -77,9 +81,21 @@ export const Toolbar: React.FC = () => {
     setHoverTooltip(null);
   };
 
+  const { user } = useAuthStore();
+  const { isLive, participants, setModalOpen, isViewer, role: collabRole } = useCollabStore();
+  const viewerMode = isLive && isViewer();
+  const isHost = Boolean(
+    (project?.ownerId && user?.userId && project.ownerId === user.userId) ||
+    collabRole === 'host'
+  );
+
   const handleSelectTool = (tool: string, label: string) => {
     if (!project) {
       toast.error('Abre o crea un modelo para usar las herramientas');
+      return;
+    }
+    if (viewerMode) {
+      toast.error('Modo Solo Lectura: No tienes permisos de edición en esta sala colaborativa');
       return;
     }
     if (activeTool === tool) {
@@ -96,6 +112,10 @@ export const Toolbar: React.FC = () => {
       toast.error('Abre o crea un modelo para usar el dictado de voz');
       return;
     }
+    if (viewerMode) {
+      toast.error('Modo Solo Lectura: No puedes realizar modificaciones por voz en esta sala');
+      return;
+    }
     setIsVoiceModalOpen((prev) => !prev);
   };
 
@@ -104,7 +124,19 @@ export const Toolbar: React.FC = () => {
       toast.error('Abre o crea un modelo para digitalizar una pizarra');
       return;
     }
+    if (viewerMode) {
+      toast.error('Modo Solo Lectura: No puedes importar ni digitalizar pizarras en esta sala');
+      return;
+    }
     setIsVisionModalOpen(true);
+  };
+
+  const handleLiveCollab = () => {
+    if (!project?.id) {
+      toast.error('Abre o crea un modelo para acceder al menú colaborativo');
+      return;
+    }
+    setModalOpen(true);
   };
 
   return (
@@ -163,9 +195,9 @@ export const Toolbar: React.FC = () => {
             onClick={() => undo()}
             onMouseEnter={showTip('Deshacer • Ctrl+Z')}
             onMouseLeave={hideTip}
-            disabled={!canUndo}
+            disabled={!canUndo || viewerMode}
             className={`p-2 rounded-md transition-all cursor-pointer ${
-              canUndo
+              canUndo && !viewerMode
                 ? 'text-slate-300 hover:text-white hover:bg-slate-900 active:scale-95'
                 : 'text-slate-600 cursor-not-allowed opacity-35'
             }`}
@@ -178,9 +210,9 @@ export const Toolbar: React.FC = () => {
             onClick={() => redo()}
             onMouseEnter={showTip('Rehacer • Ctrl+Y')}
             onMouseLeave={hideTip}
-            disabled={!canRedo}
+            disabled={!canRedo || viewerMode}
             className={`p-2 rounded-md transition-all cursor-pointer ${
-              canRedo
+              canRedo && !viewerMode
                 ? 'text-slate-300 hover:text-white hover:bg-slate-900 active:scale-95'
                 : 'text-slate-600 cursor-not-allowed opacity-35'
             }`}
@@ -193,9 +225,9 @@ export const Toolbar: React.FC = () => {
             onClick={() => deleteSelectedElements()}
             onMouseEnter={showTip('Eliminar Selección • Supr')}
             onMouseLeave={hideTip}
-            disabled={!hasSelection}
+            disabled={!hasSelection || viewerMode}
             className={`p-2 rounded-md transition-all cursor-pointer ${
-              hasSelection
+              hasSelection && !viewerMode
                 ? 'text-rose-400 hover:text-rose-200 hover:bg-rose-950/40 active:scale-95 ring-1 ring-rose-500/30'
                 : 'text-slate-600 cursor-not-allowed opacity-35'
             }`}
@@ -213,10 +245,13 @@ export const Toolbar: React.FC = () => {
             onClick={() => handleSelectTool('add-class', 'Clase Entidad')}
             onMouseEnter={showTip('Clase Entidad')}
             onMouseLeave={hideTip}
-            className={`p-2 rounded-md transition-all cursor-pointer ${
-              activeTool === 'add-class'
-                ? 'bg-blue-600 text-white shadow-xs ring-1 ring-blue-400'
-                : 'text-slate-400 hover:text-blue-400 hover:bg-slate-900'
+            disabled={viewerMode}
+            className={`p-2 rounded-md transition-all ${
+              viewerMode
+                ? 'text-slate-600 cursor-not-allowed opacity-35'
+                : activeTool === 'add-class'
+                ? 'bg-blue-600 text-white shadow-xs ring-1 ring-blue-400 cursor-pointer'
+                : 'text-slate-400 hover:text-blue-400 hover:bg-slate-900 cursor-pointer'
             }`}
             title="Añadir Clase Entidad"
           >
@@ -227,10 +262,13 @@ export const Toolbar: React.FC = () => {
             onClick={() => handleSelectTool('add-interface', 'Interfaz')}
             onMouseEnter={showTip('Interfaz')}
             onMouseLeave={hideTip}
-            className={`p-2 rounded-md transition-all cursor-pointer ${
-              activeTool === 'add-interface'
-                ? 'bg-indigo-600 text-white shadow-xs ring-1 ring-indigo-400'
-                : 'text-slate-400 hover:text-indigo-400 hover:bg-slate-900'
+            disabled={viewerMode}
+            className={`p-2 rounded-md transition-all ${
+              viewerMode
+                ? 'text-slate-600 cursor-not-allowed opacity-35'
+                : activeTool === 'add-interface'
+                ? 'bg-indigo-600 text-white shadow-xs ring-1 ring-indigo-400 cursor-pointer'
+                : 'text-slate-400 hover:text-indigo-400 hover:bg-slate-900 cursor-pointer'
             }`}
             title="Añadir Interfaz"
           >
@@ -241,10 +279,13 @@ export const Toolbar: React.FC = () => {
             onClick={() => handleSelectTool('add-abstract', 'Clase Abstracta')}
             onMouseEnter={showTip('Clase Abstracta')}
             onMouseLeave={hideTip}
-            className={`p-2 rounded-md transition-all cursor-pointer ${
-              activeTool === 'add-abstract'
-                ? 'bg-amber-600 text-white shadow-xs ring-1 ring-amber-400'
-                : 'text-slate-400 hover:text-amber-400 hover:bg-slate-900'
+            disabled={viewerMode}
+            className={`p-2 rounded-md transition-all ${
+              viewerMode
+                ? 'text-slate-600 cursor-not-allowed opacity-35'
+                : activeTool === 'add-abstract'
+                ? 'bg-amber-600 text-white shadow-xs ring-1 ring-amber-400 cursor-pointer'
+                : 'text-slate-400 hover:text-amber-400 hover:bg-slate-900 cursor-pointer'
             }`}
             title="Añadir Clase Abstracta"
           >
@@ -260,10 +301,13 @@ export const Toolbar: React.FC = () => {
             onClick={handleVoiceCommand}
             onMouseEnter={showTip('Modelar por Voz (PLN)')}
             onMouseLeave={hideTip}
-            className={`p-2 rounded-md transition-all cursor-pointer ${
-              isVoiceModalOpen
-                ? 'bg-purple-600 text-white shadow-xs ring-1 ring-purple-400'
-                : 'text-slate-400 hover:text-purple-400 hover:bg-slate-900'
+            disabled={viewerMode}
+            className={`p-2 rounded-md transition-all ${
+              viewerMode
+                ? 'text-slate-600 cursor-not-allowed opacity-35'
+                : isVoiceModalOpen
+                ? 'bg-purple-600 text-white shadow-xs ring-1 ring-purple-400 cursor-pointer'
+                : 'text-slate-400 hover:text-purple-400 hover:bg-slate-900 cursor-pointer'
             }`}
             title="Modelar por Voz (PLN)"
           >
@@ -274,10 +318,13 @@ export const Toolbar: React.FC = () => {
             onClick={handlePhotoImport}
             onMouseEnter={showTip('Digitalizar Foto de Pizarra')}
             onMouseLeave={hideTip}
-            className={`p-2 rounded-md transition-all cursor-pointer ${
-              isVisionModalOpen
-                ? 'bg-amber-600 text-white shadow-xs ring-1 ring-amber-400'
-                : 'text-slate-400 hover:text-amber-400 hover:bg-slate-900'
+            disabled={viewerMode}
+            className={`p-2 rounded-md transition-all ${
+              viewerMode
+                ? 'text-slate-600 cursor-not-allowed opacity-35'
+                : isVisionModalOpen
+                ? 'bg-amber-600 text-white shadow-xs ring-1 ring-amber-400 cursor-pointer'
+                : 'text-slate-400 hover:text-amber-400 hover:bg-slate-900 cursor-pointer'
             }`}
             title="Digitalizar Foto de Pizarra"
           >
@@ -354,6 +401,51 @@ export const Toolbar: React.FC = () => {
           >
             <Send size={16} />
           </button>
+
+          {/* Espacio Colaborativo & Ajustes de Proyecto (CU18 - Solo visible para Anfitrión) */}
+          {isHost && (
+            <button
+              onClick={handleLiveCollab}
+              onMouseEnter={showTip(
+                !isLive
+                  ? 'Espacio Colaborativo & Ajustes'
+                  : participants.length <= 1
+                  ? 'Sala en Reposo (1 participante)'
+                  : `Sala Colaborativa Activa (${participants.length} conectados)`
+              )}
+              onMouseLeave={hideTip}
+              className={`p-2 rounded-md transition-all cursor-pointer relative ${
+                isLive
+                  ? participants.length <= 1
+                    ? 'bg-amber-600/20 text-amber-400 ring-1 ring-amber-500/50 hover:bg-amber-600/30'
+                    : 'bg-emerald-600/20 text-emerald-400 ring-1 ring-emerald-500/50 hover:bg-emerald-600/30'
+                  : 'text-slate-400 hover:text-blue-400 hover:bg-blue-950/30'
+              }`}
+              title="Espacio Colaborativo & Ajustes"
+            >
+              <div className="relative">
+                <Users
+                  size={16}
+                  className={
+                    isLive
+                      ? participants.length <= 1
+                        ? 'text-amber-400'
+                        : 'text-emerald-400'
+                      : ''
+                  }
+                />
+                {isLive && (
+                  <span
+                    className={`absolute -top-1 -right-1 w-2 h-2 rounded-full ${
+                      participants.length <= 1
+                        ? 'bg-amber-500 ring-1 ring-amber-400/50'
+                        : 'bg-emerald-500 animate-pulse'
+                    }`}
+                  />
+                )}
+              </div>
+            </button>
+          )}
         </div>
 
         <div className="w-7 h-px bg-slate-800 my-1" />
@@ -446,6 +538,9 @@ export const Toolbar: React.FC = () => {
         onClose={() => setIsVisionModalOpen(false)}
         onApplied={() => fitView({ padding: 0.25 })}
       />
+
+      {/* Live Collaboration Modal (CU18) */}
+      <LiveCollabModal />
     </aside>
   );
 };

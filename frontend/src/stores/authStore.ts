@@ -205,6 +205,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   logout: () => {
     try {
+      import('./collabStore').then(({ useCollabStore }) => {
+        const collab = useCollabStore.getState();
+        if (collab.isLive) {
+          collab.leaveSession();
+        }
+      }).catch(() => {});
       api.logout().catch(() => {});
     } finally {
       sessionStorage.removeItem(TOKEN_KEY);

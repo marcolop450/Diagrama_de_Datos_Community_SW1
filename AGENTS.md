@@ -10,9 +10,9 @@
 ## 1. Enfoque de Desarrollo y Estado Real de los Casos de Uso (CU)
 
 El desarrollo del sistema se ejecuta **estrictamente Caso de Uso por Caso de Uso (CU por CU)** bajo el Proceso Unificado de Desarrollo de Software (PUDS).
-* **Realizados Correctamente y Validados:** Exclusivamente hasta el **CU17** (Ciclo 3 en progreso).
-* **Todo lo posterior a CU17:** Eran maquetas/demos no definitivas que deben ser desarrolladas formalmente desde cero paso a paso.
-* **Foco Inmediato Siguiente:** **CU18** (Sincronizar Sesión Colaborativa — WSS + DNI).
+* **Realizados Correctamente y Validados:** Exclusivamente hasta el **CU18** (Ciclo 3 completado al 100%).
+* **Todo lo posterior a CU18:** Casos de uso futuros o estabilización de ciclo.
+* **Foco Inmediato Siguiente:** Consolidación y validación integral de Ciclo 3.
 
 ### Matriz de Estado de Casos de Uso por Ciclos
 
@@ -36,7 +36,7 @@ El desarrollo del sistema se ejecuta **estrictamente Caso de Uso por Caso de Uso
 | **CU15** | Generar Colección de Pruebas Postman v2.1 | Ciclo 2 | `A2: Arquitecto` | **Implementado** | Colección JSON oficial Postman v2.1.0 con carpetas por entidad, suite REST CRUD completa (5 requests/entidad), tests automáticos pm.test (status 200/201/204, <1000ms), captura de IDs en variables de entorno, generación semántica de datos mock, variable {{baseUrl}}, visor de código y auditoría inmutable. |
 | **CU16** | Modelar por Dictado de Voz (IA PLN) | Ciclo 3 | `A2: Arquitecto` / `A3: Colaborador` | **Implementado** | Entrada por micrófono (Web Speech API) y texto libre, arquitectura de resiliencia Circuit Breaker en 4 niveles (Gemini Flash, Groq Llama 3.3, OpenRouter y Motor Heurístico Local Offline), mutaciones incrementales en React Flow, reversibilidad total con Ctrl+Z/Ctrl+Y, y persistencia inmutable en `ai_prompt_logs` y `audit_logs`. |
 | **CU17** | Digitalizar Foto de Pizarra (IA Visión) | Ciclo 3 | `A2: Arquitecto (Host)` | **Implementado** | Subida Drag & Drop y captura por cámara web, Circuit Breaker multimodal (Gemini 3.6 Flash, OpenRouter Vision y Fallback Local), motor de auto-layout jerárquico no colisionante (LayoutEngineUtil), defensa preventiva 1NF relacional ({PK} id: Long), opción dual Reemplazar vs Fusionar, reversibilidad total con Ctrl+Z, y auditoría inmutable en `ai_prompt_logs` y `audit_logs`. |
-| **CU18** | Sincronizar Sesión Colaborativa (WSS + DNI) | Ciclo 3 | `A2: Host` / `A3: Guest` | **Pendiente** | Salas concurrentes en tiempo real vía WebSockets STOMP sobre SockJS (< 50ms latencia) ingresando con DNI/nombre. |
+| **CU18** | Sincronizar Sesión Colaborativa (WSS + Chat + Gobernanza) | Ciclo 3 | `A2: Arquitecto (Host)` / `A3: Colaborador` | **Implementado** | Salas concurrentes en tiempo real vía WebSockets STOMP sobre SockJS (< 50ms latencia) exclusivas para usuarios registrados (Arquitecto y Colaborador, con bloqueo a Super Admin), expulsión inmediata de participantes por el Host (Kick), candados optimistas de edición, chat colaborativo en vivo no invasivo con aislamiento de teclado, cursores remotos con transformación geométrica de viewport y persistencia en Supabase (PostgreSQL 17). |
 
 ---
 

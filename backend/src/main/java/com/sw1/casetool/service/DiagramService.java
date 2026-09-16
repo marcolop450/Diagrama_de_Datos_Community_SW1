@@ -3,15 +3,18 @@ package com.sw1.casetool.service;
 import com.sw1.casetool.dto.*;
 import com.sw1.casetool.exception.ResourceNotFoundException;
 import com.sw1.casetool.model.ClassNode;
+import com.sw1.casetool.model.CollaborationSession;
 import com.sw1.casetool.model.DiagramProject;
-import com.sw1.casetool.model.Relationship;
-import com.sw1.casetool.model.UserProfile;
 import com.sw1.casetool.model.DomainTemplate;
+import com.sw1.casetool.model.Relationship;
+import com.sw1.casetool.model.SessionParticipant;
+import com.sw1.casetool.model.UserProfile;
 import com.sw1.casetool.repository.ClassNodeRepository;
 import com.sw1.casetool.repository.DiagramHistoryRepository;
 import com.sw1.casetool.repository.DiagramProjectRepository;
 import com.sw1.casetool.repository.DomainTemplateRepository;
 import com.sw1.casetool.repository.RelationshipRepository;
+import com.sw1.casetool.repository.SessionParticipantRepository;
 import com.sw1.casetool.repository.UserProfileRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
@@ -34,6 +37,7 @@ public class DiagramService {
     private final DiagramHistoryService diagramHistoryService;
     private final DiagramHistoryRepository diagramHistoryRepository;
     private final DomainTemplateRepository domainTemplateRepository;
+    private final SessionParticipantRepository sessionParticipantRepository;
 
     @Transactional
     public ProjectResponse createProject(CreateProjectRequest request, String userEmail, String ip, String userAgent) {
@@ -245,9 +249,25 @@ public class DiagramService {
         UserProfile user = resolveUser(userEmail);
         boolean isSuperAdmin = "SUPER_ADMIN".equalsIgnoreCase(user.getRole());
 
-        List<DiagramProject> projects = isSuperAdmin
-                ? projectRepository.findAllByIsDeletedFalseOrderByUpdatedAtDesc()
-                : projectRepository.findByOwnerIdAndIsDeletedFalseOrderByUpdatedAtDesc(user.getId());
+        List<DiagramProject> projects;
+        if (isSuperAdmin) {
+            projects = projectRepository.findAllByIsDeletedFalseOrderByUpdatedAtDesc();
+        } else {
+            List<DiagramProject> owned = projectRepository.findByOwnerIdAndIsDeletedFalseOrderByUpdatedAtDesc(user.getId());
+            Set<UUID> ownedIds = owned.stream().map(DiagramProject::getId).collect(Collectors.toSet());
+
+            List<SessionParticipant> participations = sessionParticipantRepository.findByUserId(user.getId());
+            List<DiagramProject> shared = participations.stream()
+                    .map(SessionParticipant::getSession)
+                    .filter(s -> s != null && "active".equalsIgnoreCase(s.getStatus()))
+                    .map(CollaborationSession::getProject)
+                    .filter(p -> p != null && !Boolean.TRUE.equals(p.getIsDeleted()) && !ownedIds.contains(p.getId()))
+                    .distinct()
+                    .toList();
+
+            projects = new ArrayList<>(owned);
+            projects.addAll(shared);
+        }
 
         // Cache user full names for response
         Map<UUID, String> userNames = new HashMap<>();
@@ -301,8 +321,10 @@ public class DiagramService {
         UserProfile user = resolveUser(userEmail);
         DiagramProject project = getProject(id);
 
-        // Ownership validation (IDOR check)
-        checkProjectOwnership(project, user);
+        // Solo el propietario del proyecto puede editar sus atributos
+        if (!project.getOwnerId().equals(user.getId())) {
+            throw new IllegalArgumentException("Operación denegada: Solo el creador y anfitrión del proyecto puede modificar sus atributos.");
+        }
 
         Map<String, Object> beforeState = new HashMap<>();
         beforeState.put("name", project.getName());
@@ -375,8 +397,10 @@ public class DiagramService {
             throw new IllegalArgumentException("Operación denegada: El Administrador solo puede supervisar y restaurar proyectos, mas no eliminarlos.");
         }
 
-        // Ownership validation (IDOR check)
-        checkProjectOwnership(project, user);
+        // Solo el propietario del proyecto puede eliminarlo
+        if (!project.getOwnerId().equals(user.getId())) {
+            throw new IllegalArgumentException("Operación denegada: Solo el creador y anfitrión del proyecto puede eliminarlo.");
+        }
 
         // Soft delete execution
         project.setIsDeleted(true);
@@ -1107,7 +1131,7 @@ public class DiagramService {
     public FullDiagramResponse syncFullDiagram(UUID projectId, SyncDiagramRequest request, String userEmail) {
         UserProfile user = resolveUser(userEmail);
         DiagramProject project = getProject(projectId);
-        checkProjectOwnership(project, user);
+        checkProjectEditPermission(project, user);
 
         Map<String, ClassNode> idToNodeMap = new HashMap<>();
 
@@ -1203,21 +1227,23 @@ public class DiagramService {
             }
         }
 
-        // 3. Remove deleted relationships first (cascade integrity)
-        for (Relationship r : existingRels) {
-            if (!keptRelIds.contains(r.getId())) {
-                relationshipRepository.delete(r);
-            }
+        // 3. Remove deleted relationships first (cascade integrity) using bulk in-batch delete
+        List<UUID> toDeleteRelIds = existingRels.stream()
+                .map(Relationship::getId)
+                .filter(id -> !keptRelIds.contains(id))
+                .toList();
+        if (!toDeleteRelIds.isEmpty()) {
+            relationshipRepository.deleteAllByIdInBatch(toDeleteRelIds);
         }
-        relationshipRepository.flush();
 
-        // 4. Remove deleted nodes
-        for (ClassNode n : existingNodes) {
-            if (!keptNodeIds.contains(n.getId())) {
-                classNodeRepository.delete(n);
-            }
+        // 4. Remove deleted nodes using bulk in-batch delete
+        List<UUID> toDeleteNodeIds = existingNodes.stream()
+                .map(ClassNode::getId)
+                .filter(id -> !keptNodeIds.contains(id))
+                .toList();
+        if (!toDeleteNodeIds.isEmpty()) {
+            classNodeRepository.deleteAllByIdInBatch(toDeleteNodeIds);
         }
-        classNodeRepository.flush();
 
         project.setUpdatedAt(Instant.now());
         projectRepository.save(project);
@@ -1249,6 +1275,29 @@ public class DiagramService {
         return userProfileRepository.findByEmailIgnoreCase(userIdentifier)
                 .orElseGet(() -> userProfileRepository.findByUsernameIgnoreCase(userIdentifier)
                         .orElseThrow(() -> new IllegalArgumentException("Usuario no autenticado: " + userIdentifier)));
+    }
+
+    private void checkProjectEditPermission(DiagramProject project, UserProfile user) {
+        boolean isOwner = project.getOwnerId().equals(user.getId());
+        boolean isSuperAdmin = "SUPER_ADMIN".equalsIgnoreCase(user.getRole());
+
+        if (isOwner || isSuperAdmin) {
+            return;
+        }
+
+        // Permitir si es un participante activo en una sesión colaborativa de este proyecto con rol editor/host
+        List<SessionParticipant> participants = sessionParticipantRepository.findByUserId(user.getId());
+        boolean isEditor = participants.stream().anyMatch(p ->
+                p.getSession() != null &&
+                p.getSession().getProject() != null &&
+                project.getId().equals(p.getSession().getProject().getId()) &&
+                !"ended".equalsIgnoreCase(p.getSession().getStatus()) &&
+                !"viewer".equalsIgnoreCase(p.getRole())
+        );
+
+        if (!isEditor) {
+            throw new IllegalArgumentException("Operación denegada: No tienes privilegios para modificar o eliminar este proyecto.");
+        }
     }
 
     private void checkProjectOwnership(DiagramProject project, UserProfile user) {

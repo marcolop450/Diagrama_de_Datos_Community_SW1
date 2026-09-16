@@ -14,6 +14,7 @@ import MainLayout from './components/layout/MainLayout';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { useAuthStore } from './stores/authStore';
 import { CursorSpotlight } from './components/common/CursorSpotlight';
+import { JoinCollabPage } from './pages/JoinCollabPage';
 
 function App() {
   const { user, initialize } = useAuthStore();
@@ -32,7 +33,7 @@ function App() {
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <CursorSpotlight />
       <Toaster 
-        position="top-right" 
+        position="bottom-left" 
         toastOptions={{
           style: {
             background: '#0F172A',
@@ -59,6 +60,10 @@ function App() {
       <Routes>
         {/* Public Landing Page for Guests */}
         <Route path="/" element={<LandingPage />} />
+
+        {/* Public Collaboration Entry (CU18 - WSS + DNI) */}
+        <Route path="/join" element={<JoinCollabPage />} />
+        <Route path="/join/:code" element={<JoinCollabPage />} />
 
         {/* Authentication Routes */}
         <Route path="/login" element={<LoginPage />} />

@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import { useDiagramStore } from '../../stores/diagramStore';
 import { useUiStore } from '../../stores/uiStore';
+import { useCollabStore } from '../../stores/collabStore';
 import { Logo } from '../common/Logo';
 import { 
   LogOut, 
@@ -24,6 +25,7 @@ const Header: React.FC = () => {
   const { user, logout } = useAuthStore();
   const { project, saveDiagram } = useDiagramStore();
   const { toggleSidebar, sidebarOpen, openOnboarding } = useUiStore();
+  const { isLive, participants, setModalOpen } = useCollabStore();
   const location = useLocation();
 
   const [isExportOpen, setIsExportOpen] = useState(false);
@@ -69,8 +71,8 @@ const Header: React.FC = () => {
 
         {/* Project Logo */}
         <Link to="/dashboard" className="shrink-0 flex items-center hover:opacity-90 transition-opacity">
-          <Logo size="sm" showText={false} className="sm:hidden" />
-          <Logo size="sm" showText={true} className="hidden sm:flex" />
+          <Logo size="sm" showText={false} className="lg:hidden" />
+          <Logo size="sm" showText={true} className="hidden lg:flex" />
         </Link>
 
         {/* Back to Dashboard Button when on subpages */}
@@ -79,11 +81,11 @@ const Header: React.FC = () => {
             <div className="h-4 w-px bg-slate-800 shrink-0 hidden sm:block" />
             <Link
               to="/dashboard"
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium text-slate-300 hover:text-white bg-slate-900/80 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 transition-all cursor-pointer shrink-0"
+              className="flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium text-slate-300 hover:text-white bg-slate-900/80 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 transition-all cursor-pointer shrink-0"
               title="Volver al Dashboard"
             >
               <ArrowLeft size={13} className="text-slate-400" />
-              <span className="hidden lg:inline">Volver al Dashboard</span>
+              <span className="hidden xl:inline">Volver al Dashboard</span>
             </Link>
           </>
         )}
@@ -92,7 +94,7 @@ const Header: React.FC = () => {
           <>
             <div className="h-4 w-px bg-slate-800 shrink-0 hidden md:block" />
             {/* Active Project Indicator (visible on medium screens and up, zero bulk) */}
-            <div className="hidden md:flex items-center gap-2 min-w-0 max-w-[140px] lg:max-w-[240px]">
+            <div className="hidden md:flex items-center gap-2 min-w-0 max-w-[120px] lg:max-w-[200px]">
               <FolderKanban size={14} className={project?.id ? "text-blue-400 shrink-0" : "text-slate-500 shrink-0"} />
               {project?.id ? (
                 <div className="flex items-center gap-1.5 min-w-0">
@@ -115,10 +117,28 @@ const Header: React.FC = () => {
       </div>
 
       {/* Right side: Editor Tools (Guardar + Tutorial Bubble) & User Controls */}
-      <div className="flex items-center gap-2 md:gap-3 shrink-0">
+      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
         {/* Editor Actions (visible only when in canvas and role != SUPER_ADMIN) */}
         {isEditor && user?.role !== 'SUPER_ADMIN' && (
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+            {/* Live Collaboration Status Pill (CU18) */}
+            {isLive && (
+              <button
+                onClick={() => setModalOpen(true)}
+                className="flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-semibold bg-rose-500/15 text-rose-300 border border-rose-500/30 hover:bg-rose-500/25 transition-all cursor-pointer animate-fade-in"
+                title="Sesión colaborativa en tiempo real activa. Clic para ver detalles e invitar."
+              >
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                </span>
+                <span className="hidden md:inline">En Vivo</span>
+                <span className="px-1.5 py-0.2 bg-rose-500/20 rounded-full text-[10px] font-mono text-rose-200">
+                  {participants.length}
+                </span>
+              </button>
+            )}
+
             {/* Import Model from XMI Button */}
             <button
               onClick={() => setIsImportOpen(true)}
@@ -126,7 +146,7 @@ const Header: React.FC = () => {
               title="Importar modelo desde archivo XMI (ArchiTec / StarUML)"
             >
               <Upload size={13} className="text-emerald-400" />
-              <span className="hidden sm:inline">Importar</span>
+              <span className="hidden xl:inline">Importar</span>
             </button>
 
             {/* Export Model Button */}
@@ -141,7 +161,7 @@ const Header: React.FC = () => {
               title={project?.id ? "Exportar modelo a XMI, PNG, PDF o Excel" : "Abre o crea un proyecto para exportar"}
             >
               <Download size={13} className={project?.id ? "text-blue-400" : "text-slate-600"} />
-              <span className="hidden sm:inline">Exportar</span>
+              <span className="hidden xl:inline">Exportar</span>
             </button>
 
             {/* Save Diagram Button */}
@@ -149,7 +169,7 @@ const Header: React.FC = () => {
               onClick={handleSave}
               disabled={!project?.id}
               data-tour="header-save-button"
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all shrink-0 ${
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-semibold transition-all shrink-0 ${
                 project?.id
                   ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-xs shadow-blue-500/20 active:scale-95 cursor-pointer'
                   : 'bg-slate-800 text-slate-500 border border-slate-700/60 cursor-not-allowed opacity-50'
@@ -157,7 +177,7 @@ const Header: React.FC = () => {
               title={project?.id ? "Guardar cambios del diagrama" : "Abre o crea un proyecto para guardar"}
             >
               <Save size={13} />
-              <span className="hidden sm:inline">Guardar</span>
+              <span className="hidden lg:inline">Guardar</span>
             </button>
 
             {/* Quick Guide Onboarding Bubble (?) */}

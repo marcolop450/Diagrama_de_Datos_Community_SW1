@@ -22,8 +22,11 @@ import ClassNodeComponent from './ClassNodeComponent';
 import RelationshipEdge from './RelationshipEdge';
 import { ClassNodeData, RelationshipData } from '../../types/diagram';
 import { getCanvasTheme } from '../../constants/canvasThemes';
-import { Info, MousePointerClick, BoxSelect, X, FolderKanban, FolderPlus, Layers } from 'lucide-react';
+import { Info, MousePointerClick, BoxSelect, X, FolderKanban, FolderPlus, Layers, Eye } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useCollabStore } from '../../stores/collabStore';
+import { RemoteCursors } from './RemoteCursors';
+import { LiveCollabChat } from '../collab/LiveCollabChat';
 
 const nodeTypes: NodeTypes = {
   classNode: ClassNodeComponent as any,
@@ -32,9 +35,21 @@ const nodeTypes: NodeTypes = {
 const edgeTypes: EdgeTypes = {
   umlEdge: RelationshipEdge as any,
   relationship: RelationshipEdge as any,
+  umlRelationship: RelationshipEdge as any,
+  default: RelationshipEdge as any,
 };
 
 export default function DiagramCanvas() {
+  const { 
+    isLive, 
+    isViewer, 
+    broadcastNodeMove, 
+    broadcastCursor, 
+    broadcastLock, 
+    broadcastUnlock 
+  } = useCollabStore();
+  const viewerMode = isLive && isViewer();
+
   const { 
     project,
     nodes, 
@@ -93,6 +108,25 @@ export default function DiagramCanvas() {
   const isPlacementMode = activeTool === 'add-class' || activeTool === 'add-interface' || activeTool === 'add-abstract';
   const isAreaSelectMode = activeTool === 'select-area';
 
+  // Colaboración en Vivo (CU18 - WSS)
+  const lastCursorSentRef = useRef<number>(0);
+
+  const handleNodeDrag = useCallback((_e: any, node: Node) => {
+    if (isLive) {
+      broadcastNodeMove(node.id, node.position);
+    }
+  }, [isLive, broadcastNodeMove]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isLive) return;
+    const now = Date.now();
+    if (now - lastCursorSentRef.current > 35) {
+      lastCursorSentRef.current = now;
+      const flowPos = screenToFlowPosition({ x: e.clientX, y: e.clientY });
+      broadcastCursor(Math.round(flowPos.x), Math.round(flowPos.y));
+    }
+  }, [isLive, screenToFlowPosition, broadcastCursor]);
+
   // Global Keyboard Shortcuts (Ctrl+Z, Ctrl+Y / Ctrl+Shift+Z, Delete, Escape, S, V) with input immunity
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -104,6 +138,18 @@ export default function DiagramCanvas() {
         (activeEl as HTMLElement).isContentEditable
       );
       if (isInputActive) return;
+
+      if (viewerMode) {
+        if (
+          e.key === 'Delete' || 
+          e.key === 'Backspace' || 
+          ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z' || e.key === 'y' || e.key === 'Y' || e.key === 'v' || e.key === 'V' || e.key === 'd' || e.key === 'D'))
+        ) {
+          e.preventDefault();
+          toast('Acción deshabilitada en Modo Solo Lectura (Lector)');
+          return;
+        }
+      }
 
       // S: Toggle Area Selection
       if (!e.ctrlKey && !e.metaKey && !e.altKey && (e.key === 's' || e.key === 'S')) {
@@ -244,16 +290,22 @@ export default function DiagramCanvas() {
       return;
     }
 
+    if (selectedNode && isLive) {
+      broadcastUnlock(selectedNode.id);
+    }
     setSelectedNode(null);
     setSelectedEdge(null);
     setPropertiesPanelOpen(false);
-  }, [isPlacementMode, activeTool, screenToFlowPosition, createNewClass, setActiveTool, setSelectedNode, setSelectedEdge, setPropertiesPanelOpen]);
+  }, [isPlacementMode, activeTool, screenToFlowPosition, createNewClass, setActiveTool, setSelectedNode, setSelectedEdge, setPropertiesPanelOpen, selectedNode, isLive, broadcastUnlock]);
 
   const onNodeClick = useCallback((_: React.MouseEvent, node: Node<ClassNodeData>) => {
     if (isPlacementMode) return;
+    if (isLive) {
+      broadcastLock(node.id);
+    }
     setSelectedNode(node);
     setPropertiesPanelOpen(true);
-  }, [isPlacementMode, setSelectedNode, setPropertiesPanelOpen]);
+  }, [isPlacementMode, isLive, broadcastLock, setSelectedNode, setPropertiesPanelOpen]);
 
   const onEdgeClick = useCallback((_: React.MouseEvent, edge: Edge<RelationshipData>) => {
     if (isPlacementMode) return;
@@ -368,6 +420,7 @@ export default function DiagramCanvas() {
         onNodeDragStart={onNodeDragStart}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
+        proOptions={{ hideAttribution: true }}
         onPaneClick={onPaneClick}
         onNodeClick={onNodeClick}
         onEdgeClick={onEdgeClick}
@@ -380,7 +433,10 @@ export default function DiagramCanvas() {
         selectionMode={SelectionMode.Partial}
         deleteKeyCode={null}
         panActivationKeyCode={null}
+        nodesDraggable={!viewerMode}
+        nodesConnectable={!viewerMode}
         onBeforeDelete={async ({ nodes: delNodes, edges: delEdges }) => {
+          if (viewerMode) return false;
           if (delNodes.length > 0 || delEdges.length > 0) {
             takeSnapshot();
           }
@@ -395,7 +451,12 @@ export default function DiagramCanvas() {
           type: 'umlEdge',
           animated: false,
         }}
+        onNodeDrag={handleNodeDrag}
+        onMouseMove={handleMouseMove}
       >
+        {/* Sincronización de Cursores Remotos (CU18 - WSS) */}
+        <RemoteCursors />
+
         {/* Engineering Millimeter Grid (Rejilla Milimétrica Profesional UML) */}
         {user?.preferences?.grid !== false && (
           <>
@@ -416,6 +477,16 @@ export default function DiagramCanvas() {
               variant={BackgroundVariant.Lines} 
             />
           </>
+        )}
+
+        {/* Viewer Mode Banner (CU18) */}
+        {viewerMode && (
+          <Panel position="top-center" className="!m-3">
+            <div className="flex items-center gap-2 px-3.5 py-1.5 bg-slate-900/90 border border-blue-500/50 text-blue-200 rounded-md text-xs font-mono shadow-lg backdrop-blur-md">
+              <Eye size={13} className="text-blue-400 shrink-0 animate-pulse" />
+              <span>Modo Solo Lectura (Lector) activo — Visualizando el modelo en tiempo real</span>
+            </div>
+          </Panel>
         )}
 
         {/* Top Info Banner / Placement Banner / Area Selection Banner */}
@@ -463,6 +534,9 @@ export default function DiagramCanvas() {
           </Panel>
         )}
       </ReactFlow>
+
+      {/* Chat Colaborativo en Tiempo Real (CU18 - WSS) */}
+      <LiveCollabChat />
     </div>
   );
 }

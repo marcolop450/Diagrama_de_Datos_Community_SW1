@@ -25,17 +25,24 @@ import {
   AlertTriangle,
   ChevronLeft,
   ChevronRight,
-  Upload
+  Upload,
+  Radio,
+  Loader2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ProjectHistoryModal } from '../components/history/ProjectHistoryModal';
 import CreateProjectModal from '../components/modals/CreateProjectModal';
 import { ImportModal } from '../components/modals/ImportModal';
+import { useCollabStore } from '../stores/collabStore';
 
 export const ProjectsPage: React.FC = () => {
   const { user } = useAuthStore();
   const { project, loadDiagram, resetDiagram } = useDiagramStore();
+  const { joinSession } = useCollabStore();
   const navigate = useNavigate();
+
+  const [collabRoomCode, setCollabRoomCode] = useState('');
+  const [isJoiningCollab, setIsJoiningCollab] = useState(false);
 
   const [projects, setProjects] = useState<DiagramProject[]>([]);
   const [trashProjects, setTrashProjects] = useState<DiagramProject[]>([]);
@@ -117,6 +124,30 @@ export const ProjectsPage: React.FC = () => {
     loadDiagram(id);
     navigate(`/editor/${id}`);
     toast.success(`Cargando proyecto: ${name}`);
+  };
+
+  // Join live collaboration directly
+  const handleJoinCollabSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!collabRoomCode.trim()) {
+      toast.error('Ingresa el código de sala (ej. SW1-902)');
+      return;
+    }
+    const cleanCode = collabRoomCode.trim().toUpperCase();
+    setIsJoiningCollab(true);
+    try {
+      const success = await joinSession(cleanCode);
+      if (success) {
+        const activeSession = useCollabStore.getState().session;
+        if (activeSession?.projectId) {
+          navigate(`/editor/${activeSession.projectId}`);
+        } else {
+          navigate('/editor');
+        }
+      }
+    } finally {
+      setIsJoiningCollab(false);
+    }
   };
 
   // Edit Project
@@ -344,6 +375,56 @@ export const ProjectsPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Live Collaboration Quick Join Card (CU18) */}
+        <div className="p-4 sm:p-5 rounded-xl bg-gradient-to-r from-amber-500/10 via-slate-900/90 to-indigo-950/40 border border-amber-500/30 shadow-md relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex items-start sm:items-center gap-3.5 min-w-0">
+            <div className="p-2.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-400 shadow-inner shrink-0">
+              <Radio className="w-5 h-5 animate-pulse text-amber-400" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-slate-100 tracking-wide">
+                  Unirse a Pizarra Compartida en Vivo
+                </h3>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  WSS Activo
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 mt-0.5 max-w-xl leading-relaxed">
+                Ingresa el código de sesión (ej. SW1-902) para conectarte en vivo a la pizarra UML con chat y sincronización en tiempo real.
+              </p>
+            </div>
+          </div>
+
+          <form 
+            onSubmit={handleJoinCollabSubmit}
+            className="flex items-center gap-2 w-full md:w-auto shrink-0"
+          >
+            <div className="relative flex-1 md:w-44">
+              <input
+                type="text"
+                value={collabRoomCode}
+                onChange={(e) => setCollabRoomCode(e.target.value.toUpperCase())}
+                placeholder="SW1-XXX"
+                maxLength={10}
+                className="w-full px-3 py-2 rounded-lg bg-slate-950/80 border border-slate-700 text-slate-100 placeholder-slate-500 font-mono text-center text-xs font-bold tracking-widest uppercase focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition-all"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={isJoiningCollab}
+              className="px-4 py-2 rounded-lg text-xs font-semibold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-sm shadow-amber-500/20 transition-all flex items-center gap-1.5 shrink-0 cursor-pointer disabled:opacity-50"
+            >
+              {isJoiningCollab ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Radio className="w-3.5 h-3.5" />
+              )}
+              <span>{isJoiningCollab ? 'Conectando...' : 'Unirse a la Sala'}</span>
+            </button>
+          </form>
+        </div>
+
         {/* Tab Switcher: Proyectos Activos vs Papelera de Reciclaje */}
         <div className="flex items-center gap-2">
           <button
@@ -492,6 +573,15 @@ export const ProjectsPage: React.FC = () => {
                           En Papelera
                         </span>
                       )}
+                      {proj.ownerName && (
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium shrink-0 ${
+                          proj.ownerId === user?.userId
+                            ? 'bg-emerald-950/60 border border-emerald-800/60 text-emerald-300'
+                            : 'bg-slate-800/80 border border-slate-700/80 text-slate-300'
+                        }`}>
+                          {proj.ownerId === user?.userId ? 'Anfitrión (Tú)' : `Host: ${proj.ownerName}`}
+                        </span>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-1 shrink-0 ml-auto">
@@ -508,7 +598,7 @@ export const ProjectsPage: React.FC = () => {
                             <Copy size={13} />
                           </button>
                           
-                          {!isColaborador && (
+                          {(proj.ownerId ? proj.ownerId === user?.userId : !isColaborador) && (
                             <button
                               onClick={() => {
                                 setEditModalProject(proj);
@@ -532,7 +622,7 @@ export const ProjectsPage: React.FC = () => {
                             <History size={13} />
                           </button>
 
-                          {!isColaborador && (
+                          {(proj.ownerId ? proj.ownerId === user?.userId : !isColaborador) && (
                             <button
                               onClick={() => setDeleteModalProject(proj)}
                               className="p-1 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded transition-colors cursor-pointer shrink-0"
@@ -544,15 +634,17 @@ export const ProjectsPage: React.FC = () => {
                         </>
                       ) : (
                         <>
-                          <button
-                            onClick={() => handleRestoreProject(proj.id, proj.name)}
-                            disabled={restoringId === proj.id}
-                            className="flex items-center gap-1 px-2 py-0.5 bg-emerald-950/60 hover:bg-emerald-900/60 text-emerald-300 border border-emerald-800/80 rounded text-xs font-semibold transition-all cursor-pointer active:scale-95 disabled:opacity-50 shrink-0"
-                            title="Restaurar proyecto"
-                          >
-                            <RotateCcw size={12} className={restoringId === proj.id ? 'animate-spin' : ''} />
-                            <span>Restaurar</span>
-                          </button>
+                          {(proj.ownerId ? proj.ownerId === user?.userId : !isColaborador) && (
+                            <button
+                              onClick={() => handleRestoreProject(proj.id, proj.name)}
+                              disabled={restoringId === proj.id}
+                              className="flex items-center gap-1 px-2 py-0.5 bg-emerald-950/60 hover:bg-emerald-900/60 text-emerald-300 border border-emerald-800/80 rounded text-xs font-semibold transition-all cursor-pointer active:scale-95 disabled:opacity-50 shrink-0"
+                              title="Restaurar proyecto"
+                            >
+                              <RotateCcw size={12} className={restoringId === proj.id ? 'animate-spin' : ''} />
+                              <span>Restaurar</span>
+                            </button>
+                          )}
 
                           <button
                             onClick={() => setHistoryModalProject(proj)}
@@ -562,7 +654,7 @@ export const ProjectsPage: React.FC = () => {
                             <History size={13} />
                           </button>
 
-                          {!isColaborador && (
+                          {(proj.ownerId ? proj.ownerId === user?.userId : !isColaborador) && (
                             <button
                               onClick={() => setPurgeModalProject(proj)}
                               className="p-1 text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 rounded transition-colors cursor-pointer shrink-0"

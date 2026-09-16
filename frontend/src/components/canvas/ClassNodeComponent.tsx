@@ -1,11 +1,13 @@
 import { memo } from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Lock } from 'lucide-react';
 import { Handle, Position, NodeProps, Node } from '@xyflow/react';
 import { ClassNodeData, ClassAttribute, ClassMethod } from '../../types/diagram';
 import { useUiStore } from '../../stores/uiStore';
 import { useDiagramStore } from '../../stores/diagramStore';
 import { useAuthStore } from '../../stores/authStore';
+import { useCollabStore } from '../../stores/collabStore';
 import { getCanvasTheme } from '../../constants/canvasThemes';
+import toast from 'react-hot-toast';
 
 const getVisibilitySymbol = (visibility: string) => {
   switch (visibility) {
@@ -24,18 +26,35 @@ const getVisibilitySymbol = (visibility: string) => {
 
 type CustomNodeProps = NodeProps<Node<ClassNodeData>>;
 
-const ClassNodeComponent = ({ data, selected }: CustomNodeProps) => {
+const ClassNodeComponent = ({ id, data, selected }: CustomNodeProps) => {
   const { setSelectedNode, isClassNameTaken } = useDiagramStore();
   const { setPropertiesPanelOpen } = useUiStore();
   const { user } = useAuthStore();
+  const { locks, myParticipant, broadcastLock, isLive, isViewer } = useCollabStore();
+  const viewerMode = isLive && isViewer();
   const theme = getCanvasTheme(user?.preferences?.canvasTheme);
 
-  const isDuplicateName = isClassNameTaken(data.name, data.id);
+  const lock = locks[data.id];
+  const isLockedByOther = !!(lock && myParticipant && lock.lockedBy !== myParticipant.userId);
+
+  const nodeId = id || (data as any)?.id;
+  const isDuplicateName = isClassNameTaken(data.name, nodeId);
   const isAbstract = data.isAbstract || data.stereotype?.toLowerCase() === 'abstract';
   const attributes: ClassAttribute[] = data.attributes || [];
   const methods: ClassMethod[] = data.methods || [];
 
   const handleDoubleClick = () => {
+    if (viewerMode) {
+      toast('Modo Solo Lectura: No es posible editar atributos o métodos');
+      return;
+    }
+    if (isLockedByOther) {
+      toast.error(`Esta clase está siendo editada por ${lock.lockedByName}`);
+      return;
+    }
+    if (isLive) {
+      broadcastLock(data.id);
+    }
     setSelectedNode({ id: data.id, position: { x: 0, y: 0 }, data } as any);
     setPropertiesPanelOpen(true);
   };
@@ -45,17 +64,29 @@ const ClassNodeComponent = ({ data, selected }: CustomNodeProps) => {
       className="relative group cursor-pointer rounded-sm border min-w-[240px] max-w-[360px] font-mono text-xs select-none transition-all duration-150"
       style={{
         backgroundColor: theme.nodeBg,
-        borderColor: selected ? theme.nodeBorderSelected : theme.nodeBorder,
+        borderColor: isLockedByOther 
+          ? (lock?.cursorColor || '#F59E0B')
+          : selected ? theme.nodeBorderSelected : theme.nodeBorder,
         boxShadow: selected ? theme.nodeShadowSelected : '0 4px 14px rgba(0, 0, 0, 0.25)',
       }}
       onDoubleClick={handleDoubleClick}
     >
+      {/* Optimistic Lock Visual Badge */}
+      {lock && (
+        <div 
+          className="absolute -top-5 left-0 flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-semibold text-white shadow-md z-30 pointer-events-none animate-fade-in"
+          style={{ backgroundColor: lock.cursorColor || '#10B981' }}
+        >
+          <Lock className="w-2.5 h-2.5" />
+          <span>{isLockedByOther ? `Editando: ${lock.lockedByName}` : 'Bloqueado por ti'}</span>
+        </div>
+      )}
       {/* 4 Connection Magnetic Handles (UML Ports - precisely centered, full bidirectional connectivity) */}
       <Handle 
         type="source" 
         position={Position.Top} 
         id="top" 
-        isConnectable={true}
+        isConnectable={!viewerMode}
         style={{ 
           top: 0, 
           left: '50%', 
@@ -69,7 +100,7 @@ const ClassNodeComponent = ({ data, selected }: CustomNodeProps) => {
         type="source" 
         position={Position.Bottom} 
         id="bottom" 
-        isConnectable={true}
+        isConnectable={!viewerMode}
         style={{ 
           bottom: 0, 
           left: '50%', 
@@ -83,7 +114,7 @@ const ClassNodeComponent = ({ data, selected }: CustomNodeProps) => {
         type="source" 
         position={Position.Left} 
         id="left" 
-        isConnectable={true}
+        isConnectable={!viewerMode}
         style={{ 
           top: '50%', 
           left: 0, 
@@ -97,7 +128,7 @@ const ClassNodeComponent = ({ data, selected }: CustomNodeProps) => {
         type="source" 
         position={Position.Right} 
         id="right" 
-        isConnectable={true}
+        isConnectable={!viewerMode}
         style={{ 
           top: '50%', 
           right: 0, 

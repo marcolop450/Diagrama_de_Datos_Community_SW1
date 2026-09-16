@@ -12,16 +12,21 @@ import {
   ClipboardPaste,
   AlertCircle,
   ArrowLeftRight,
-  Info
+  Info,
+  Eye
 } from 'lucide-react';
 import { ClassAttribute, ClassMethod } from '../../types/diagram';
+import { useCollabStore } from '../../stores/collabStore';
 import toast from 'react-hot-toast';
 
-const CARDINALITY_OPTIONS = ['1', '0..1', '1..*', '0..*', '*'];
+const CARDINALITY_OPTIONS = ['1', '0..1', '1..*', '0..*', '*', 'N', 'M', '1..N', '0..N'];
 const BACKEND_BD_TYPES = ['Long', 'Integer', 'String', 'Double', 'BigDecimal', 'Boolean', 'LocalDate', 'LocalDateTime', 'UUID', 'byte[]'];
 const COMMON_RETURN_TYPES = ['void', 'String', 'Long', 'Integer', 'Double', 'Boolean', 'UUID', 'List<T>', 'List<String>', 'Optional<T>'];
 
 const PropertiesPanel: React.FC = () => {
+  const { isLive, isViewer } = useCollabStore();
+  const viewerMode = isLive && isViewer();
+
   const { 
     selectedNode, 
     selectedEdge, 
@@ -53,7 +58,7 @@ const PropertiesPanel: React.FC = () => {
 
   const handleNodeStereotypeChange = (stereotype: string) => {
     if (!selectedNode) return;
-    updateClassNode(selectedNode.id, { stereotype: stereotype || undefined });
+    updateClassNode(selectedNode.id, { stereotype: stereotype || '' });
   };
 
   const handleNodeAbstractToggle = (isAbstract: boolean) => {
@@ -246,6 +251,14 @@ const PropertiesPanel: React.FC = () => {
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-5">
+        {/* Banner de Modo Solo Lectura (Lector) */}
+        {viewerMode && (
+          <div className="flex items-center gap-2 p-2.5 bg-blue-500/10 border border-blue-500/30 rounded-xl text-blue-300 text-xs font-mono shadow-sm">
+            <Eye size={14} className="shrink-0 text-blue-400 animate-pulse" />
+            <span className="font-semibold">Modo Solo Lectura (Lector) — Solo inspección</span>
+          </div>
+        )}
+
         {/* ================= CLASS NODE PROPERTIES ================= */}
         {selectedNode && (
           <>
@@ -287,8 +300,11 @@ const PropertiesPanel: React.FC = () => {
                   <input 
                     type="text" 
                     value={selectedNode.data.name} 
+                    disabled={viewerMode}
                     onChange={(e) => handleNodeNameChange(e.target.value)}
                     className={`w-full bg-slate-900 border rounded-lg px-3 py-2 text-xs font-mono text-slate-100 focus:outline-none transition-colors ${
+                      viewerMode ? 'opacity-70 cursor-not-allowed bg-slate-950' : ''
+                    } ${
                       isClassNameTaken(selectedNode.data.name, selectedNode.id)
                         ? 'border-amber-500/80 focus:border-amber-400 ring-1 ring-amber-500/30'
                         : 'border-slate-800 focus:border-blue-500'
@@ -310,8 +326,11 @@ const PropertiesPanel: React.FC = () => {
                   </label>
                   <select 
                     value={selectedNode.data.stereotype || ''} 
+                    disabled={viewerMode}
                     onChange={(e) => handleNodeStereotypeChange(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-800 focus:border-blue-500 rounded-lg px-3 py-2 text-xs font-sans text-slate-200 focus:outline-none transition-colors"
+                    className={`w-full bg-slate-900 border border-slate-800 focus:border-blue-500 rounded-lg px-3 py-2 text-xs font-sans text-slate-200 focus:outline-none transition-colors ${
+                      viewerMode ? 'opacity-70 cursor-not-allowed bg-slate-950' : ''
+                    }`}
                   >
                     <option value="">(Ninguno)</option>
                     <option value="entity">&laquo;entity&raquo; (Entidad JPA)</option>
@@ -324,10 +343,11 @@ const PropertiesPanel: React.FC = () => {
                 </div>
 
                 <div className="pt-2">
-                  <label className="flex items-center gap-2 cursor-pointer">
+                  <label className={`flex items-center gap-2 ${viewerMode ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}>
                     <input 
                       type="checkbox" 
                       checked={!!selectedNode.data.isAbstract} 
+                      disabled={viewerMode}
                       onChange={(e) => handleNodeAbstractToggle(e.target.checked)}
                       className="w-4 h-4 rounded border-slate-700 bg-slate-900 text-blue-600 focus:ring-0 cursor-pointer"
                     />
@@ -335,47 +355,49 @@ const PropertiesPanel: React.FC = () => {
                   </label>
                 </div>
 
-                <div className="pt-3 border-t border-slate-800/80 space-y-2">
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => copyClassNode(selectedNode.id)}
-                      className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-slate-900 hover:bg-slate-850 text-slate-200 hover:text-white border border-slate-700/80 hover:border-slate-600 rounded-lg text-[11px] font-semibold transition-all active:scale-98 cursor-pointer shadow-xs"
-                      title="Copiar clase al portapapeles (Ctrl+C)"
-                    >
-                      <ClipboardCopy size={13} className="text-sky-400" />
-                      <span>Copiar (Ctrl+C)</span>
-                    </button>
+                {!viewerMode && (
+                  <div className="pt-3 border-t border-slate-800/80 space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => copyClassNode(selectedNode.id)}
+                        className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-slate-900 hover:bg-slate-850 text-slate-200 hover:text-white border border-slate-700/80 hover:border-slate-600 rounded-lg text-[11px] font-semibold transition-all active:scale-98 cursor-pointer shadow-xs"
+                        title="Copiar clase al portapapeles (Ctrl+C)"
+                      >
+                        <ClipboardCopy size={13} className="text-sky-400" />
+                        <span>Copiar (Ctrl+C)</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={!copiedClassNode}
+                        onClick={() => pasteClassNode()}
+                        className={`flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition-all shadow-xs ${
+                          copiedClassNode
+                            ? 'bg-slate-900 hover:bg-slate-850 text-slate-200 hover:text-white border-slate-700/80 hover:border-slate-600 active:scale-98 cursor-pointer'
+                            : 'bg-slate-950 text-slate-600 border-slate-800 cursor-not-allowed opacity-50'
+                        }`}
+                        title={copiedClassNode ? `Pegar '${copiedClassNode.name}' (Ctrl+V)` : 'Primero copia una clase con Ctrl+C'}
+                      >
+                        <ClipboardPaste size={13} className="text-emerald-400" />
+                        <span>Pegar (Ctrl+V)</span>
+                      </button>
+                    </div>
 
                     <button
                       type="button"
-                      disabled={!copiedClassNode}
-                      onClick={() => pasteClassNode()}
-                      className={`flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition-all shadow-xs ${
-                        copiedClassNode
-                          ? 'bg-slate-900 hover:bg-slate-850 text-slate-200 hover:text-white border-slate-700/80 hover:border-slate-600 active:scale-98 cursor-pointer'
-                          : 'bg-slate-950 text-slate-600 border-slate-800 cursor-not-allowed opacity-50'
-                      }`}
-                      title={copiedClassNode ? `Pegar '${copiedClassNode.name}' (Ctrl+V)` : 'Primero copia una clase con Ctrl+C'}
+                      onClick={async () => {
+                        await cloneClassNode(selectedNode.id);
+                        toast.success('Clase duplicada exitosamente');
+                      }}
+                      className="w-full flex items-center justify-center gap-2 px-3 py-1.5 bg-slate-900 hover:bg-slate-850 text-slate-200 hover:text-white border border-slate-700/80 hover:border-slate-600 rounded-lg text-xs font-semibold transition-all active:scale-98 cursor-pointer shadow-xs"
+                      title="Duplicar clase inmediatamente (Ctrl+D)"
                     >
-                      <ClipboardPaste size={13} className="text-emerald-400" />
-                      <span>Pegar (Ctrl+V)</span>
+                      <Copy size={13} className="text-blue-400" />
+                      <span>Duplicar Clase (Ctrl+D)</span>
                     </button>
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      await cloneClassNode(selectedNode.id);
-                      toast.success('Clase duplicada exitosamente');
-                    }}
-                    className="w-full flex items-center justify-center gap-2 px-3 py-1.5 bg-slate-900 hover:bg-slate-850 text-slate-200 hover:text-white border border-slate-700/80 hover:border-slate-600 rounded-lg text-xs font-semibold transition-all active:scale-98 cursor-pointer shadow-xs"
-                    title="Duplicar clase inmediatamente (Ctrl+D)"
-                  >
-                    <Copy size={13} className="text-blue-400" />
-                    <span>Duplicar Clase (Ctrl+D)</span>
-                  </button>
-                </div>
+                )}
               </div>
             )}
 
@@ -389,25 +411,29 @@ const PropertiesPanel: React.FC = () => {
                       {selectedNode.data.attributes?.length || 0}
                     </span>
                   </div>
-                  <button 
-                    onClick={handleAddAttribute}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold shadow-xs shadow-blue-500/20 transition-all active:scale-95 cursor-pointer"
-                  >
-                    <Plus size={13} />
-                    <span>Añadir</span>
-                  </button>
+                  {!viewerMode && (
+                    <button 
+                      onClick={handleAddAttribute}
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold shadow-xs shadow-blue-500/20 transition-all active:scale-95 cursor-pointer"
+                    >
+                      <Plus size={13} />
+                      <span>Añadir</span>
+                    </button>
+                  )}
                 </div>
 
                 <div className="space-y-2.5 max-h-[440px] overflow-y-auto pr-1">
                   {(!selectedNode.data.attributes || selectedNode.data.attributes.length === 0) ? (
                     <div className="p-6 text-center rounded-xl border border-dashed border-slate-800 bg-slate-900/40">
                       <p className="text-xs text-slate-500 italic">Sin atributos definidos en esta clase</p>
-                      <button 
-                        onClick={handleAddAttribute}
-                        className="mt-2 text-xs text-blue-400 hover:text-blue-300 font-semibold"
-                      >
-                        + Añadir primer atributo
-                      </button>
+                      {!viewerMode && (
+                        <button 
+                          onClick={handleAddAttribute}
+                          className="mt-2 text-xs text-blue-400 hover:text-blue-300 font-semibold"
+                        >
+                          + Añadir primer atributo
+                        </button>
+                      )}
                     </div>
                   ) : (
                     selectedNode.data.attributes.map((attr) => (
@@ -417,8 +443,11 @@ const PropertiesPanel: React.FC = () => {
                           {/* Visibility dropdown */}
                           <select
                             value={attr.visibility}
+                            disabled={viewerMode}
                             onChange={(e) => handleUpdateAttribute(attr.id, { visibility: e.target.value as any })}
-                            className={`w-24 shrink-0 rounded-lg px-2 py-1.5 text-xs font-mono font-bold border transition-colors cursor-pointer ${
+                            className={`w-24 shrink-0 rounded-lg px-2 py-1.5 text-xs font-mono font-bold border transition-colors ${
+                              viewerMode ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'
+                            } ${
                               attr.visibility === 'public'
                                 ? 'bg-emerald-950/40 border-emerald-700/60 text-emerald-400'
                                 : attr.visibility === 'private'
@@ -439,20 +468,25 @@ const PropertiesPanel: React.FC = () => {
                           <input
                             type="text"
                             value={attr.name}
+                            disabled={viewerMode}
                             onChange={(e) => handleUpdateAttribute(attr.id, { name: e.target.value })}
-                            className="flex-1 min-w-0 bg-slate-950 border border-slate-700/80 focus:border-blue-500 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-100 placeholder:text-slate-600 focus:outline-none transition-colors"
+                            className={`flex-1 min-w-0 bg-slate-950 border border-slate-700/80 focus:border-blue-500 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-100 placeholder:text-slate-600 focus:outline-none transition-colors ${
+                              viewerMode ? 'opacity-70 cursor-not-allowed' : ''
+                            }`}
                             placeholder="nombreAtributo"
                           />
 
                           {/* Delete Button */}
-                          <button 
-                            type="button"
-                            onClick={() => handleRemoveAttribute(attr.id)}
-                            className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-950/30 rounded-lg transition-colors cursor-pointer shrink-0"
-                            title="Eliminar atributo"
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                          {!viewerMode && (
+                            <button 
+                              type="button"
+                              onClick={() => handleRemoveAttribute(attr.id)}
+                              className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-950/30 rounded-lg transition-colors cursor-pointer shrink-0"
+                              title="Eliminar atributo"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
                         </div>
 
                         {/* Row 2: Tipo de dato (Selector) y Modificadores (PK, NN, Static) */}
@@ -461,8 +495,11 @@ const PropertiesPanel: React.FC = () => {
                             <span className="text-[10px] text-slate-400 uppercase font-mono tracking-wider shrink-0">Tipo:</span>
                             <select
                               value={attr.type}
+                              disabled={viewerMode}
                               onChange={(e) => handleUpdateAttribute(attr.id, { type: e.target.value })}
-                              className="flex-1 min-w-0 bg-slate-950 border border-slate-700/80 focus:border-blue-500 rounded-lg px-2 py-1 text-xs font-mono text-sky-300 focus:outline-none transition-colors cursor-pointer"
+                              className={`flex-1 min-w-0 bg-slate-950 border border-slate-700/80 focus:border-blue-500 rounded-lg px-2 py-1 text-xs font-mono text-sky-300 focus:outline-none transition-colors ${
+                                viewerMode ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'
+                              }`}
                             >
                               {BACKEND_BD_TYPES.map((t) => (
                                 <option key={t} value={t} className="bg-slate-950 text-slate-200 font-mono">
@@ -482,8 +519,11 @@ const PropertiesPanel: React.FC = () => {
                             {/* PK Toggle Button */}
                             <button
                               type="button"
+                              disabled={viewerMode}
                               onClick={() => handleToggleAttributeId(attr.id)}
-                              className={`px-2 py-1 rounded-lg text-[10px] font-mono font-bold border transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
+                              className={`px-2 py-1 rounded-lg text-[10px] font-mono font-bold border transition-all flex items-center gap-1 shrink-0 ${
+                                viewerMode ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'
+                              } ${
                                 (attr.isId || attr.isPrimaryKey)
                                   ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 ring-1 ring-amber-400/40 shadow-xs'
                                   : 'bg-slate-950 border-slate-800 text-slate-500 hover:text-slate-300 hover:border-slate-700'
@@ -498,8 +538,10 @@ const PropertiesPanel: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => handleToggleAttributeNotNull(attr.id)}
-                              disabled={Boolean(attr.isId || attr.isPrimaryKey)}
-                              className={`px-2 py-1 rounded-lg text-[10px] font-mono font-bold border transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
+                              disabled={viewerMode || Boolean(attr.isId || attr.isPrimaryKey)}
+                              className={`px-2 py-1 rounded-lg text-[10px] font-mono font-bold border transition-all flex items-center gap-1 shrink-0 ${
+                                viewerMode ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'
+                              } ${
                                 (attr.isId || attr.isPrimaryKey)
                                   ? 'bg-blue-500/10 border-blue-500/30 text-blue-400/60 cursor-not-allowed opacity-75'
                                   : attr.isNotNull
@@ -520,8 +562,11 @@ const PropertiesPanel: React.FC = () => {
                             {/* Static Toggle Button */}
                             <button
                               type="button"
+                              disabled={viewerMode}
                               onClick={() => handleUpdateAttribute(attr.id, { isStatic: !attr.isStatic })}
-                              className={`px-2 py-1 rounded-lg text-[10px] font-mono font-semibold border transition-all cursor-pointer shrink-0 ${
+                              className={`px-2 py-1 rounded-lg text-[10px] font-mono font-semibold border transition-all shrink-0 ${
+                                viewerMode ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'
+                              } ${
                                 attr.isStatic
                                   ? 'bg-purple-500/20 border-purple-500/50 text-purple-300 ring-1 ring-purple-400/40 shadow-xs'
                                   : 'bg-slate-950 border-slate-800 text-slate-500 hover:text-slate-300 hover:border-slate-700'
@@ -534,22 +579,24 @@ const PropertiesPanel: React.FC = () => {
                         </div>
 
                         {/* Row 3: Quick Type Pills */}
-                        <div className="flex flex-wrap items-center gap-1 pl-9">
-                          {BACKEND_BD_TYPES.map((t) => (
-                            <button
-                              key={t}
-                              type="button"
-                              onClick={() => handleUpdateAttribute(attr.id, { type: t })}
-                              className={`text-[10px] font-mono px-1.5 py-0.5 rounded transition-colors cursor-pointer ${
-                                attr.type === t
-                                  ? 'bg-sky-600/30 text-sky-300 border border-sky-500/40'
-                                  : 'bg-slate-950/80 text-slate-400 hover:text-slate-200 border border-slate-800'
-                              }`}
-                            >
-                              {t}
-                            </button>
-                          ))}
-                        </div>
+                        {!viewerMode && (
+                          <div className="flex flex-wrap items-center gap-1 pl-9">
+                            {BACKEND_BD_TYPES.map((t) => (
+                              <button
+                                key={t}
+                                type="button"
+                                onClick={() => handleUpdateAttribute(attr.id, { type: t })}
+                                className={`text-[10px] font-mono px-1.5 py-0.5 rounded transition-colors cursor-pointer ${
+                                  attr.type === t
+                                    ? 'bg-sky-600/30 text-sky-300 border border-sky-500/40'
+                                    : 'bg-slate-950/80 text-slate-400 hover:text-slate-200 border border-slate-800'
+                                }`}
+                              >
+                                {t}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     ))
                   )}
@@ -567,25 +614,29 @@ const PropertiesPanel: React.FC = () => {
                       {selectedNode.data.methods?.length || 0}
                     </span>
                   </div>
-                  <button 
-                    onClick={handleAddMethod}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold shadow-xs shadow-blue-500/20 transition-all active:scale-95 cursor-pointer"
-                  >
-                    <Plus size={13} />
-                    <span>Añadir</span>
-                  </button>
+                  {!viewerMode && (
+                    <button 
+                      onClick={handleAddMethod}
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold shadow-xs shadow-blue-500/20 transition-all active:scale-95 cursor-pointer"
+                    >
+                      <Plus size={13} />
+                      <span>Añadir</span>
+                    </button>
+                  )}
                 </div>
 
                 <div className="space-y-2.5 max-h-[440px] overflow-y-auto pr-1">
                   {(!selectedNode.data.methods || selectedNode.data.methods.length === 0) ? (
                     <div className="p-6 text-center rounded-xl border border-dashed border-slate-800 bg-slate-900/40">
                       <p className="text-xs text-slate-500 italic">Sin operaciones definidas en esta clase</p>
-                      <button 
-                        onClick={handleAddMethod}
-                        className="mt-2 text-xs text-blue-400 hover:text-blue-300 font-semibold"
-                      >
-                        + Añadir primera operación
-                      </button>
+                      {!viewerMode && (
+                        <button 
+                          onClick={handleAddMethod}
+                          className="mt-2 text-xs text-blue-400 hover:text-blue-300 font-semibold"
+                        >
+                          + Añadir primera operación
+                        </button>
+                      )}
                     </div>
                   ) : (
                     selectedNode.data.methods.map((method) => (
@@ -595,8 +646,11 @@ const PropertiesPanel: React.FC = () => {
                           {/* Visibility dropdown */}
                           <select
                             value={method.visibility}
+                            disabled={viewerMode}
                             onChange={(e) => handleUpdateMethod(method.id, { visibility: e.target.value as any })}
-                            className={`w-24 shrink-0 rounded-lg px-2 py-1.5 text-xs font-mono font-bold border transition-colors cursor-pointer ${
+                            className={`w-24 shrink-0 rounded-lg px-2 py-1.5 text-xs font-mono font-bold border transition-colors ${
+                              viewerMode ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'
+                            } ${
                               method.visibility === 'public'
                                 ? 'bg-emerald-950/40 border-emerald-700/60 text-emerald-400'
                                 : method.visibility === 'private'
@@ -617,20 +671,25 @@ const PropertiesPanel: React.FC = () => {
                           <input
                             type="text"
                             value={method.name}
+                            disabled={viewerMode}
                             onChange={(e) => handleUpdateMethod(method.id, { name: e.target.value })}
-                            className="flex-1 min-w-0 bg-slate-950 border border-slate-700/80 focus:border-blue-500 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-100 placeholder:text-slate-600 focus:outline-none transition-colors"
+                            className={`flex-1 min-w-0 bg-slate-950 border border-slate-700/80 focus:border-blue-500 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-100 placeholder:text-slate-600 focus:outline-none transition-colors ${
+                              viewerMode ? 'opacity-70 cursor-not-allowed' : ''
+                            }`}
                             placeholder="nombreMetodo"
                           />
 
                           {/* Delete Button */}
-                          <button 
-                            type="button"
-                            onClick={() => handleRemoveMethod(method.id)}
-                            className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-950/30 rounded-lg transition-colors cursor-pointer shrink-0"
-                            title="Eliminar método"
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                          {!viewerMode && (
+                            <button 
+                              type="button"
+                              onClick={() => handleRemoveMethod(method.id)}
+                              className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-950/30 rounded-lg transition-colors cursor-pointer shrink-0"
+                              title="Eliminar método"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
                         </div>
 
                         {/* Row 2: Retorno y Modificadores (Static, Abstract) */}
@@ -640,8 +699,11 @@ const PropertiesPanel: React.FC = () => {
                             <input
                               type="text"
                               value={method.returnType}
+                              disabled={viewerMode}
                               onChange={(e) => handleUpdateMethod(method.id, { returnType: e.target.value })}
-                              className="flex-1 min-w-0 bg-slate-950 border border-slate-700/80 focus:border-blue-500 rounded-lg px-2 py-1 text-xs font-mono text-emerald-300 placeholder:text-slate-600 focus:outline-none transition-colors"
+                              className={`flex-1 min-w-0 bg-slate-950 border border-slate-700/80 focus:border-blue-500 rounded-lg px-2 py-1 text-xs font-mono text-emerald-300 placeholder:text-slate-600 focus:outline-none transition-colors ${
+                                viewerMode ? 'opacity-70 cursor-not-allowed' : ''
+                              }`}
                               placeholder="void, String, etc."
                             />
                           </div>
@@ -650,8 +712,11 @@ const PropertiesPanel: React.FC = () => {
                             {/* Static Toggle Button */}
                             <button
                               type="button"
+                              disabled={viewerMode}
                               onClick={() => handleUpdateMethod(method.id, { isStatic: !method.isStatic })}
-                              className={`px-2 py-1 rounded-lg text-[10px] font-mono font-semibold border transition-all cursor-pointer shrink-0 ${
+                              className={`px-2 py-1 rounded-lg text-[10px] font-mono font-semibold border transition-all shrink-0 ${
+                                viewerMode ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'
+                              } ${
                                 method.isStatic
                                   ? 'bg-purple-500/20 border-purple-500/50 text-purple-300 ring-1 ring-purple-400/40 shadow-xs'
                                   : 'bg-slate-950 border-slate-800 text-slate-500 hover:text-slate-300 hover:border-slate-700'
@@ -664,8 +729,11 @@ const PropertiesPanel: React.FC = () => {
                             {/* Abstract Toggle Button */}
                             <button
                               type="button"
+                              disabled={viewerMode}
                               onClick={() => handleUpdateMethod(method.id, { isAbstract: !method.isAbstract })}
-                              className={`px-2 py-1 rounded-lg text-[10px] font-mono font-semibold border transition-all cursor-pointer shrink-0 ${
+                              className={`px-2 py-1 rounded-lg text-[10px] font-mono font-semibold border transition-all shrink-0 ${
+                                viewerMode ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'
+                              } ${
                                 method.isAbstract
                                   ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 ring-1 ring-amber-400/40 shadow-xs'
                                   : 'bg-slate-950 border-slate-800 text-slate-500 hover:text-slate-300 hover:border-slate-700'
@@ -677,7 +745,8 @@ const PropertiesPanel: React.FC = () => {
                           </div>
                         </div>
 
-                          {/* Quick Return Type Pills */}
+                        {/* Quick Return Type Pills */}
+                        {!viewerMode && (
                           <div className="flex flex-wrap items-center gap-1 pl-12">
                             {COMMON_RETURN_TYPES.map((rt) => (
                               <button
@@ -694,6 +763,7 @@ const PropertiesPanel: React.FC = () => {
                               </button>
                             ))}
                           </div>
+                        )}
 
                         {/* Row 3: Parameter Manager */}
                         <div className="pt-2 border-t border-slate-800/80 space-y-1.5">
@@ -701,13 +771,15 @@ const PropertiesPanel: React.FC = () => {
                             <span className="text-[10px] text-slate-400 uppercase font-mono tracking-wider">
                               Parámetros ({method.parameters?.length || 0}):
                             </span>
-                            <button
-                              type="button"
-                              onClick={() => handleAddParameter(method.id)}
-                              className="text-[10px] text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1 cursor-pointer transition-colors"
-                            >
-                              <Plus size={11} /> Añadir parámetro
-                            </button>
+                            {!viewerMode && (
+                              <button
+                                type="button"
+                                onClick={() => handleAddParameter(method.id)}
+                                className="text-[10px] text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+                              >
+                                <Plus size={11} /> Añadir parámetro
+                              </button>
+                            )}
                           </div>
                           {method.parameters && method.parameters.length > 0 && (
                             <div className="space-y-1.5 pl-1">
@@ -716,26 +788,34 @@ const PropertiesPanel: React.FC = () => {
                                   <input
                                     type="text"
                                     value={param.name}
+                                    disabled={viewerMode}
                                     onChange={(e) => handleUpdateParameter(method.id, pIdx, { name: e.target.value })}
                                     placeholder="nombre"
-                                    className="w-24 bg-slate-950 border border-slate-700/80 focus:border-blue-500 rounded px-1.5 py-0.5 text-[11px] font-mono text-slate-200 placeholder:text-slate-600 focus:outline-none transition-colors"
+                                    className={`w-24 bg-slate-950 border border-slate-700/80 focus:border-blue-500 rounded px-1.5 py-0.5 text-[11px] font-mono text-slate-200 placeholder:text-slate-600 focus:outline-none transition-colors ${
+                                      viewerMode ? 'opacity-70 cursor-not-allowed' : ''
+                                    }`}
                                   />
                                   <span className="text-slate-500 text-xs">:</span>
                                   <input
                                     type="text"
                                     value={param.type}
+                                    disabled={viewerMode}
                                     onChange={(e) => handleUpdateParameter(method.id, pIdx, { type: e.target.value })}
                                     placeholder="tipo"
-                                    className="flex-1 min-w-0 bg-slate-950 border border-slate-700/80 focus:border-blue-500 rounded px-1.5 py-0.5 text-[11px] font-mono text-sky-300 placeholder:text-slate-600 focus:outline-none transition-colors"
+                                    className={`flex-1 min-w-0 bg-slate-950 border border-slate-700/80 focus:border-blue-500 rounded px-1.5 py-0.5 text-[11px] font-mono text-sky-300 placeholder:text-slate-600 focus:outline-none transition-colors ${
+                                      viewerMode ? 'opacity-70 cursor-not-allowed' : ''
+                                    }`}
                                   />
-                                  <button
-                                    type="button"
-                                    onClick={() => handleRemoveParameter(method.id, pIdx)}
-                                    className="p-1 text-slate-500 hover:text-rose-400 hover:bg-rose-950/30 rounded transition-colors cursor-pointer shrink-0"
-                                    title="Eliminar parámetro"
-                                  >
-                                    <X size={12} />
-                                  </button>
+                                  {!viewerMode && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRemoveParameter(method.id, pIdx)}
+                                      className="p-1 text-slate-500 hover:text-rose-400 hover:bg-rose-950/30 rounded transition-colors cursor-pointer shrink-0"
+                                      title="Eliminar parámetro"
+                                    >
+                                      <X size={12} />
+                                    </button>
+                                  )}
                                 </div>
                               ))}
                             </div>
@@ -749,19 +829,21 @@ const PropertiesPanel: React.FC = () => {
             )}
 
             {/* Delete Class Button */}
-            <div className="pt-4 border-t border-slate-800/80">
-              <button
-                type="button"
-                onClick={() => {
-                  deleteClassNode(selectedNode.id);
-                  toast.success('Clase eliminada del modelo');
-                }}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-rose-950/20 hover:bg-rose-950/40 text-rose-300 hover:text-rose-200 border border-rose-800/40 hover:border-rose-700/60 rounded-xl text-xs font-semibold transition-all active:scale-98 cursor-pointer"
-              >
-                <Trash2 size={14} className="text-rose-400" />
-                <span>Eliminar Clase del Modelo</span>
-              </button>
-            </div>
+            {!viewerMode && (
+              <div className="pt-4 border-t border-slate-800/80">
+                <button
+                  type="button"
+                  onClick={() => {
+                    deleteClassNode(selectedNode.id);
+                    toast.success('Clase eliminada del modelo');
+                  }}
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-rose-950/20 hover:bg-rose-950/40 text-rose-300 hover:text-rose-200 border border-rose-800/40 hover:border-rose-700/60 rounded-xl text-xs font-semibold transition-all active:scale-98 cursor-pointer"
+                >
+                  <Trash2 size={14} className="text-rose-400" />
+                  <span>Eliminar Clase del Modelo</span>
+                </button>
+              </div>
+            )}
           </>
         )}
 
@@ -778,15 +860,17 @@ const PropertiesPanel: React.FC = () => {
                 <span className="text-[11px] font-semibold text-slate-300 uppercase tracking-wider">
                   Orientación
                 </span>
-                <button
-                  type="button"
-                  onClick={() => flipRelationship(selectedEdge.id)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-blue-400 hover:text-blue-300 border border-slate-800 hover:border-slate-700 rounded-xl text-xs font-medium transition-colors cursor-pointer"
-                  title="Invertir origen y destino de la relación"
-                >
-                  <ArrowLeftRight size={13} />
-                  <span>Invertir Dirección</span>
-                </button>
+                {!viewerMode && (
+                  <button
+                    type="button"
+                    onClick={() => flipRelationship(selectedEdge.id)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-blue-400 hover:text-blue-300 border border-slate-800 hover:border-slate-700 rounded-xl text-xs font-medium transition-colors cursor-pointer"
+                    title="Invertir origen y destino de la relación"
+                  >
+                    <ArrowLeftRight size={13} />
+                    <span>Invertir Dirección</span>
+                  </button>
+                )}
               </div>
 
               {/* Relationship Type Cards Grid */}
@@ -873,8 +957,11 @@ const PropertiesPanel: React.FC = () => {
                       <button
                         key={t.id}
                         type="button"
+                        disabled={viewerMode}
                         onClick={() => handleEdgeTypeChange(t.id)}
-                        className={`p-2.5 rounded-xl border text-left flex flex-col gap-1 transition-all cursor-pointer ${
+                        className={`p-2.5 rounded-xl border text-left flex flex-col gap-1 transition-all ${
+                          viewerMode ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'
+                        } ${
                           isSelected
                             ? 'bg-blue-600/20 border-blue-500/80 text-blue-300 ring-1 ring-blue-500/40 shadow-xs'
                             : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
@@ -948,8 +1035,11 @@ const PropertiesPanel: React.FC = () => {
                       <button
                         key={rt.id}
                         type="button"
+                        disabled={viewerMode}
                         onClick={() => updateRelationship(selectedEdge.id, { routing: rt.id as any })}
-                        className={`p-2.5 rounded-xl border text-left flex flex-col gap-1 transition-all cursor-pointer ${
+                        className={`p-2.5 rounded-xl border text-left flex flex-col gap-1 transition-all ${
+                          viewerMode ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'
+                        } ${
                           isSelected
                             ? 'bg-blue-600/20 border-blue-500/80 text-blue-300 ring-1 ring-blue-500/40 shadow-xs'
                             : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
@@ -977,13 +1067,15 @@ const PropertiesPanel: React.FC = () => {
                         Trazo personalizado ({selectedEdge.data.waypoints.length} {selectedEdge.data.waypoints.length === 1 ? 'punto' : 'puntos'})
                       </span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => updateRelationship(selectedEdge.id, { waypoints: [] })}
-                      className="text-[11px] font-medium text-amber-400 hover:text-amber-300 hover:underline cursor-pointer"
-                    >
-                      Restablecer
-                    </button>
+                    {!viewerMode && (
+                      <button
+                        type="button"
+                        onClick={() => updateRelationship(selectedEdge.id, { waypoints: [] })}
+                        className="text-[11px] font-medium text-amber-400 hover:text-amber-300 hover:underline cursor-pointer"
+                      >
+                        Restablecer
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -1001,8 +1093,11 @@ const PropertiesPanel: React.FC = () => {
                   </div>
                   <button
                     type="button"
+                    disabled={viewerMode}
                     onClick={() => updateRelationship(selectedEdge.id, { isDirected: selectedEdge.data?.isDirected === false ? true : false })}
-                    className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${
+                    className={`w-9 h-5 rounded-full transition-colors relative ${
+                      viewerMode ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'
+                    } ${
                       selectedEdge.data?.isDirected !== false ? 'bg-blue-600' : 'bg-slate-700'
                     }`}
                   >
@@ -1023,9 +1118,12 @@ const PropertiesPanel: React.FC = () => {
                 <input 
                   type="text" 
                   value={selectedEdge.data?.label || ''} 
+                  disabled={viewerMode}
                   onChange={(e) => handleEdgeLabelChange(e.target.value)}
                   placeholder="ej: pertenece_a, gestiona, contiene"
-                  className="w-full bg-slate-900 border border-slate-800 focus:border-blue-500 rounded-xl px-3 py-2 text-xs font-mono text-slate-100 placeholder:text-slate-600 focus:outline-none transition-colors"
+                  className={`w-full bg-slate-900 border border-slate-800 focus:border-blue-500 rounded-xl px-3 py-2 text-xs font-mono text-slate-100 placeholder:text-slate-600 focus:outline-none transition-colors ${
+                    viewerMode ? 'opacity-70 cursor-not-allowed bg-slate-950' : ''
+                  }`}
                 />
               </div>
 
@@ -1038,9 +1136,12 @@ const PropertiesPanel: React.FC = () => {
                   <input 
                     type="text" 
                     value={selectedEdge.data?.sourceRole || ''} 
+                    disabled={viewerMode}
                     onChange={(e) => updateRelationship(selectedEdge.id, { sourceRole: e.target.value })}
                     placeholder="ej: propietario"
-                    className="w-full bg-slate-900 border border-slate-800 focus:border-blue-500 rounded-xl px-2.5 py-2 text-xs font-mono text-slate-100 placeholder:text-slate-600 focus:outline-none transition-colors"
+                    className={`w-full bg-slate-900 border border-slate-800 focus:border-blue-500 rounded-xl px-2.5 py-2 text-xs font-mono text-slate-100 placeholder:text-slate-600 focus:outline-none transition-colors ${
+                      viewerMode ? 'opacity-70 cursor-not-allowed bg-slate-950' : ''
+                    }`}
                   />
                 </div>
                 <div>
@@ -1050,9 +1151,12 @@ const PropertiesPanel: React.FC = () => {
                   <input 
                     type="text" 
                     value={selectedEdge.data?.targetRole || ''} 
+                    disabled={viewerMode}
                     onChange={(e) => updateRelationship(selectedEdge.id, { targetRole: e.target.value })}
                     placeholder="ej: cuenta"
-                    className="w-full bg-slate-900 border border-slate-800 focus:border-blue-500 rounded-xl px-2.5 py-2 text-xs font-mono text-slate-100 placeholder:text-slate-600 focus:outline-none transition-colors"
+                    className={`w-full bg-slate-900 border border-slate-800 focus:border-blue-500 rounded-xl px-2.5 py-2 text-xs font-mono text-slate-100 placeholder:text-slate-600 focus:outline-none transition-colors ${
+                      viewerMode ? 'opacity-70 cursor-not-allowed bg-slate-950' : ''
+                    }`}
                   />
                 </div>
               </div>
@@ -1070,18 +1174,21 @@ const PropertiesPanel: React.FC = () => {
                 </div>
               ) : (
                 <>
-                  {/* Quick Cardinality Presets */}
+                  {/* Quick Cardinality Presets (con soporte explícito N:N, 1:N, N:M) */}
                   <div className="p-3 bg-slate-900/70 border border-slate-800/90 rounded-xl space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-semibold text-slate-300 uppercase tracking-wider">
-                        Preajustes Rápidos
+                        Preajustes Rápidos (1:1, 1:N, N:N, N:M)
                       </span>
                       <Sparkles size={12} className="text-blue-400" />
                     </div>
-                    <div className="grid grid-cols-5 gap-1.5">
+                    <div className="grid grid-cols-4 gap-1.5">
                       {[
                         { label: '1 : 1', src: '1', tgt: '1' },
                         { label: '1 : *', src: '1', tgt: '*' },
+                        { label: '1 : N', src: '1', tgt: 'N' },
+                        { label: 'N : N', src: 'N', tgt: 'N' },
+                        { label: 'N : M', src: 'N', tgt: 'M' },
                         { label: '1 : 1..*', src: '1', tgt: '1..*' },
                         { label: '* : *', src: '*', tgt: '*' },
                         { label: '0..1 : 1', src: '0..1', tgt: '1' },
@@ -1093,8 +1200,11 @@ const PropertiesPanel: React.FC = () => {
                           <button
                             key={preset.label}
                             type="button"
+                            disabled={viewerMode}
                             onClick={() => applyCardinalityPreset(preset.src, preset.tgt)}
-                            className={`px-1.5 py-1.5 rounded-lg text-[11px] font-mono font-semibold text-center transition-all cursor-pointer border ${
+                            className={`px-1.5 py-1.5 rounded-lg text-[11px] font-mono font-semibold text-center transition-all border ${
+                              viewerMode ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'
+                            } ${
                               isActive
                                 ? 'bg-blue-600 text-white border-blue-400 shadow-xs shadow-blue-500/20'
                                 : 'bg-slate-950 text-slate-300 hover:text-white border-slate-800 hover:border-slate-700'
@@ -1121,6 +1231,7 @@ const PropertiesPanel: React.FC = () => {
                       </label>
                       <select 
                         value={CARDINALITY_OPTIONS.includes(selectedEdge.data?.sourceCardinality || '') && !customSourceCard ? selectedEdge.data?.sourceCardinality : 'custom'} 
+                        disabled={viewerMode}
                         onChange={(e) => {
                           if (e.target.value === 'custom') {
                             setCustomSourceCard(true);
@@ -1129,22 +1240,31 @@ const PropertiesPanel: React.FC = () => {
                             handleEdgeCardinalityChange(e.target.value, selectedEdge.data?.targetCardinality || '');
                           }
                         }}
-                        className="w-full bg-slate-900 border border-slate-800 focus:border-blue-500 rounded-xl px-2.5 py-2 text-xs font-mono text-blue-300 focus:outline-none transition-colors cursor-pointer"
+                        className={`w-full bg-slate-900 border border-slate-800 focus:border-blue-500 rounded-xl px-2.5 py-2 text-xs font-mono text-blue-300 focus:outline-none transition-colors ${
+                          viewerMode ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'
+                        }`}
                       >
                         <option value="1">1 (Exactamente 1)</option>
                         <option value="0..1">0..1 (Opcional)</option>
                         {!isComposition && <option value="1..*">1..* (Uno o más)</option>}
                         {!isComposition && <option value="0..*">0..* (Cero o más)</option>}
                         {!isComposition && <option value="*">* (Muchos)</option>}
+                        {!isComposition && <option value="N">N (Muchos N)</option>}
+                        {!isComposition && <option value="M">M (Muchos M)</option>}
+                        {!isComposition && <option value="1..N">1..N (Uno a N)</option>}
+                        {!isComposition && <option value="0..N">0..N (Cero a N)</option>}
                         <option value="custom">Personalizado...</option>
                       </select>
                       {(customSourceCard || !CARDINALITY_OPTIONS.includes(selectedEdge.data?.sourceCardinality || '')) && (
                         <input 
                           type="text" 
                           value={selectedEdge.data?.sourceCardinality || ''} 
+                          disabled={viewerMode}
                           onChange={(e) => handleEdgeCardinalityChange(e.target.value, selectedEdge.data?.targetCardinality || '')}
                           placeholder="ej: 1..10"
-                          className="w-full mt-1.5 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs font-mono text-blue-300 focus:outline-none transition-colors"
+                          className={`w-full mt-1.5 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs font-mono text-blue-300 focus:outline-none transition-colors ${
+                            viewerMode ? 'opacity-70 cursor-not-allowed' : ''
+                          }`}
                         />
                       )}
                     </div>
@@ -1155,6 +1275,7 @@ const PropertiesPanel: React.FC = () => {
                       </label>
                       <select 
                         value={CARDINALITY_OPTIONS.includes(selectedEdge.data?.targetCardinality || '') && !customTargetCard ? selectedEdge.data?.targetCardinality : 'custom'} 
+                        disabled={viewerMode}
                         onChange={(e) => {
                           if (e.target.value === 'custom') {
                             setCustomTargetCard(true);
@@ -1163,22 +1284,31 @@ const PropertiesPanel: React.FC = () => {
                             handleEdgeCardinalityChange(selectedEdge.data?.sourceCardinality || '', e.target.value);
                           }
                         }}
-                        className="w-full bg-slate-900 border border-slate-800 focus:border-blue-500 rounded-xl px-2.5 py-2 text-xs font-mono text-indigo-300 focus:outline-none transition-colors cursor-pointer"
+                        className={`w-full bg-slate-900 border border-slate-800 focus:border-blue-500 rounded-xl px-2.5 py-2 text-xs font-mono text-indigo-300 focus:outline-none transition-colors ${
+                          viewerMode ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'
+                        }`}
                       >
                         <option value="1">1 (Exactamente 1)</option>
                         <option value="0..1">0..1 (Opcional)</option>
                         <option value="1..*">1..* (Uno o más)</option>
                         <option value="0..*">0..* (Cero o más)</option>
                         <option value="*">* (Muchos)</option>
+                        <option value="N">N (Muchos N)</option>
+                        <option value="M">M (Muchos M)</option>
+                        <option value="1..N">1..N (Uno a N)</option>
+                        <option value="0..N">0..N (Cero a N)</option>
                         <option value="custom">Personalizado...</option>
                       </select>
                       {(customTargetCard || !CARDINALITY_OPTIONS.includes(selectedEdge.data?.targetCardinality || '')) && (
                         <input 
                           type="text" 
                           value={selectedEdge.data?.targetCardinality || ''} 
+                          disabled={viewerMode}
                           onChange={(e) => handleEdgeCardinalityChange(selectedEdge.data?.sourceCardinality || '', e.target.value)}
                           placeholder="ej: 0..5"
-                          className="w-full mt-1.5 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs font-mono text-indigo-300 focus:outline-none transition-colors"
+                          className={`w-full mt-1.5 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs font-mono text-indigo-300 focus:outline-none transition-colors ${
+                            viewerMode ? 'opacity-70 cursor-not-allowed' : ''
+                          }`}
                         />
                       )}
                     </div>
@@ -1187,19 +1317,21 @@ const PropertiesPanel: React.FC = () => {
               )}
 
               {/* Delete Edge Button */}
-              <div className="pt-4 border-t border-slate-800/80">
-                <button
-                  type="button"
-                  onClick={() => {
-                    deleteRelationship(selectedEdge.id);
-                    toast.success('Relación eliminada del modelo');
-                  }}
-                  className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-rose-950/20 hover:bg-rose-950/40 text-rose-300 hover:text-rose-200 border border-rose-800/40 hover:border-rose-700/60 rounded-xl text-xs font-semibold transition-all active:scale-98 cursor-pointer"
-                >
-                  <Trash2 size={14} className="text-rose-400" />
-                  <span>Eliminar Relación del Modelo</span>
-                </button>
-              </div>
+              {!viewerMode && (
+                <div className="pt-4 border-t border-slate-800/80">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      deleteRelationship(selectedEdge.id);
+                      toast.success('Relación eliminada del modelo');
+                    }}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-rose-950/20 hover:bg-rose-950/40 text-rose-300 hover:text-rose-200 border border-rose-800/40 hover:border-rose-700/60 rounded-xl text-xs font-semibold transition-all active:scale-98 cursor-pointer"
+                  >
+                    <Trash2 size={14} className="text-rose-400" />
+                    <span>Eliminar Relación del Modelo</span>
+                  </button>
+                </div>
+              )}
             </div>
           );
         })()}

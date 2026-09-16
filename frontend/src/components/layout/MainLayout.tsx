@@ -10,6 +10,7 @@ import { OnboardingSpotlight } from '../onboarding/OnboardingSpotlight';
 import { useUiStore } from '../../stores/uiStore';
 import { useAuthStore } from '../../stores/authStore';
 import { useDiagramStore } from '../../stores/diagramStore';
+import { useCollabStore } from '../../stores/collabStore';
 import { ReactFlowProvider } from '@xyflow/react';
 import toast from 'react-hot-toast';
 
@@ -82,6 +83,10 @@ const MainLayout: React.FC = () => {
 
     const intervalMs = intervalSeconds * 1000;
     const autoSaveTimer = setInterval(() => {
+      const collab = useCollabStore.getState();
+      if (collab.isLive && collab.role !== 'host') {
+        return;
+      }
       saveDiagram().catch(() => {
         // Silent background sync
       });

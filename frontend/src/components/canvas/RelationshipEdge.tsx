@@ -50,19 +50,60 @@ export default function RelationshipEdge({
   const relData = data as RelationshipData | undefined;
   const routing: EdgeRoutingType = relData?.routing || 'smoothstep';
 
+  // Detectar relaciones paralelas entre el mismo par de clases para trazar líneas distintas
+  const edges = useDiagramStore((s) => s.edges);
+  const currentEdge = edges.find((e) => e.id === id);
+  const srcId = currentEdge?.source;
+  const tgtId = currentEdge?.target;
+
+  let parallelIndex = 0;
+  let parallelCount = 1;
+
+  if (srcId && tgtId) {
+    const parallelEdges = edges.filter(
+      (e) => (e.source === srcId && e.target === tgtId) || (e.source === tgtId && e.target === srcId)
+    );
+    parallelCount = parallelEdges.length;
+    parallelIndex = parallelEdges.findIndex((e) => e.id === id);
+    if (parallelIndex === -1) parallelIndex = 0;
+  }
+
   // 1. Calculate Geometry & SVG Paths
   let edgePath = '';
   let labelX = 0;
   let labelY = 0;
 
-  if (routing === 'straight') {
-    [edgePath, labelX, labelY] = getStraightPath({
-      sourceX,
-      sourceY,
-      targetX,
-      targetY,
-    });
+  const isSelfLoop = !!(srcId && tgtId && srcId === tgtId);
+  const pathOffset = parallelCount > 1 ? 24 + parallelIndex * 28 : 20;
+
+  if (isSelfLoop) {
+    // Trazado reflexivo (auto-asociación) canónico en arco visible
+    const loopSize = 45 + parallelIndex * 25;
+    edgePath = `M ${sourceX} ${sourceY} C ${sourceX + loopSize} ${sourceY - loopSize}, ${targetX + loopSize} ${targetY + loopSize}, ${targetX} ${targetY}`;
+    labelX = Math.max(sourceX, targetX) + loopSize * 0.7;
+    labelY = (sourceY + targetY) / 2;
+  } else if (routing === 'straight') {
+    if (parallelCount > 1) {
+      const curvature = 0.2 + parallelIndex * 0.22;
+      [edgePath, labelX, labelY] = getBezierPath({
+        sourceX,
+        sourceY,
+        sourcePosition,
+        targetX,
+        targetY,
+        targetPosition,
+        curvature
+      });
+    } else {
+      [edgePath, labelX, labelY] = getStraightPath({
+        sourceX,
+        sourceY,
+        targetX,
+        targetY,
+      });
+    }
   } else if (routing === 'bezier') {
+    const curvature = 0.25 + parallelIndex * 0.22;
     [edgePath, labelX, labelY] = getBezierPath({
       sourceX,
       sourceY,
@@ -70,6 +111,7 @@ export default function RelationshipEdge({
       targetX,
       targetY,
       targetPosition,
+      curvature
     });
   } else if (routing === 'step') {
     [edgePath, labelX, labelY] = getSmoothStepPath({
@@ -80,6 +122,7 @@ export default function RelationshipEdge({
       targetY,
       targetPosition,
       borderRadius: 0,
+      offset: pathOffset
     });
   } else {
     // Default: 'smoothstep' (Ortogonal Suave)
@@ -91,6 +134,7 @@ export default function RelationshipEdge({
       targetY,
       targetPosition,
       borderRadius: 8,
+      offset: pathOffset
     });
   }
 
@@ -127,9 +171,18 @@ export default function RelationshipEdge({
     }
   }
 
-  // Offset endpoint labels cleanly based on handle orientation
-  const { x: sourceCardX, y: sourceCardY } = getEndpointLabelPosition(sourceX, sourceY, sourcePosition);
-  const { x: targetCardX, y: targetCardY } = getEndpointLabelPosition(targetX, targetY, targetPosition);
+  // Offset endpoint labels cleanly based on handle orientation and parallel index
+  const { x: rawSrcX, y: rawSrcY } = getEndpointLabelPosition(sourceX, sourceY, sourcePosition);
+  const { x: rawTgtX, y: rawTgtY } = getEndpointLabelPosition(targetX, targetY, targetPosition);
+
+  const labelShift = parallelCount > 1 ? (parallelIndex - (parallelCount - 1) / 2) * 14 : 0;
+  const isSrcHorizontal = sourcePosition === Position.Left || sourcePosition === Position.Right;
+  const isTgtHorizontal = targetPosition === Position.Left || targetPosition === Position.Right;
+
+  const sourceCardX = isSrcHorizontal ? rawSrcX : rawSrcX + labelShift;
+  const sourceCardY = isSrcHorizontal ? rawSrcY + labelShift : rawSrcY;
+  const targetCardX = isTgtHorizontal ? rawTgtX : rawTgtX + labelShift;
+  const targetCardY = isTgtHorizontal ? rawTgtY + labelShift : rawTgtY;
 
   const showSourceLabel = (!hideCardinality && !!relData?.sourceCardinality) || !!relData?.sourceRole;
   const showTargetLabel = (!hideCardinality && !!relData?.targetCardinality) || !!relData?.targetRole;
