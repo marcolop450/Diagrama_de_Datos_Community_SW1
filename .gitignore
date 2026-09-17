@@ -41,3 +41,15 @@ logs/
 # Scratch / Temporary
 scratch/
 
+# Agents and Skills Configuration
+.agents/
+AGENTS.md
+SKILLS_REGISTRY_BACKUP.md
+skills-lock.json
+
+# Internal Project Documentation & Architecture Guides
+DOCUMENTACION_PROYECTO.md
+ESTRUCTURA_PROYECTO.md
+
+# Deployment & Docker (Internal Orchestration)
+docker-compose.yml
