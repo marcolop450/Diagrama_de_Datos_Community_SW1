@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,6 +26,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/projects/{projectId}/generate")
 @RequiredArgsConstructor
+@PreAuthorize("hasAnyRole('ARQUITECTO', 'SUPER_ADMIN')")
 @Tag(name = "Generador CASE (CU13, CU14, CU15)", description = "Generación de backend Spring Boot, Esquemas DDL SQL PostgreSQL 17 y Colecciones Postman v2.1")
 public class GeneratorController {
 

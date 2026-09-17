@@ -165,20 +165,20 @@ export const AdminUsersPage: React.FC = () => {
 
   return (
     <AppLayout>
-      <div className="max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
+      <div className="max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 pb-20 flex flex-col gap-6 font-sans">
         {/* Title and Refresh */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#242934] pb-5">
           <div>
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-purple-600/20 border border-purple-500/40 flex items-center justify-center text-purple-400 shadow-xs">
+              <div className="w-8 h-8 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shadow-xs">
                 <ShieldAlert size={18} />
               </div>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white font-display">
                 Gestión de Usuarios y Roles
               </h1>
             </div>
             <p className="text-xs sm:text-sm text-slate-400 mt-1">
-              Supervisión de cuentas registradas, administración de roles, estado de activación y bitácora de seguridad.
+              Supervisión de cuentas registradas, administración de roles, estado de activación y gobernanza del sistema.
             </p>
           </div>
 
@@ -186,9 +186,9 @@ export const AdminUsersPage: React.FC = () => {
             <button
               onClick={handleRefresh}
               disabled={refreshing}
-              className="flex items-center gap-2 px-3 py-1.5 bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white rounded-lg text-xs font-semibold transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+              className="flex items-center gap-2 px-3 py-1.5 bg-[#14171d] hover:bg-[#181c24] border border-[#242934] hover:border-[#2e3543] text-slate-300 hover:text-white rounded-xl text-xs font-semibold transition-all active:scale-95 cursor-pointer disabled:opacity-50"
             >
-              <RefreshCw size={13} className={refreshing ? 'animate-spin text-purple-400' : 'text-purple-400'} />
+              <RefreshCw size={13} className={refreshing ? 'animate-spin text-indigo-400' : 'text-indigo-400'} />
               <span>{refreshing ? 'Actualizando...' : 'Actualizar'}</span>
             </button>
           </div>
@@ -196,75 +196,75 @@ export const AdminUsersPage: React.FC = () => {
 
         {/* Metrics Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <div className="bg-slate-900/50 border border-slate-800/90 rounded-lg p-3.5 flex flex-col hover:border-slate-700/60 transition-colors">
+          <div className="bg-[#14171d] border border-[#242934] rounded-2xl p-3.5 flex flex-col hover:border-[#2e3543] transition-colors">
             <div className="flex items-center justify-between text-slate-400 mb-2">
               <span className="text-xs font-medium">Total Usuarios</span>
-              <Users size={15} className="text-blue-400" />
+              <Users size={15} className="text-slate-400" />
             </div>
-            <span className="text-2xl font-bold font-mono text-white">
+            <span className="text-2xl font-bold font-display text-white">
               {metrics ? metrics.totalUsers : '-'}
             </span>
-            <span className="text-[10px] text-slate-500 mt-1">Registrados</span>
+            <span className="text-[10px] font-mono text-slate-500 mt-1">Registrados</span>
           </div>
 
-          <div className="bg-slate-900/50 border border-purple-900/30 rounded-lg p-3.5 flex flex-col hover:border-purple-800/50 transition-colors">
-            <div className="flex items-center justify-between text-purple-300 mb-2">
+          <div className="bg-[#14171d] border border-[#242934] rounded-2xl p-3.5 flex flex-col hover:border-[#2e3543] transition-colors">
+            <div className="flex items-center justify-between text-indigo-300/80 mb-2">
               <span className="text-xs font-medium">Super Admins</span>
-              <ShieldCheck size={15} className="text-purple-400" />
+              <ShieldCheck size={15} className="text-indigo-400" />
             </div>
-            <span className="text-2xl font-bold font-mono text-purple-200">
+            <span className="text-2xl font-bold font-display text-indigo-200">
               {metrics ? metrics.totalSuperAdmins : '-'}
             </span>
-            <span className="text-[10px] text-purple-400/70 mt-1">Control Total</span>
+            <span className="text-[10px] font-mono text-indigo-400/70 mt-1">Control Total</span>
           </div>
 
-          <div className="bg-slate-900/50 border border-blue-900/30 rounded-lg p-3.5 flex flex-col hover:border-blue-800/50 transition-colors">
-            <div className="flex items-center justify-between text-blue-300 mb-2">
+          <div className="bg-[#14171d] border border-[#242934] rounded-2xl p-3.5 flex flex-col hover:border-[#2e3543] transition-colors">
+            <div className="flex items-center justify-between text-blue-300/80 mb-2">
               <span className="text-xs font-medium">Arquitectos</span>
               <Layers size={15} className="text-blue-400" />
             </div>
-            <span className="text-2xl font-bold font-mono text-blue-200">
+            <span className="text-2xl font-bold font-display text-blue-200">
               {metrics ? metrics.totalArchitects : '-'}
             </span>
-            <span className="text-[10px] text-blue-400/70 mt-1">Modelado CASE</span>
+            <span className="text-[10px] font-mono text-blue-400/70 mt-1">Modelado CASE</span>
           </div>
 
-          <div className="bg-slate-900/50 border border-emerald-900/30 rounded-lg p-3.5 flex flex-col hover:border-emerald-800/50 transition-colors">
-            <div className="flex items-center justify-between text-emerald-300 mb-2">
+          <div className="bg-[#14171d] border border-[#242934] rounded-2xl p-3.5 flex flex-col hover:border-[#2e3543] transition-colors">
+            <div className="flex items-center justify-between text-emerald-300/80 mb-2">
               <span className="text-xs font-medium">Colaboradores</span>
               <Users size={15} className="text-emerald-400" />
             </div>
-            <span className="text-2xl font-bold font-mono text-emerald-200">
+            <span className="text-2xl font-bold font-display text-emerald-200">
               {metrics ? metrics.totalCollaborators : '-'}
             </span>
-            <span className="text-[10px] text-emerald-400/70 mt-1">Co-diseño</span>
+            <span className="text-[10px] font-mono text-emerald-400/70 mt-1">Co-diseño</span>
           </div>
 
-          <div className="bg-slate-900/50 border border-slate-800/90 rounded-lg p-3.5 flex flex-col hover:border-slate-700/60 transition-colors">
+          <div className="bg-[#14171d] border border-[#242934] rounded-2xl p-3.5 flex flex-col hover:border-[#2e3543] transition-colors">
             <div className="flex items-center justify-between text-slate-400 mb-2">
               <span className="text-xs font-medium">Cuentas Activas</span>
               <UserCheck size={15} className="text-emerald-400" />
             </div>
-            <span className="text-2xl font-bold font-mono text-emerald-400">
+            <span className="text-2xl font-bold font-display text-emerald-400">
               {metrics ? metrics.totalActiveUsers : '-'}
             </span>
-            <span className="text-[10px] text-slate-500 mt-1">Habilitadas</span>
+            <span className="text-[10px] font-mono text-slate-500 mt-1">Habilitadas</span>
           </div>
 
-          <div className="bg-slate-900/50 border border-slate-800/90 rounded-lg p-3.5 flex flex-col hover:border-slate-700/60 transition-colors">
+          <div className="bg-[#14171d] border border-[#242934] rounded-2xl p-3.5 flex flex-col hover:border-[#2e3543] transition-colors">
             <div className="flex items-center justify-between text-slate-400 mb-2">
               <span className="text-xs font-medium">Suspendidos</span>
               <UserX size={15} className="text-rose-400" />
             </div>
-            <span className="text-2xl font-bold font-mono text-rose-400">
+            <span className="text-2xl font-bold font-display text-rose-400">
               {metrics ? metrics.totalInactiveUsers : '-'}
             </span>
-            <span className="text-[10px] text-slate-500 mt-1">Bloqueadas</span>
+            <span className="text-[10px] font-mono text-slate-500 mt-1">Bloqueadas</span>
           </div>
         </div>
 
         {/* Search & Filters */}
-        <div className="bg-slate-900/40 border border-slate-800 rounded-lg p-3 sm:p-3.5 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+        <div className="bg-[#14171d] border border-[#242934] rounded-2xl p-3 sm:p-3.5 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
           <div className="relative flex-1">
             <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
             <input
@@ -272,54 +272,54 @@ export const AdminUsersPage: React.FC = () => {
               placeholder="Buscar por nombre, usuario o correo electrónico..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 focus:border-purple-500 text-slate-100 placeholder:text-slate-500 rounded-md pl-9 pr-3 py-1.5 text-xs focus:outline-none transition-colors"
+              className="w-full bg-[#0f1115] border border-[#242934] focus:border-indigo-500 text-slate-100 placeholder:text-slate-500 rounded-xl pl-9 pr-3 py-1.5 text-xs focus:outline-none transition-colors"
             />
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-md px-2.5 py-1.5 text-xs text-slate-300">
+            <div className="flex items-center gap-1.5 bg-[#0f1115] border border-[#242934] rounded-xl px-2.5 py-1.5 text-xs text-slate-300">
               <Filter size={13} className="text-slate-500" />
               <select
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value)}
                 className="bg-transparent text-slate-200 text-xs focus:outline-none cursor-pointer"
               >
-                <option value="ALL" className="bg-slate-900 text-white">Todos los Roles</option>
-                <option value="SUPER_ADMIN" className="bg-slate-900 text-white">SUPER_ADMIN</option>
-                <option value="ARQUITECTO" className="bg-slate-900 text-white">ARQUITECTO</option>
-                <option value="COLABORADOR" className="bg-slate-900 text-white">COLABORADOR</option>
+                <option value="ALL" className="bg-[#14171d] text-white">Todos los Roles</option>
+                <option value="SUPER_ADMIN" className="bg-[#14171d] text-white">SUPER_ADMIN</option>
+                <option value="ARQUITECTO" className="bg-[#14171d] text-white">ARQUITECTO</option>
+                <option value="COLABORADOR" className="bg-[#14171d] text-white">COLABORADOR</option>
               </select>
             </div>
 
-            <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-md px-2.5 py-1.5 text-xs text-slate-300">
+            <div className="flex items-center gap-1.5 bg-[#0f1115] border border-[#242934] rounded-xl px-2.5 py-1.5 text-xs text-slate-300">
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="bg-transparent text-slate-200 text-xs focus:outline-none cursor-pointer"
               >
-                <option value="ALL" className="bg-slate-900 text-white">Todos los Estados</option>
-                <option value="ACTIVE" className="bg-slate-900 text-white">Solo Activos</option>
-                <option value="INACTIVE" className="bg-slate-900 text-white">Solo Suspendidos</option>
+                <option value="ALL" className="bg-[#14171d] text-white">Todos los Estados</option>
+                <option value="ACTIVE" className="bg-[#14171d] text-white">Solo Activos</option>
+                <option value="INACTIVE" className="bg-[#14171d] text-white">Solo Suspendidos</option>
               </select>
             </div>
           </div>
         </div>
 
         {/* Users Table */}
-        <div className="bg-slate-900/40 border border-slate-800 rounded-lg overflow-hidden shadow-sm">
+        <div className="bg-[#14171d] border border-[#242934] rounded-2xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-slate-950/80 text-slate-400 font-mono text-[11px] uppercase tracking-wider border-b border-slate-800">
-                  <th className="py-3 px-4">Usuario</th>
-                  <th className="py-3 px-4">Correo Electrónico</th>
-                  <th className="py-3 px-4">Rol Asignado</th>
-                  <th className="py-3 px-4">Estado</th>
-                  <th className="py-3 px-4">Fecha Alta</th>
-                  <th className="py-3 px-4 text-right">Acciones</th>
+                <tr className="bg-[#0f1115] text-slate-400 font-mono text-[11px] uppercase tracking-wider border-b border-[#242934]">
+                  <th className="py-3.5 px-4 font-semibold">Usuario</th>
+                  <th className="py-3.5 px-4 font-semibold">Correo Electrónico</th>
+                  <th className="py-3.5 px-4 font-semibold">Rol Asignado</th>
+                  <th className="py-3.5 px-4 font-semibold">Estado</th>
+                  <th className="py-3.5 px-4 font-semibold">Fecha Alta</th>
+                  <th className="py-3.5 px-4 text-right font-semibold">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60">
+              <tbody className="divide-y divide-[#242934]/60">
                 {loading ? (
                   <tr>
                     <td colSpan={6} className="py-12 text-center text-slate-500 animate-pulse font-mono">
@@ -340,24 +340,24 @@ export const AdminUsersPage: React.FC = () => {
                       <tr 
                         key={u.id}
                         className={`transition-colors ${
-                          isSelf ? 'bg-purple-950/10 hover:bg-purple-950/20' : 'hover:bg-slate-850/40'
+                          isSelf ? 'bg-indigo-950/15 hover:bg-indigo-950/25' : 'hover:bg-[#181c24]'
                         }`}
                       >
                         {/* User info */}
-                        <td className="py-3 px-4">
+                        <td className="py-3.5 px-4">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700/80 flex items-center justify-center font-bold text-slate-200 overflow-hidden shrink-0">
+                            <div className="w-8 h-8 rounded-xl bg-[#181c24] border border-[#2e3543] flex items-center justify-center font-bold text-slate-200 overflow-hidden shrink-0">
                               {u.avatarUrl ? (
                                 <img src={u.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                               ) : (
-                                <span>{u.fullName?.charAt(0).toUpperCase() || 'U'}</span>
+                                <span className="font-mono text-xs">{u.fullName?.charAt(0).toUpperCase() || 'U'}</span>
                               )}
                             </div>
                             <div className="min-w-0">
                               <div className="flex items-center gap-1.5">
                                 <span className="font-semibold text-white truncate">{u.fullName}</span>
                                 {isSelf && (
-                                  <span className="px-1.5 py-0.2 text-[9px] font-mono bg-purple-600/30 text-purple-300 border border-purple-500/40 rounded">
+                                  <span className="px-1.5 py-0.5 text-[9px] font-mono bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-md">
                                     TÚ
                                   </span>
                                 )}
@@ -370,15 +370,15 @@ export const AdminUsersPage: React.FC = () => {
                         </td>
 
                         {/* Email */}
-                        <td className="py-3 px-4 text-slate-300 font-mono">
+                        <td className="py-3.5 px-4 text-slate-300 font-mono">
                           {u.email}
                         </td>
 
                         {/* Role */}
-                        <td className="py-3 px-4">
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-mono font-semibold border ${
+                        <td className="py-3.5 px-4">
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-mono font-semibold border ${
                             u.role === 'SUPER_ADMIN'
-                              ? 'bg-purple-500/10 border-purple-500/30 text-purple-300'
+                              ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-300'
                               : u.role === 'COLABORADOR'
                                 ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
                                 : 'bg-blue-500/10 border-blue-500/30 text-blue-300'
@@ -389,14 +389,14 @@ export const AdminUsersPage: React.FC = () => {
                         </td>
 
                         {/* Status */}
-                        <td className="py-3 px-4">
+                        <td className="py-3.5 px-4">
                           {u.isActive ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-medium bg-emerald-950/60 text-emerald-400 border border-emerald-800/50">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                               Activo
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-medium bg-rose-950/60 text-rose-400 border border-rose-800/50">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-medium bg-rose-500/10 text-rose-400 border border-rose-500/30">
                               <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
                               Suspendido
                             </span>
@@ -404,22 +404,22 @@ export const AdminUsersPage: React.FC = () => {
                         </td>
 
                         {/* Created At */}
-                        <td className="py-3 px-4 text-slate-400 font-mono text-[11px]">
+                        <td className="py-3.5 px-4 text-slate-400 font-mono text-[11px]">
                           {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'Reciente'}
                         </td>
 
                         {/* Actions */}
-                        <td className="py-3 px-4 text-right">
+                        <td className="py-3.5 px-4 text-right">
                           <div className="flex items-center justify-end gap-1.5">
                             {/* Change Role Button */}
                             <button
                               onClick={() => handleOpenRoleModal(u)}
                               disabled={isSelf}
                               title={isSelf ? "No puedes modificar tu propio rol" : "Modificar Rol RBAC"}
-                              className={`p-1.5 rounded-lg border text-xs font-semibold transition-colors ${
+                              className={`p-1.5 rounded-xl border text-xs font-semibold transition-colors ${
                                 isSelf
-                                  ? 'opacity-30 cursor-not-allowed border-slate-800 text-slate-600'
-                                  : 'bg-slate-900 hover:bg-slate-800 border-slate-800 hover:border-purple-500/50 text-purple-300 hover:text-purple-200 cursor-pointer'
+                                  ? 'opacity-30 cursor-not-allowed border-[#242934] text-slate-600'
+                                  : 'bg-[#181c24] hover:bg-[#1e232e] border-[#242934] hover:border-indigo-500/50 text-indigo-300 hover:text-indigo-200 cursor-pointer'
                               }`}
                             >
                               <Edit3 size={13} />
@@ -430,12 +430,12 @@ export const AdminUsersPage: React.FC = () => {
                               onClick={() => setStatusModalUser(u)}
                               disabled={isSelf}
                               title={isSelf ? "No puedes suspender tu propia cuenta" : u.isActive ? "Suspender cuenta" : "Reactivar cuenta"}
-                              className={`p-1.5 rounded-lg border text-xs font-semibold transition-colors ${
+                              className={`p-1.5 rounded-xl border text-xs font-semibold transition-colors ${
                                 isSelf
-                                  ? 'opacity-30 cursor-not-allowed border-slate-800 text-slate-600'
+                                  ? 'opacity-30 cursor-not-allowed border-[#242934] text-slate-600'
                                   : u.isActive
-                                    ? 'bg-slate-900 hover:bg-rose-950/40 border-slate-800 hover:border-rose-800/60 text-rose-400 cursor-pointer'
-                                    : 'bg-slate-900 hover:bg-emerald-950/40 border-slate-800 hover:border-emerald-800/60 text-emerald-400 cursor-pointer'
+                                    ? 'bg-[#181c24] hover:bg-rose-950/40 border-[#242934] hover:border-rose-500/40 text-rose-400 cursor-pointer'
+                                    : 'bg-[#181c24] hover:bg-emerald-950/40 border-[#242934] hover:border-emerald-500/40 text-emerald-400 cursor-pointer'
                               }`}
                             >
                               <Power size={13} />
@@ -455,11 +455,11 @@ export const AdminUsersPage: React.FC = () => {
       {/* Role Change Modal */}
       {roleModalUser && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-lg p-5 sm:p-6 shadow-2xl flex flex-col gap-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div className="bg-[#14171d] border border-[#242934] w-full max-w-md rounded-2xl p-5 sm:p-6 shadow-2xl flex flex-col gap-4">
+            <div className="flex items-center justify-between border-b border-[#242934] pb-3">
               <div className="flex items-center gap-2">
-                <Crown size={16} className="text-purple-400" />
-                <h3 className="font-bold text-white text-sm">
+                <Crown size={16} className="text-indigo-400" />
+                <h3 className="font-bold text-white text-sm font-display">
                   Asignar Rol de Usuario
                 </h3>
               </div>
@@ -477,14 +477,13 @@ export const AdminUsersPage: React.FC = () => {
 
             <div className="flex flex-col gap-2">
               <label className="text-xs font-medium text-slate-300">Selecciona el nuevo rol:</label>
-              
               <div className="grid grid-cols-1 gap-2">
                 {[
                   { 
                     role: 'SUPER_ADMIN', 
                     title: 'SUPER_ADMIN', 
-                    desc: 'Acceso total a la gobernanza, gestión de usuarios, auditoría y modelos.',
-                    border: 'border-purple-500/40 text-purple-300'
+                    desc: 'Acceso total a la gobernanza, supervisión de usuarios, auditoría y modelos.',
+                    border: 'border-indigo-500/40 text-indigo-300'
                   },
                   { 
                     role: 'ARQUITECTO', 
@@ -503,15 +502,15 @@ export const AdminUsersPage: React.FC = () => {
                     key={item.role}
                     type="button"
                     onClick={() => setSelectedNewRole(item.role)}
-                    className={`p-3 rounded-lg border text-left transition-all cursor-pointer ${
+                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                       selectedNewRole === item.role
-                        ? `bg-slate-800 ${item.border} ring-1 ring-purple-500/30`
-                        : 'bg-slate-950 border-slate-800 hover:border-slate-700 text-slate-400'
+                        ? `bg-[#181c24] ${item.border} ring-1 ring-indigo-500/30`
+                        : 'bg-[#0f1115] border-[#242934] hover:border-[#2e3543] text-slate-400'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="font-semibold text-xs text-white">{item.title}</span>
-                      {selectedNewRole === item.role && <Check size={14} className="text-purple-400" />}
+                      <span className="font-semibold text-xs text-white font-mono">{item.title}</span>
+                      {selectedNewRole === item.role && <Check size={14} className="text-indigo-400" />}
                     </div>
                     <p className="text-[11px] text-slate-400">{item.desc}</p>
                   </button>
@@ -519,17 +518,17 @@ export const AdminUsersPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800 mt-2">
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#242934]">
               <button
                 onClick={() => setRoleModalUser(null)}
-                className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-md text-xs font-medium transition-colors cursor-pointer"
+                className="px-3.5 py-1.5 bg-[#181c24] hover:bg-[#1e232e] border border-[#242934] text-slate-300 rounded-xl text-xs font-medium transition-colors cursor-pointer"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleSaveRole}
                 disabled={savingAction}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-md text-xs font-semibold shadow-sm transition-all cursor-pointer disabled:opacity-50"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold shadow-sm transition-all cursor-pointer disabled:opacity-50"
               >
                 {savingAction ? <RefreshCw size={13} className="animate-spin" /> : <Check size={13} />}
                 <span>Guardar Rol</span>
@@ -543,10 +542,10 @@ export const AdminUsersPage: React.FC = () => {
       {/* Status Toggle Modal */}
       {statusModalUser && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-lg p-5 sm:p-6 shadow-2xl flex flex-col gap-4">
-            <div className="flex items-center gap-3 text-rose-400 border-b border-slate-800 pb-3">
+          <div className="bg-[#14171d] border border-[#242934] w-full max-w-md rounded-2xl p-5 sm:p-6 shadow-2xl flex flex-col gap-4">
+            <div className="flex items-center gap-3 text-rose-400 border-b border-[#242934] pb-3">
               <AlertTriangle size={18} />
-              <h3 className="font-bold text-white text-sm sm:text-base">
+              <h3 className="font-bold text-white text-sm sm:text-base font-display">
                 {statusModalUser.isActive ? '¿Suspender Cuenta de Usuario?' : '¿Reactivar Cuenta de Usuario?'}
               </h3>
             </div>
@@ -563,17 +562,17 @@ export const AdminUsersPage: React.FC = () => {
               )}
             </p>
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800 mt-2">
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#242934]">
               <button
                 onClick={() => setStatusModalUser(null)}
-                className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-md text-xs font-medium transition-colors cursor-pointer"
+                className="px-3.5 py-1.5 bg-[#181c24] hover:bg-[#1e232e] border border-[#242934] text-slate-300 rounded-xl text-xs font-medium transition-colors cursor-pointer"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleToggleStatus}
                 disabled={savingAction}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-semibold text-white shadow-sm transition-all cursor-pointer disabled:opacity-50 ${
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-white shadow-sm transition-all cursor-pointer disabled:opacity-50 ${
                   statusModalUser.isActive
                     ? 'bg-rose-600 hover:bg-rose-500'
                     : 'bg-emerald-600 hover:bg-emerald-500'

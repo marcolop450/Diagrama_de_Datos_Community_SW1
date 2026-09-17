@@ -128,11 +128,11 @@ const Sidebar: React.FC = () => {
               to="/dashboard"
               className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-semibold transition-all ${
                 location.pathname === '/dashboard'
-                  ? 'bg-blue-600/20 text-blue-300 border border-blue-500/40'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900 border border-transparent'
+                  ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/40'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 border border-transparent'
               }`}
             >
-              <LayoutDashboard size={15} className="shrink-0 text-blue-400" />
+              <LayoutDashboard size={15} className="shrink-0 text-indigo-400" />
               <span>Dashboard</span>
             </Link>
 
@@ -140,13 +140,27 @@ const Sidebar: React.FC = () => {
               to="/projects"
               className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-semibold transition-all ${
                 location.pathname === '/projects'
-                  ? 'bg-blue-600/20 text-blue-300 border border-blue-500/40'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900 border border-transparent'
+                  ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/40'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 border border-transparent'
               }`}
             >
-              <FolderKanban size={15} className="shrink-0 text-blue-400" />
-              <span>{isColaborador ? 'Modelos Compartidos' : 'Mis Proyectos UML'}</span>
+              <FolderKanban size={15} className="shrink-0 text-indigo-400" />
+              <span>{isColaborador ? 'Modelos UML y Práctica' : 'Mis Proyectos UML'}</span>
             </Link>
+
+            {!isColaborador && (
+              <Link
+                to="/collaborators"
+                className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-semibold transition-all ${
+                  location.pathname === '/collaborators'
+                    ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/40'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 border border-transparent'
+                }`}
+              >
+                <Users2 size={15} className="shrink-0 text-indigo-400" />
+                <span>Gestión de Colaboradores</span>
+              </Link>
+            )}
 
             {/* Contextual Active Editor Link (Only when an active project is selected) */}
             {project?.id && (
@@ -205,7 +219,7 @@ const Sidebar: React.FC = () => {
                 </div>
                 <button
                   onClick={() => navigate(`/editor/${project.id}`)}
-                  className="mt-1 w-full text-center py-1.5 px-2.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 rounded-md text-xs font-medium transition-colors cursor-pointer"
+                  className="mt-1 w-full text-center py-1.5 px-2.5 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 rounded-md text-xs font-medium transition-colors cursor-pointer"
                 >
                   Abrir en el Lienzo
                 </button>

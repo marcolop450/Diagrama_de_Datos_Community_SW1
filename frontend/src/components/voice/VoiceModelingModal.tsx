@@ -183,20 +183,20 @@ export const VoiceModelingModal: React.FC<VoiceModelingModalProps> = ({ isOpen, 
 
   return createPortal(
     <div
-      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-[95vw] max-w-2xl select-none animate-in fade-in slide-in-from-bottom-3 duration-200"
+      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-[95vw] max-w-2xl select-none animate-in fade-in slide-in-from-bottom-3 duration-200 font-sans"
       style={{ pointerEvents: 'auto' }}
     >
       {/* Popover de Sugerencias Rápidas */}
       {showSuggestions && (
-        <div className="mb-2 p-3 rounded-xl bg-slate-900/95 border border-slate-700/80 shadow-2xl backdrop-blur-xl flex flex-col gap-1.5 animate-in fade-in slide-in-from-bottom-2 duration-150">
-          <div className="flex items-center justify-between pb-1 border-b border-slate-800">
-            <span className="text-[11px] font-semibold tracking-wider uppercase text-slate-400 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+        <div className="mb-2 p-3 rounded-2xl bg-[#14171d]/95 border border-[#242934] shadow-2xl backdrop-blur-xl flex flex-col gap-1.5 animate-in fade-in slide-in-from-bottom-2 duration-150">
+          <div className="flex items-center justify-between pb-1 border-b border-[#242934]">
+            <span className="text-[11px] font-semibold tracking-wider uppercase text-slate-400 flex items-center gap-1.5 font-display">
+              <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
               Comandos sugeridos para dictar o ejecutar
             </span>
             <button
               onClick={() => setShowSuggestions(false)}
-              className="text-slate-500 hover:text-slate-300 p-0.5 rounded-sm"
+              className="text-slate-500 hover:text-slate-300 p-0.5 rounded-md cursor-pointer"
               title="Ocultar sugerencias"
             >
               <X className="w-3.5 h-3.5" />
@@ -207,7 +207,7 @@ export const VoiceModelingModal: React.FC<VoiceModelingModalProps> = ({ isOpen, 
               <button
                 key={idx}
                 onClick={() => handleChipClick(s)}
-                className="px-2.5 py-1 text-xs rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/60 transition-all text-left flex items-center gap-1 active:scale-95"
+                className="px-2.5 py-1 text-xs rounded-xl bg-[#181c24] hover:bg-[#1f2430] text-slate-300 hover:text-white border border-[#242934] transition-all text-left flex items-center gap-1 active:scale-95 cursor-pointer"
               >
                 <span>{s}</span>
               </button>
@@ -216,16 +216,16 @@ export const VoiceModelingModal: React.FC<VoiceModelingModalProps> = ({ isOpen, 
         </div>
       )}
 
-      {/* Dock Principal Flotante (No tapa el lienzo ni las tablas) */}
-      <div className="flex items-center gap-2 p-2 rounded-2xl bg-slate-900/95 border border-slate-700/80 shadow-2xl backdrop-blur-xl ring-1 ring-white/10">
+      {/* Dock Principal Flotante */}
+      <div className="flex items-center gap-2 p-2 rounded-2xl bg-[#14171d]/95 border border-[#242934] shadow-2xl backdrop-blur-xl ring-1 ring-white/5">
         {/* Botón de Micrófono con Pulso Activo */}
         <button
           onClick={handleToggleMic}
           disabled={isLoading}
-          className={`relative p-2.5 rounded-xl flex items-center justify-center transition-all ${
+          className={`relative p-2.5 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
             isListening
               ? 'bg-rose-600 text-white shadow-lg shadow-rose-600/40 ring-2 ring-rose-400 animate-pulse'
-              : 'bg-blue-600 hover:bg-blue-500 text-white shadow-md hover:shadow-blue-500/20 active:scale-95'
+              : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/20 active:scale-95'
           }`}
           title={isListening ? 'Detener escucha' : 'Hablar por micrófono'}
         >
@@ -235,7 +235,7 @@ export const VoiceModelingModal: React.FC<VoiceModelingModalProps> = ({ isOpen, 
           )}
         </button>
 
-        {/* Input de Comando en Vivo (Voz o Texto sin recorte de espacios) */}
+        {/* Input de Comando en Vivo */}
         <div className="relative flex-1 flex items-center">
           <input
             ref={inputRef}
@@ -249,10 +249,10 @@ export const VoiceModelingModal: React.FC<VoiceModelingModalProps> = ({ isOpen, 
                 ? 'Escuchando tu voz... (di: "Crear tabla Gatos conectado a Estudiante")'
                 : 'Habla o escribe aquí tu orden UML (ej: "Crear tabla Gatos conectado a Estudiante")...'
             }
-            className={`w-full bg-slate-800/80 border rounded-xl py-2 px-3.5 text-xs md:text-sm text-white select-text placeholder-slate-400 focus:outline-none transition-all ${
+            className={`w-full bg-[#0f1115] border rounded-xl py-2 px-3.5 text-xs md:text-sm text-white select-text placeholder-slate-500 focus:outline-none transition-all ${
               isListening
                 ? 'border-rose-500/60 ring-1 ring-rose-500/40 shadow-inner'
-                : 'border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
+                : 'border-[#242934] focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'
             }`}
           />
           {inputText && (
@@ -261,7 +261,7 @@ export const VoiceModelingModal: React.FC<VoiceModelingModalProps> = ({ isOpen, 
                 setInputText('');
                 resetTranscript();
               }}
-              className="absolute right-2.5 text-slate-400 hover:text-slate-200 p-1 rounded-md"
+              className="absolute right-2.5 text-slate-400 hover:text-white p-1 rounded-md cursor-pointer"
               title="Limpiar texto"
             >
               <X className="w-3.5 h-3.5" />
@@ -273,15 +273,15 @@ export const VoiceModelingModal: React.FC<VoiceModelingModalProps> = ({ isOpen, 
         <button
           onClick={() => handleExecute()}
           disabled={isLoading || !inputText.trim()}
-          className={`p-2.5 rounded-xl flex items-center justify-center transition-all ${
+          className={`p-2.5 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
             inputText.trim() && !isLoading
-              ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/30 active:scale-95'
-              : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700/50'
+              ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/30 active:scale-95'
+              : 'bg-[#181c24] text-slate-500 cursor-not-allowed border border-[#242934]'
           }`}
           title="Ejecutar y aplicar cambios en vivo"
         >
           {isLoading ? (
-            <Loader2 className="w-4 h-4 animate-spin text-emerald-400" />
+            <Loader2 className="w-4 h-4 animate-spin text-indigo-400" />
           ) : (
             <Send className="w-4 h-4" />
           )}
@@ -294,7 +294,7 @@ export const VoiceModelingModal: React.FC<VoiceModelingModalProps> = ({ isOpen, 
               undo();
               toast('Deshecho último cambio • Ctrl+Z');
             }}
-            className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/60 transition-all active:scale-95 hidden sm:flex items-center justify-center"
+            className="p-2.5 rounded-xl bg-[#181c24] hover:bg-[#1f2430] text-slate-300 hover:text-white border border-[#242934] transition-all active:scale-95 hidden sm:flex items-center justify-center cursor-pointer"
             title="Deshacer cambio (Ctrl+Z)"
           >
             <RotateCcw className="w-4 h-4" />
@@ -304,10 +304,10 @@ export const VoiceModelingModal: React.FC<VoiceModelingModalProps> = ({ isOpen, 
         {/* Botón Sugerencias */}
         <button
           onClick={() => setShowSuggestions(!showSuggestions)}
-          className={`p-2.5 rounded-xl border transition-all ${
+          className={`p-2.5 rounded-xl border transition-all cursor-pointer ${
             showSuggestions
-              ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-              : 'bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border-slate-700/60'
+              ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40'
+              : 'bg-[#181c24] hover:bg-[#1f2430] text-slate-400 hover:text-white border-[#242934]'
           }`}
           title="Ver comandos de ejemplo"
         >
@@ -317,7 +317,7 @@ export const VoiceModelingModal: React.FC<VoiceModelingModalProps> = ({ isOpen, 
         {/* Botón Cerrar Dock */}
         <button
           onClick={handleClose}
-          className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border border-slate-700/60 transition-all"
+          className="p-2.5 rounded-xl bg-[#181c24] hover:bg-[#1f2430] text-slate-400 hover:text-white border border-[#242934] transition-all cursor-pointer"
           title="Cerrar barra de IA (Esc)"
         >
           <X className="w-4 h-4" />

@@ -323,33 +323,33 @@ export default function DiagramCanvas() {
         className="w-full h-full flex flex-col items-center justify-center p-6 text-center select-none"
         style={{ backgroundColor: currentTheme.canvasBg }}
       >
-        <div className="max-w-md w-full p-8 bg-slate-900/70 border border-slate-800/90 rounded-lg shadow-2xl backdrop-blur-xs flex flex-col items-center gap-4 animate-fade-in">
-          <div className="w-16 h-16 rounded-md bg-blue-600/10 border border-blue-500/25 flex items-center justify-center text-blue-400 shadow-inner">
-            <Layers size={30} />
+        <div className="max-w-md w-full p-8 bg-[#14171d]/90 border border-[#242934] rounded-2xl shadow-2xl backdrop-blur-md flex flex-col items-center gap-5 animate-fade-in">
+          <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shadow-inner">
+            <Layers size={32} />
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <h2 className="text-lg font-bold text-slate-100 tracking-tight">
+          <div className="flex flex-col gap-2">
+            <h2 className="text-xl font-bold text-white tracking-tight font-display">
               Ningún modelo UML abierto
             </h2>
-            <p className="text-xs text-slate-400 leading-relaxed max-w-sm">
+            <p className="text-xs text-slate-400 leading-relaxed max-w-sm font-sans">
               Selecciona un modelo desde tus proyectos o crea uno nuevo para comenzar a modelar clases y relaciones en el editor CASE.
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full mt-2">
+          <div className="flex flex-col sm:flex-row items-center gap-3 w-full mt-2">
             <button
               onClick={() => navigate('/projects')}
-              className="w-full sm:flex-1 py-2.5 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-md text-xs font-semibold shadow-xs shadow-blue-500/20 transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+              className="w-full sm:flex-1 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold shadow-md transition-all active:scale-98 cursor-pointer flex items-center justify-center gap-2 font-sans"
             >
               <FolderKanban size={15} />
               <span>Mis Proyectos</span>
             </button>
             <button
               onClick={() => openModal('createProject')}
-              className="w-full sm:flex-1 py-2.5 px-4 bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-700/70 rounded-md text-xs font-semibold transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+              className="w-full sm:flex-1 py-2.5 px-4 bg-[#181c24] hover:bg-[#1f2430] text-slate-200 border border-[#242934] rounded-xl text-xs font-semibold transition-all active:scale-98 cursor-pointer flex items-center justify-center gap-2 font-sans"
             >
-              <FolderPlus size={15} className="text-blue-400" />
+              <FolderPlus size={15} className="text-indigo-400" />
               <span>Crear Modelo</span>
             </button>
           </div>
@@ -482,8 +482,8 @@ export default function DiagramCanvas() {
         {/* Viewer Mode Banner (CU18) */}
         {viewerMode && (
           <Panel position="top-center" className="!m-3">
-            <div className="flex items-center gap-2 px-3.5 py-1.5 bg-slate-900/90 border border-blue-500/50 text-blue-200 rounded-md text-xs font-mono shadow-lg backdrop-blur-md">
-              <Eye size={13} className="text-blue-400 shrink-0 animate-pulse" />
+            <div className="flex items-center gap-2 px-4 py-2 bg-[#14171d]/95 border border-indigo-500/40 text-indigo-300 rounded-xl text-xs font-mono shadow-2xl backdrop-blur-md">
+              <Eye size={14} className="text-indigo-400 shrink-0 animate-pulse" />
               <span>Modo Solo Lectura (Lector) activo — Visualizando el modelo en tiempo real</span>
             </div>
           </Panel>
@@ -493,38 +493,38 @@ export default function DiagramCanvas() {
         {(isPlacementMode || isAreaSelectMode || showBanner) && (
           <Panel position="top-center" className="!m-3">
             {isPlacementMode ? (
-              <div className="flex items-center gap-2.5 px-4 py-2 bg-gradient-to-r from-blue-900/90 to-indigo-900/90 border border-blue-400/50 text-blue-100 rounded-md text-xs font-mono shadow-2xl backdrop-blur-md animate-bounce">
-                <MousePointerClick size={15} className="text-blue-300 animate-pulse" />
+              <div className="flex items-center gap-2.5 px-4 py-2 bg-[#14171d]/95 border border-indigo-500/50 text-white rounded-xl text-xs font-mono shadow-2xl backdrop-blur-md">
+                <MousePointerClick size={15} className="text-indigo-400 animate-pulse" />
                 <span>Haz clic en el lienzo para colocar la {activeTool === 'add-interface' ? 'Interfaz' : activeTool === 'add-abstract' ? 'Clase Abstracta' : 'Clase'}</span>
                 <button 
                   onClick={() => setActiveTool('pointer')}
-                  className="p-1 hover:bg-white/10 rounded ml-1 cursor-pointer"
+                  className="p-1 hover:bg-white/10 rounded-lg ml-1 cursor-pointer"
                   title="Cancelar • Esc"
                 >
                   <X size={13} />
                 </button>
               </div>
             ) : isAreaSelectMode ? (
-              <div className="flex items-center gap-2.5 px-4 py-2 bg-gradient-to-r from-blue-900/90 to-indigo-900/90 border border-blue-400/50 text-blue-100 rounded-md text-xs font-mono shadow-2xl backdrop-blur-md">
-                <BoxSelect size={15} className="text-blue-300 animate-pulse" />
+              <div className="flex items-center gap-2.5 px-4 py-2 bg-[#14171d]/95 border border-indigo-500/50 text-white rounded-xl text-xs font-mono shadow-2xl backdrop-blur-md">
+                <BoxSelect size={15} className="text-indigo-400 animate-pulse" />
                 <span>Modo Selección por Área: Arrastra con el mouse en el lienzo para seleccionar múltiples elementos</span>
                 <button 
                   onClick={() => setActiveTool('pointer')}
-                  className="p-1 hover:bg-white/10 rounded ml-1 cursor-pointer"
+                  className="p-1 hover:bg-white/10 rounded-lg ml-1 cursor-pointer"
                   title="Volver a Puntero • Esc"
                 >
                   <X size={13} />
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-900/85 border border-slate-800/80 text-slate-300 rounded-md text-xs font-mono shadow-lg backdrop-blur-md animate-fade-in">
-                <Info size={13} className="text-blue-400 shrink-0" />
+              <div className="flex items-center gap-2 px-3.5 py-1.5 bg-[#14171d]/90 border border-[#242934] text-slate-300 rounded-xl text-xs font-mono shadow-xl backdrop-blur-md animate-fade-in">
+                <Info size={13} className="text-indigo-400 shrink-0" />
                 <span className="hidden sm:inline">Haz clic en una clase para editarla o selecciona una herramienta para colocar</span>
                 <span className="sm:hidden">Toca una clase para editar</span>
                 <button
                   type="button"
                   onClick={() => setShowBanner(false)}
-                  className="p-0.5 hover:bg-slate-800 text-slate-400 hover:text-slate-200 rounded transition-colors cursor-pointer ml-1"
+                  className="p-0.5 hover:bg-[#1f2430] text-slate-400 hover:text-white rounded transition-colors cursor-pointer ml-1"
                   title="Cerrar mensaje"
                 >
                   <X size={13} />

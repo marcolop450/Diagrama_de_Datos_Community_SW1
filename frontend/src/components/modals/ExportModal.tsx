@@ -109,22 +109,18 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fade-in">
       <div 
-        className="border rounded-lg w-full max-w-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden transition-colors duration-200"
-        style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
+        className="border border-[#242934] bg-[#14171d] rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden transition-colors duration-200"
       >
         {/* Modal Header */}
-        <div 
-          className="px-6 py-4 border-b flex items-center justify-between"
-          style={{ borderColor: 'var(--border-subtle)', backgroundColor: 'var(--bg-card)' }}
-        >
+        <div className="px-6 py-4 border-b border-[#242934] flex items-center justify-between bg-[#11141a]">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-md bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
+            <div className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
               <Download size={20} />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-slate-100 flex items-center gap-2">
+              <h2 className="text-base font-semibold text-slate-100 font-display flex items-center gap-2">
                 Exportar Modelo y Documentación Técnica
               </h2>
               <p className="text-xs text-slate-400">
@@ -135,16 +131,16 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
           <button
             onClick={onClose}
             disabled={isExporting}
-            className="p-1.5 rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#1f2430] transition-colors cursor-pointer"
             title="Cerrar modal"
           >
             <X size={18} />
           </button>
         </div>
 
-        {/* Empty Model Warning Guard (E1) */}
+        {/* Empty Model Warning Guard */}
         {isModelEmpty && (
-          <div className="mx-6 mt-4 p-3.5 bg-amber-950/40 border border-amber-800/60 rounded-md flex items-start gap-3">
+          <div className="mx-6 mt-4 p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
             <div className="text-xs text-amber-200">
               <p className="font-semibold mb-0.5">Modelo vacío sin clases</p>
@@ -167,21 +163,21 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
               <button
                 type="button"
                 onClick={() => setSelectedFormat('XMI')}
-                className={`p-3.5 rounded-lg border text-left transition-all cursor-pointer flex items-start gap-3 ${
+                className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex items-start gap-3 ${
                   selectedFormat === 'XMI'
-                    ? 'border-blue-500 bg-blue-950/30 shadow-xs ring-1 ring-blue-500/50'
-                    : 'border-slate-800 bg-slate-900/60 hover:bg-slate-900 hover:border-slate-700'
+                    ? 'border-indigo-500 bg-indigo-500/10 shadow-sm ring-1 ring-indigo-500/40'
+                    : 'border-[#242934] bg-[#181c24] hover:bg-[#1f2430] hover:border-indigo-500/40'
                 }`}
               >
-                <div className={`p-2 rounded-md shrink-0 ${
-                  selectedFormat === 'XMI' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400'
+                <div className={`p-2 rounded-lg shrink-0 ${
+                  selectedFormat === 'XMI' ? 'bg-indigo-600 text-white' : 'bg-[#0f1115] text-slate-400 border border-[#242934]'
                 }`}>
                   <FileCode2 size={20} />
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5">
                     <span className="text-sm font-semibold text-slate-200">OMG XMI 2.1</span>
-                    <span className="text-[10px] px-1.5 py-0.2 bg-blue-500/20 text-blue-300 rounded font-mono">UML 2.1</span>
+                    <span className="text-[10px] px-1.5 py-0.2 bg-indigo-500/20 text-indigo-300 rounded font-mono">UML 2.1</span>
                   </div>
                   <p className="text-xs text-slate-400 mt-1 line-clamp-2">
                     Intercambio estándar XML compatible con StarUML, ArchiTec y modeladores CASE.
@@ -193,14 +189,14 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
               <button
                 type="button"
                 onClick={() => setSelectedFormat('PNG')}
-                className={`p-3.5 rounded-lg border text-left transition-all cursor-pointer flex items-start gap-3 ${
+                className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex items-start gap-3 ${
                   selectedFormat === 'PNG'
-                    ? 'border-blue-500 bg-blue-950/30 shadow-xs ring-1 ring-blue-500/50'
-                    : 'border-slate-800 bg-slate-900/60 hover:bg-slate-900 hover:border-slate-700'
+                    ? 'border-indigo-500 bg-indigo-500/10 shadow-sm ring-1 ring-indigo-500/40'
+                    : 'border-[#242934] bg-[#181c24] hover:bg-[#1f2430] hover:border-indigo-500/40'
                 }`}
               >
-                <div className={`p-2 rounded-md shrink-0 ${
-                  selectedFormat === 'PNG' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400'
+                <div className={`p-2 rounded-lg shrink-0 ${
+                  selectedFormat === 'PNG' ? 'bg-indigo-600 text-white' : 'bg-[#0f1115] text-slate-400 border border-[#242934]'
                 }`}>
                   <ImageIcon size={20} />
                 </div>
@@ -219,14 +215,14 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
               <button
                 type="button"
                 onClick={() => setSelectedFormat('PDF')}
-                className={`p-3.5 rounded-lg border text-left transition-all cursor-pointer flex items-start gap-3 ${
+                className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex items-start gap-3 ${
                   selectedFormat === 'PDF'
-                    ? 'border-blue-500 bg-blue-950/30 shadow-xs ring-1 ring-blue-500/50'
-                    : 'border-slate-800 bg-slate-900/60 hover:bg-slate-900 hover:border-slate-700'
+                    ? 'border-indigo-500 bg-indigo-500/10 shadow-sm ring-1 ring-indigo-500/40'
+                    : 'border-[#242934] bg-[#181c24] hover:bg-[#1f2430] hover:border-indigo-500/40'
                 }`}
               >
-                <div className={`p-2 rounded-md shrink-0 ${
-                  selectedFormat === 'PDF' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400'
+                <div className={`p-2 rounded-lg shrink-0 ${
+                  selectedFormat === 'PDF' ? 'bg-indigo-600 text-white' : 'bg-[#0f1115] text-slate-400 border border-[#242934]'
                 }`}>
                   <FileText size={20} />
                 </div>
@@ -245,14 +241,14 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
               <button
                 type="button"
                 onClick={() => setSelectedFormat('EXCEL')}
-                className={`p-3.5 rounded-lg border text-left transition-all cursor-pointer flex items-start gap-3 ${
+                className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex items-start gap-3 ${
                   selectedFormat === 'EXCEL'
-                    ? 'border-blue-500 bg-blue-950/30 shadow-xs ring-1 ring-blue-500/50'
-                    : 'border-slate-800 bg-slate-900/60 hover:bg-slate-900 hover:border-slate-700'
+                    ? 'border-indigo-500 bg-indigo-500/10 shadow-sm ring-1 ring-indigo-500/40'
+                    : 'border-[#242934] bg-[#181c24] hover:bg-[#1f2430] hover:border-indigo-500/40'
                 }`}
               >
-                <div className={`p-2 rounded-md shrink-0 ${
-                  selectedFormat === 'EXCEL' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400'
+                <div className={`p-2 rounded-lg shrink-0 ${
+                  selectedFormat === 'EXCEL' ? 'bg-indigo-600 text-white' : 'bg-[#0f1115] text-slate-400 border border-[#242934]'
                 }`}>
                   <FileSpreadsheet size={20} />
                 </div>
@@ -267,18 +263,18 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
                 </div>
               </button>
 
-              {/* Option 5: PostgreSQL 17 SQL DDL (CU14) */}
+              {/* Option 5: PostgreSQL 17 SQL DDL */}
               <button
                 type="button"
                 onClick={() => setSelectedFormat('SQL')}
-                className={`p-3.5 rounded-lg border text-left transition-all cursor-pointer flex items-start gap-3 ${
+                className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex items-start gap-3 ${
                   selectedFormat === 'SQL'
-                    ? 'border-emerald-500 bg-emerald-950/30 shadow-xs ring-1 ring-emerald-500/50'
-                    : 'border-slate-800 bg-slate-900/60 hover:bg-slate-900 hover:border-slate-700'
+                    ? 'border-emerald-500 bg-emerald-500/10 shadow-sm ring-1 ring-emerald-500/40'
+                    : 'border-[#242934] bg-[#181c24] hover:bg-[#1f2430] hover:border-emerald-500/40'
                 }`}
               >
-                <div className={`p-2 rounded-md shrink-0 ${
-                  selectedFormat === 'SQL' ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'
+                <div className={`p-2 rounded-lg shrink-0 ${
+                  selectedFormat === 'SQL' ? 'bg-emerald-600 text-white' : 'bg-[#0f1115] text-slate-400 border border-[#242934]'
                 }`}>
                   <Database size={20} />
                 </div>
@@ -293,18 +289,18 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
                 </div>
               </button>
 
-              {/* Option 6: Postman Collection v2.1 (CU15) */}
+              {/* Option 6: Postman Collection v2.1 */}
               <button
                 type="button"
                 onClick={() => setSelectedFormat('POSTMAN')}
-                className={`p-3.5 rounded-lg border text-left transition-all cursor-pointer flex items-start gap-3 ${
+                className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex items-start gap-3 ${
                   selectedFormat === 'POSTMAN'
-                    ? 'border-amber-500 bg-amber-950/30 shadow-xs ring-1 ring-amber-500/50'
-                    : 'border-slate-800 bg-slate-900/60 hover:bg-slate-900 hover:border-slate-700'
+                    ? 'border-amber-500 bg-amber-500/10 shadow-sm ring-1 ring-amber-500/40'
+                    : 'border-[#242934] bg-[#181c24] hover:bg-[#1f2430] hover:border-amber-500/40'
                 }`}
               >
-                <div className={`p-2 rounded-md shrink-0 ${
-                  selectedFormat === 'POSTMAN' ? 'bg-amber-600 text-white' : 'bg-slate-800 text-slate-400'
+                <div className={`p-2 rounded-lg shrink-0 ${
+                  selectedFormat === 'POSTMAN' ? 'bg-amber-600 text-white' : 'bg-[#0f1115] text-slate-400 border border-[#242934]'
                 }`}>
                   <Send size={20} />
                 </div>
@@ -322,11 +318,11 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
           </div>
 
           {/* Contextual Options based on selected format */}
-          <div className="p-4 rounded-lg border border-slate-800/80 bg-slate-900/40">
+          <div className="p-4 rounded-xl border border-[#242934] bg-[#0f1115]">
             {selectedFormat === 'PNG' && (
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-xs font-semibold text-slate-300">
-                  <Settings2 size={14} className="text-blue-400" />
+                  <Settings2 size={14} className="text-indigo-400" />
                   <span>Configuración de Exportación Gráfica</span>
                 </div>
                 
@@ -344,10 +340,10 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
                           key={item.val}
                           type="button"
                           onClick={() => setPngScale(item.val)}
-                          className={`py-1.5 text-xs font-medium rounded-md border text-center transition-colors cursor-pointer ${
+                          className={`py-1.5 text-xs font-medium rounded-lg border text-center transition-colors cursor-pointer ${
                             pngScale === item.val
-                              ? 'bg-blue-600 text-white border-blue-500'
-                              : 'bg-slate-800/60 text-slate-300 border-slate-700 hover:bg-slate-800'
+                              ? 'bg-indigo-600 text-white border-indigo-500 shadow-sm'
+                              : 'bg-[#181c24] text-slate-300 border-[#242934] hover:bg-[#1f2430]'
                           }`}
                         >
                           {item.label}
@@ -369,10 +365,10 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
                           key={bgItem.val}
                           type="button"
                           onClick={() => setPngBg(bgItem.val)}
-                          className={`py-1.5 text-xs font-medium rounded-md border text-center transition-colors cursor-pointer ${
+                          className={`py-1.5 text-xs font-medium rounded-lg border text-center transition-colors cursor-pointer ${
                             pngBg === bgItem.val
-                              ? 'bg-blue-600 text-white border-blue-500'
-                              : 'bg-slate-800/60 text-slate-300 border-slate-700 hover:bg-slate-800'
+                              ? 'bg-indigo-600 text-white border-indigo-500 shadow-sm'
+                              : 'bg-[#181c24] text-slate-300 border-[#242934] hover:bg-[#1f2430]'
                           }`}
                         >
                           {bgItem.label}
@@ -397,7 +393,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
                       type="checkbox"
                       checked={pdfIncludeImage}
                       onChange={(e) => setPdfIncludeImage(e.target.checked)}
-                      className="w-4 h-4 rounded border-slate-700 text-blue-600 focus:ring-blue-500 bg-slate-800"
+                      className="w-4 h-4 rounded border-[#242934] text-indigo-600 focus:ring-indigo-500 bg-[#181c24]"
                     />
                     <span>Incluir captura gráfica del diagrama de clases en alta resolución</span>
                   </label>
@@ -407,7 +403,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
                       type="checkbox"
                       checked={pdfIncludeDictionary}
                       onChange={(e) => setPdfIncludeDictionary(e.target.checked)}
-                      className="w-4 h-4 rounded border-slate-700 text-blue-600 focus:ring-blue-500 bg-slate-800"
+                      className="w-4 h-4 rounded border-[#242934] text-indigo-600 focus:ring-indigo-500 bg-[#181c24]"
                     />
                     <span>Incluir catálogo de clases, atributos tipados, claves primarias y métodos</span>
                   </label>
@@ -417,7 +413,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
                       type="checkbox"
                       checked={pdfIncludeRelationships}
                       onChange={(e) => setPdfIncludeRelationships(e.target.checked)}
-                      className="w-4 h-4 rounded border-slate-700 text-blue-600 focus:ring-blue-500 bg-slate-800"
+                      className="w-4 h-4 rounded border-[#242934] text-indigo-600 focus:ring-indigo-500 bg-[#181c24]"
                     />
                     <span>Incluir matriz de relaciones, roles y multiplicidades</span>
                   </label>
@@ -432,15 +428,15 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
                   <span>Estructura del Libro Excel</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
-                  <div className="p-2.5 rounded bg-slate-800/40 border border-slate-800 text-xs">
+                  <div className="p-2.5 rounded-xl bg-[#181c24] border border-[#242934] text-xs">
                     <p className="font-semibold text-slate-200 mb-0.5">1. Resumen</p>
                     <p className="text-[11px] text-slate-400">Metadatos del proyecto y conteo de entidades</p>
                   </div>
-                  <div className="p-2.5 rounded bg-slate-800/40 border border-slate-800 text-xs">
+                  <div className="p-2.5 rounded-xl bg-[#181c24] border border-[#242934] text-xs">
                     <p className="font-semibold text-slate-200 mb-0.5">2. Diccionario</p>
                     <p className="text-[11px] text-slate-400">Tipos UML, PostgreSQL 17 y Java 21 JPA</p>
                   </div>
-                  <div className="p-2.5 rounded bg-slate-800/40 border border-slate-800 text-xs">
+                  <div className="p-2.5 rounded-xl bg-[#181c24] border border-[#242934] text-xs">
                     <p className="font-semibold text-slate-200 mb-0.5">3. Relaciones</p>
                     <p className="text-[11px] text-slate-400">Matriz de cardinalidades y asociaciones</p>
                   </div>
@@ -451,7 +447,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
             {selectedFormat === 'XMI' && (
               <div className="space-y-1.5 text-xs text-slate-300">
                 <div className="flex items-center gap-2 font-semibold">
-                  <FileCode2 size={14} className="text-blue-400" />
+                  <FileCode2 size={14} className="text-indigo-400" />
                   <span>Especificación OMG XMI 2.1</span>
                 </div>
                 <p className="text-[11px] text-slate-400">
@@ -469,8 +465,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
                 <p className="text-[11px] text-slate-400 leading-relaxed">
                   Genera el archivo <span className="text-emerald-300 font-mono">schema.sql</span> con sentencias DDL nativas de PostgreSQL 17: identidades estándar SQL:2008+, tablas intermedias para relaciones N:N, claves foráneas con ON DELETE CASCADE e índices B-Tree.
                 </p>
-                <div className="p-2 rounded bg-emerald-950/20 border border-emerald-800/30 text-[11px] text-emerald-300">
-                  Tip: Para previsualizar el código SQL generado, copiarlo al portapapeles o ajustar opciones avanzadas (DROP TABLE, esquemas), usa la herramienta SQL en la barra lateral del lienzo.
+                <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-300">
+                  Tip: Para previsualizar el código SQL generado, copiarlo al portapapeles o ajustar opciones avanzadas, usa la herramienta SQL en la barra lateral del lienzo.
                 </div>
               </div>
             )}
@@ -484,7 +480,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
                 <p className="text-[11px] text-slate-400 leading-relaxed">
                   Genera el archivo <span className="text-amber-300 font-mono">postman-collection.json</span> con endpoints CRUD estructurados en carpetas por entidad, variable <span className="text-amber-300 font-mono">{"{{baseUrl}}"}</span> y aserciones de prueba automáticas para Postman Runner o Newman.
                 </p>
-                <div className="p-2 rounded bg-amber-950/20 border border-amber-800/30 text-[11px] text-amber-300">
+                <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-300">
                   Tip: Para previsualizar el código JSON generado, copiarlo al portapapeles o ajustar la URL base, usa la herramienta Postman en la barra lateral del lienzo.
                 </div>
               </div>
@@ -493,10 +489,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
         </div>
 
         {/* Modal Footer */}
-        <div 
-          className="px-6 py-4 border-t flex items-center justify-between"
-          style={{ borderColor: 'var(--border-subtle)', backgroundColor: 'var(--bg-card)' }}
-        >
+        <div className="px-6 py-4 border-t border-[#242934] flex items-center justify-between bg-[#11141a]">
           <div className="text-xs text-slate-400 flex items-center gap-1.5">
             <span>Proyecto:</span>
             <span className="font-semibold text-slate-200">{project?.name || 'Modelo UML'}</span>
@@ -509,7 +502,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
               type="button"
               onClick={onClose}
               disabled={isExporting}
-              className="px-4 py-2 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-md transition-colors cursor-pointer"
+              className="px-4 py-2 text-xs font-medium text-slate-300 hover:text-white bg-[#181c24] hover:bg-[#1f2430] border border-[#242934] rounded-xl transition-colors cursor-pointer"
             >
               Cancelar
             </button>
@@ -518,10 +511,10 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
               type="button"
               onClick={handleExport}
               disabled={isExporting || isModelEmpty}
-              className={`px-4 py-2 text-xs font-semibold rounded-md flex items-center gap-2 transition-all cursor-pointer ${
+              className={`px-4 py-2 text-xs font-semibold rounded-xl flex items-center gap-2 transition-all cursor-pointer shadow-md ${
                 isExporting || isModelEmpty
-                  ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
-                  : 'bg-blue-600 hover:bg-blue-500 text-white shadow-md active:scale-95'
+                  ? 'bg-[#181c24] text-slate-500 cursor-not-allowed border border-[#242934]'
+                  : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-600/20 active:scale-95'
               }`}
             >
               {isExporting ? (

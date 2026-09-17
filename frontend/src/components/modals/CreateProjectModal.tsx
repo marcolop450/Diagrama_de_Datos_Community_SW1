@@ -186,17 +186,17 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center z-50 p-4 select-none animate-fade-in">
-      <div className="bg-slate-900 border border-slate-800 rounded-lg w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 bg-black/75 backdrop-blur-md flex items-center justify-center z-50 p-4 select-none animate-fade-in font-sans">
+      <div className="bg-[#14171d] border border-[#242934] rounded-2xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
         {/* Modal Header */}
-        <div className="flex justify-between items-center px-6 py-4 border-b border-slate-800 bg-slate-950/60 shrink-0">
+        <div className="flex justify-between items-center px-6 py-4 border-b border-[#242934] bg-[#11141a] shrink-0">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-600/10 border border-blue-500/20 text-blue-400 rounded-md">
-              <FolderPlus size={20} />
+            <div className="p-2 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-xl">
+              <FolderPlus size={18} />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-slate-100">Crear Nuevo Proyecto UML</h2>
-              <p className="text-[11px] text-slate-400">
+              <h2 className="text-base font-semibold text-white tracking-tight font-display">Crear Nuevo Proyecto UML</h2>
+              <p className="text-xs text-slate-400 font-sans">
                 Selecciona una plantilla base y revisa la configuración antes de inicializar el modelo
               </p>
             </div>
@@ -204,7 +204,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
           
           <button 
             onClick={handleClose} 
-            className="text-slate-400 hover:text-slate-200 p-1.5 hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
+            className="text-slate-400 hover:text-white p-1.5 hover:bg-[#181c24] rounded-lg transition-colors cursor-pointer"
           >
             <X size={18} />
           </button>
@@ -215,7 +215,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
           {/* Left Column: Template Selection */}
           <div className="md:w-1/2 flex flex-col gap-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-200 uppercase tracking-wider">
+              <span className="text-xs font-semibold text-slate-200 uppercase tracking-wider font-display">
                 1. Plantilla de Dominio Base
               </span>
               <span className="text-[10px] text-slate-400">
@@ -230,22 +230,22 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   <div
                     key={tpl.id}
                     onClick={() => handleSelectTemplate(tpl)}
-                    className={`p-3 rounded-lg border transition-all cursor-pointer flex flex-col gap-1.5 ${
+                    className={`p-3 rounded-xl border transition-all cursor-pointer flex flex-col gap-1.5 ${
                       isSelected
-                        ? 'bg-blue-600/15 border-blue-500/80 shadow-md shadow-blue-500/10 ring-1 ring-blue-500/50'
-                        : 'bg-slate-950/60 border-slate-800/80 hover:border-slate-700 hover:bg-slate-950/90'
+                        ? 'bg-indigo-500/15 border-indigo-500/80 shadow-md shadow-indigo-500/10 ring-1 ring-indigo-500/50'
+                        : 'bg-[#0f1115] border-[#242934] hover:border-slate-700 hover:bg-[#181c24]'
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <div className="p-1.5 rounded-md bg-slate-900 border border-slate-800">
+                        <div className="p-1.5 rounded-lg bg-[#181c24] border border-[#242934]">
                           {getCategoryIcon(tpl.category)}
                         </div>
                         <div>
-                          <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wider">
+                          <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wider font-mono">
                             {tpl.category}
                           </span>
-                          <h4 className="text-xs font-bold text-slate-100">
+                          <h4 className="text-xs font-semibold text-white font-display">
                             {tpl.name}
                           </h4>
                         </div>
@@ -253,8 +253,8 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                       
                       <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors shrink-0 ${
                         isSelected
-                          ? 'bg-blue-600 border-blue-400 text-white'
-                          : 'border-slate-700 bg-slate-900'
+                          ? 'bg-indigo-600 border-indigo-400 text-white'
+                          : 'border-[#242934] bg-[#181c24]'
                       }`}>
                         {isSelected && <Check size={10} strokeWidth={3} />}
                       </div>
@@ -264,7 +264,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                       {tpl.description}
                     </p>
 
-                    <div className="pt-1.5 border-t border-slate-800/60 flex items-center justify-between text-[10px] font-mono text-slate-400">
+                    <div className="pt-1.5 border-t border-[#242934] flex items-center justify-between text-[10px] font-mono text-slate-400">
                       <span>{tpl.nodeCount > 0 ? (`${tpl.nodeCount} clases UML`) : 'Lienzo en blanco'}</span>
                       <span>{tpl.edgeCount > 0 ? (`${tpl.edgeCount} relaciones`) : 'Cero dependencias'}</span>
                     </div>
@@ -275,9 +275,9 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
           </div>
 
           {/* Right Column: Project Configuration */}
-          <div className="md:w-1/2 flex flex-col gap-4 bg-slate-950/40 border border-slate-800/80 rounded-lg p-4">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-              <span className="text-xs font-semibold text-slate-200 uppercase tracking-wider">
+          <div className="md:w-1/2 flex flex-col gap-4 bg-[#0f1115]/60 border border-[#242934] rounded-2xl p-5">
+            <div className="flex items-center justify-between pb-2 border-b border-[#242934]">
+              <span className="text-xs font-semibold text-slate-200 uppercase tracking-wider font-display">
                 2. Configuración del Proyecto
               </span>
               <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-1">
@@ -288,7 +288,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
 
             {/* Name Input */}
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label className="block text-xs font-medium text-slate-300 mb-1">
                 Nombre del Proyecto <span className="text-rose-400">*</span>
               </label>
               <input 
@@ -297,13 +297,13 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                 value={name} 
                 onChange={(e) => setName(e.target.value)}
                 placeholder="ej: Sistema de Gestión Hospitalaria"
-                className="w-full bg-slate-900 border border-slate-800 text-slate-100 focus:border-blue-500 rounded-md px-3 py-2 text-xs focus:outline-none transition-colors"
+                className="w-full bg-[#0f1115] border border-[#242934] text-white focus:border-indigo-500 rounded-xl px-3 py-2 text-xs focus:outline-none transition-colors"
               />
             </div>
 
             {/* Description Textarea */}
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label className="block text-xs font-medium text-slate-300 mb-1">
                 Descripción del Modelo
               </label>
               <textarea 
@@ -311,13 +311,13 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                 value={description} 
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Objetivo y arquitectura del modelo UML..."
-                className="w-full bg-slate-900 border border-slate-800 text-slate-100 focus:border-blue-500 rounded-md px-3 py-2 text-xs focus:outline-none transition-colors resize-none"
+                className="w-full bg-[#0f1115] border border-[#242934] text-white focus:border-indigo-500 rounded-xl px-3 py-2 text-xs focus:outline-none transition-colors resize-none"
               />
             </div>
 
             {/* Version Input */}
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label className="block text-xs font-medium text-slate-300 mb-1">
                 Versión Semántica
               </label>
               <input 
@@ -325,13 +325,13 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                 value={version} 
                 onChange={(e) => setVersion(e.target.value)}
                 placeholder="v1.0.0"
-                className="w-full bg-slate-900 border border-slate-800 text-slate-100 focus:border-blue-500 rounded-md px-3 py-1.5 text-xs font-mono focus:outline-none transition-colors"
+                className="w-full bg-[#0f1115] border border-[#242934] text-white focus:border-indigo-500 rounded-xl px-3 py-1.5 text-xs font-mono focus:outline-none transition-colors"
               />
             </div>
 
             {/* Tags Input */}
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label className="block text-xs font-medium text-slate-300 mb-1">
                 Etiquetas / Tags
               </label>
               <div className="flex gap-2">
@@ -340,13 +340,13 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
                   onKeyDown={handleAddTag}
-                  className="flex-1 bg-slate-900 border border-slate-800 text-slate-100 focus:border-blue-500 rounded-md px-3 py-1.5 text-xs font-mono focus:outline-none"
+                  className="flex-1 bg-[#0f1115] border border-[#242934] text-white focus:border-indigo-500 rounded-xl px-3 py-1.5 text-xs font-mono focus:outline-none"
                   placeholder="Agregar tag y presiona Enter..."
                 />
                 <button
                   type="button"
                   onClick={handleAddTag}
-                  className="px-3 bg-slate-800 hover:bg-slate-750 text-slate-200 rounded-md text-xs flex items-center justify-center cursor-pointer transition-colors"
+                  className="px-3 bg-[#181c24] hover:bg-[#1f2430] text-slate-200 border border-[#242934] rounded-xl text-xs flex items-center justify-center cursor-pointer transition-colors"
                 >
                   <Plus size={14} />
                 </button>
@@ -357,9 +357,9 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   {tags.map((t) => (
                     <span 
                       key={t}
-                      className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-mono bg-slate-800/80 border border-slate-700 text-slate-300"
+                      className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[11px] font-mono bg-[#181c24] border border-[#242934] text-slate-300"
                     >
-                      <Tag size={10} className="text-blue-400" />
+                      <Tag size={10} className="text-indigo-400" />
                       {t}
                       <button
                         type="button"
@@ -377,11 +377,11 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
         </form>
 
         {/* Modal Footer */}
-        <div className="flex justify-between items-center px-6 py-4 border-t border-slate-800 bg-slate-950/60 shrink-0">
+        <div className="flex justify-between items-center px-6 py-4 border-t border-[#242934] bg-[#11141a] shrink-0">
           <button 
             type="button" 
             onClick={handleClose}
-            className="px-4 py-2 text-xs font-medium text-slate-400 hover:text-slate-200 bg-slate-800/60 hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
+            className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white bg-[#181c24] hover:bg-[#1f2430] border border-[#242934] rounded-xl transition-colors cursor-pointer"
           >
             Cancelar
           </button>
@@ -390,7 +390,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
             type="submit"
             form="create-project-form"
             disabled={loading}
-            className="inline-flex items-center gap-2 px-5 py-2 text-xs font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 rounded-md shadow-md shadow-blue-500/20 transition-all disabled:opacity-50 cursor-pointer"
+            className="inline-flex items-center gap-2 px-5 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl shadow-lg shadow-indigo-600/20 transition-all disabled:opacity-50 cursor-pointer"
           >
             {loading ? (
               <span>Creando Modelo...</span>

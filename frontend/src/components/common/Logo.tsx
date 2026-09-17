@@ -43,18 +43,18 @@ export const Logo: React.FC<LogoProps> = ({ size = 'md', showText = true, classN
           width="42"
           height="42"
           rx="10"
-          fill="#111827"
+          fill="#14171d"
           stroke="url(#logo-grad-primary)"
           strokeWidth="2.5"
         />
 
         {/* Main UML Class Box (Top Left) */}
-        <rect x="8" y="9" width="16" height="12" rx="3" fill="#1E293B" stroke="#60A5FA" strokeWidth="1.5" />
+        <rect x="8" y="9" width="16" height="12" rx="3" fill="#181c24" stroke="#60A5FA" strokeWidth="1.5" />
         <line x1="8" y1="13" x2="24" y2="13" stroke="#60A5FA" strokeWidth="1" strokeOpacity="0.6" />
         <line x1="8" y1="17" x2="24" y2="17" stroke="#60A5FA" strokeWidth="1" strokeOpacity="0.4" />
 
         {/* Target UML Class Box (Bottom Right) */}
-        <rect x="24" y="27" width="16" height="12" rx="3" fill="#1E293B" stroke="#A78BFA" strokeWidth="1.5" />
+        <rect x="24" y="27" width="16" height="12" rx="3" fill="#181c24" stroke="#A78BFA" strokeWidth="1.5" />
         <line x1="24" y1="31" x2="40" y2="31" stroke="#A78BFA" strokeWidth="1" strokeOpacity="0.6" />
         <line x1="24" y1="35" x2="40" y2="35" stroke="#A78BFA" strokeWidth="1" strokeOpacity="0.4" />
 
@@ -73,8 +73,8 @@ export const Logo: React.FC<LogoProps> = ({ size = 'md', showText = true, classN
       {showText && (
         <div className="flex flex-col leading-none">
           <div className="flex items-center gap-1.5">
-            <span className={`${dimensions.font} font-bold text-white tracking-wide`}>CASE</span>
-            <span className={`${dimensions.font} font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400`}>Tool</span>
+            <span className={`${dimensions.font} font-display font-bold text-white tracking-wide`}>CASE</span>
+            <span className={`${dimensions.font} font-display font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-indigo-300`}>Tool</span>
           </div>
           <span className="text-[10px] uppercase font-mono tracking-widest text-slate-400 font-medium">UML Architecture</span>
         </div>

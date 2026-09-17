@@ -267,7 +267,7 @@ export const getCanvasTheme = (themeId?: string): CanvasThemeConfig => {
   if (themeId && themeId in CANVAS_THEMES) {
     return CANVAS_THEMES[themeId as CanvasThemeId];
   }
-  return CANVAS_THEMES['warm-titanium'];
+  return CANVAS_THEMES['obsidian-graphite'];
 };
 
 export type AppPaletteId = 'warm-titanium' | 'obsidian-graphite';
@@ -328,5 +328,5 @@ export const getAppPalette = (paletteId?: string): AppPaletteConfig => {
   if (paletteId && paletteId in APP_PALETTES) {
     return APP_PALETTES[paletteId as AppPaletteId];
   }
-  return APP_PALETTES['warm-titanium'];
+  return APP_PALETTES['obsidian-graphite'];
 };

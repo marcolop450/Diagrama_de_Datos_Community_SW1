@@ -124,32 +124,26 @@ export const GenerateBackendModal: React.FC<GenerateBackendModalProps> = ({ isOp
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm animate-fade-in">
-      <div 
-        className="border rounded-xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden transition-colors duration-200"
-        style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
-      >
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fade-in font-sans">
+      <div className="border border-[#242934] bg-[#14171d] rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden transition-colors">
         {/* Modal Header */}
-        <div 
-          className="flex items-center justify-between px-6 py-4 border-b shrink-0"
-          style={{ borderColor: 'var(--border-subtle)', backgroundColor: 'var(--bg-surface-elevated)' }}
-        >
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#242934] bg-[#11141a] shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-blue-600/10 border border-blue-500/25 flex items-center justify-center text-blue-400 shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
               <Code2 size={20} />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-100 tracking-tight">
-                Generar Backend Spring Boot (4 Capas en ZIP)
+              <h2 className="text-base font-semibold text-white tracking-tight font-display">
+                Generar Backend Spring Boot
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-400 font-sans">
                 Arquitectura empresarial desacoplada en Java 21 LTS lista para ejecución inmediata
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+            className="p-1.5 text-slate-400 hover:text-white hover:bg-[#181c24] rounded-lg transition-colors cursor-pointer"
             title="Cerrar ventana"
           >
             <X size={18} />
@@ -159,11 +153,11 @@ export const GenerateBackendModal: React.FC<GenerateBackendModalProps> = ({ isOp
         {/* Modal Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {isModelEmpty ? (
-            <div className="p-5 rounded-xl border border-amber-500/30 bg-amber-950/20 text-amber-200 flex items-start gap-3.5">
-              <AlertTriangle size={20} className="shrink-0 text-amber-400 mt-0.5" />
+            <div className="p-4 rounded-xl border border-amber-500/20 bg-amber-500/5 text-amber-200 flex items-start gap-3">
+              <AlertTriangle size={18} className="shrink-0 text-amber-400 mt-0.5" />
               <div>
-                <h4 className="text-sm font-semibold text-amber-300">Modelo sin clases definidas</h4>
-                <p className="text-xs text-amber-200/80 mt-1 leading-relaxed">
+                <h4 className="text-xs font-semibold text-amber-300 font-display">Modelo sin clases definidas</h4>
+                <p className="text-xs text-amber-200/80 mt-0.5 leading-relaxed">
                   Para compilar y empaquetar un backend Spring Boot, debes modelar al menos una clase con atributos en el lienzo.
                 </p>
               </div>
@@ -173,16 +167,16 @@ export const GenerateBackendModal: React.FC<GenerateBackendModalProps> = ({ isOp
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Left Column: Configuration Form */}
             <div className="lg:col-span-6 space-y-4">
-              <div className="flex items-center gap-2 pb-1 border-b border-slate-800">
-                <Settings2 size={15} className="text-blue-400" />
-                <span className="text-xs font-bold text-slate-200 uppercase tracking-wider">
+              <div className="flex items-center gap-2 pb-1 border-b border-[#242934]">
+                <Settings2 size={15} className="text-indigo-400" />
+                <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider font-display">
                   Configuración del Proyecto Maven
                 </span>
               </div>
 
               {/* Package Name */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300">
+                <label className="text-xs font-medium text-slate-300">
                   Paquete Base (Root Package)
                 </label>
                 <input
@@ -190,7 +184,7 @@ export const GenerateBackendModal: React.FC<GenerateBackendModalProps> = ({ isOp
                   value={packageName}
                   onChange={(e) => setPackageName(e.target.value)}
                   placeholder="com.empresa.sistema"
-                  className="w-full px-3 py-2 text-xs font-mono bg-slate-950 border border-slate-700/80 rounded-lg text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-blue-500 transition-colors"
+                  className="w-full px-3 py-2 text-xs font-mono bg-[#0f1115] border border-[#242934] rounded-xl text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-indigo-500 transition-colors"
                 />
                 <span className="text-[11px] text-slate-500">
                   Estructura de paquetes base para controllers, services, repositories y entities.
@@ -200,7 +194,7 @@ export const GenerateBackendModal: React.FC<GenerateBackendModalProps> = ({ isOp
               {/* Group ID & Artifact ID */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-300">
+                  <label className="text-xs font-medium text-slate-300">
                     Group ID
                   </label>
                   <input
@@ -208,11 +202,11 @@ export const GenerateBackendModal: React.FC<GenerateBackendModalProps> = ({ isOp
                     value={groupId}
                     onChange={(e) => setGroupId(e.target.value)}
                     placeholder="com.sw1"
-                    className="w-full px-3 py-2 text-xs font-mono bg-slate-950 border border-slate-700/80 rounded-lg text-slate-100 focus:outline-none focus:border-blue-500 transition-colors"
+                    className="w-full px-3 py-2 text-xs font-mono bg-[#0f1115] border border-[#242934] rounded-xl text-slate-100 focus:outline-none focus:border-indigo-500 transition-colors"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-300">
+                  <label className="text-xs font-medium text-slate-300">
                     Artifact ID
                   </label>
                   <input
@@ -220,61 +214,61 @@ export const GenerateBackendModal: React.FC<GenerateBackendModalProps> = ({ isOp
                     value={artifactId}
                     onChange={(e) => setArtifactId(e.target.value)}
                     placeholder="servicio-api"
-                    className="w-full px-3 py-2 text-xs font-mono bg-slate-950 border border-slate-700/80 rounded-lg text-slate-100 focus:outline-none focus:border-blue-500 transition-colors"
+                    className="w-full px-3 py-2 text-xs font-mono bg-[#0f1115] border border-[#242934] rounded-xl text-slate-100 focus:outline-none focus:border-indigo-500 transition-colors"
                   />
                 </div>
               </div>
 
               {/* Java Version & Target Database */}
               <div className="grid grid-cols-2 gap-3 pt-1">
-                <div className="p-3 bg-slate-900/60 border border-slate-800 rounded-lg space-y-1">
-                  <span className="text-[11px] font-semibold text-slate-400">Versión Java LTS</span>
+                <div className="p-3 bg-[#181c24] border border-[#242934] rounded-xl space-y-1">
+                  <span className="text-[11px] font-medium text-slate-400">Versión Java LTS</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-emerald-400 font-mono">Java 21 LTS</span>
-                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-950 text-emerald-400 border border-emerald-800">
+                    <span className="text-xs font-semibold text-emerald-400 font-mono">Java 21 LTS</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">
                       Oficial
                     </span>
                   </div>
                 </div>
 
-                <div className="p-3 bg-slate-900/60 border border-slate-800 rounded-lg space-y-1">
-                  <span className="text-[11px] font-semibold text-slate-400">Base de Datos</span>
+                <div className="p-3 bg-[#181c24] border border-[#242934] rounded-xl space-y-1">
+                  <span className="text-[11px] font-medium text-slate-400">Base de Datos</span>
                   <div className="flex items-center gap-1.5">
-                    <Database size={13} className="text-sky-400" />
-                    <span className="text-xs font-bold text-slate-200">H2 dev + Postgres prod</span>
+                    <Database size={13} className="text-indigo-400" />
+                    <span className="text-xs font-medium text-slate-200">H2 dev + Postgres prod</span>
                   </div>
                 </div>
               </div>
 
               {/* Checkboxes */}
               <div className="space-y-2.5 pt-2">
-                <label className="flex items-center gap-2.5 cursor-pointer text-xs text-slate-300">
+                <label className="flex items-center gap-2.5 cursor-pointer text-xs text-slate-300 hover:text-white transition-colors">
                   <input
                     type="checkbox"
                     checked={includeMavenWrapper}
                     onChange={(e) => setIncludeMavenWrapper(e.target.checked)}
-                    className="w-4 h-4 rounded border-slate-700 bg-slate-950 text-blue-600 focus:ring-blue-500 focus:ring-offset-slate-900"
+                    className="w-4 h-4 rounded border-[#242934] bg-[#0f1115] text-indigo-600 focus:ring-indigo-500 focus:ring-offset-0"
                   />
-                  <span>Incluir Maven Wrapper (<code>./mvnw</code> ejecutable sin instalar Maven)</span>
+                  <span>Incluir Maven Wrapper (<code className="font-mono text-indigo-300">./mvnw</code> sin instalar Maven)</span>
                 </label>
 
-                <label className="flex items-center gap-2.5 cursor-pointer text-xs text-slate-300">
+                <label className="flex items-center gap-2.5 cursor-pointer text-xs text-slate-300 hover:text-white transition-colors">
                   <input
                     type="checkbox"
                     checked={includeSwagger}
                     onChange={(e) => setIncludeSwagger(e.target.checked)}
-                    className="w-4 h-4 rounded border-slate-700 bg-slate-950 text-blue-600 focus:ring-blue-500 focus:ring-offset-slate-900"
+                    className="w-4 h-4 rounded border-[#242934] bg-[#0f1115] text-indigo-600 focus:ring-indigo-500 focus:ring-offset-0"
                   />
-                  <span>Incluir OpenAPI 3.0 / Swagger UI (<code>/swagger-ui.html</code>)</span>
+                  <span>Incluir OpenAPI 3.0 / Swagger UI (<code className="font-mono text-indigo-300">/swagger-ui.html</code>)</span>
                 </label>
               </div>
 
               {/* Immediate Execution Banner */}
-              <div className="p-3 bg-blue-950/25 border border-blue-800/40 rounded-lg text-blue-200 text-xs flex items-start gap-2.5">
-                <Terminal size={16} className="text-blue-400 shrink-0 mt-0.5" />
+              <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl text-indigo-200 text-xs flex items-start gap-2.5">
+                <Terminal size={16} className="text-indigo-400 shrink-0 mt-0.5" />
                 <div>
-                  <span className="font-semibold text-blue-300">Ejecución en 1 comando:</span>
-                  <p className="mt-0.5 text-blue-200/80 font-mono text-[11px]">
+                  <span className="font-medium text-indigo-300">Ejecución en 1 comando:</span>
+                  <p className="mt-0.5 text-indigo-200/90 font-mono text-[11px]">
                     ./mvnw spring-boot:run
                   </p>
                 </div>
@@ -283,10 +277,10 @@ export const GenerateBackendModal: React.FC<GenerateBackendModalProps> = ({ isOp
 
             {/* Right Column: Architecture & File Tree Preview */}
             <div className="lg:col-span-6 space-y-4">
-              <div className="flex items-center justify-between pb-1 border-b border-slate-800">
+              <div className="flex items-center justify-between pb-1 border-b border-[#242934]">
                 <div className="flex items-center gap-2">
-                  <FolderTree size={15} className="text-purple-400" />
-                  <span className="text-xs font-bold text-slate-200 uppercase tracking-wider">
+                  <FolderTree size={15} className="text-indigo-400" />
+                  <span className="text-xs font-semibold text-slate-200 uppercase tracking-wider font-display">
                     Estructura en 4 Capas Generada
                   </span>
                 </div>
@@ -299,29 +293,29 @@ export const GenerateBackendModal: React.FC<GenerateBackendModalProps> = ({ isOp
 
               {/* 4 Layers Badges */}
               <div className="grid grid-cols-4 gap-1.5 text-center">
-                <div className="p-2 rounded-lg bg-blue-950/40 border border-blue-800/50">
-                  <span className="text-[10px] font-mono text-blue-400 block font-bold">@Entity</span>
-                  <span className="text-xs text-slate-200">{nodes.length} tablas</span>
+                <div className="p-2 rounded-xl bg-[#181c24] border border-[#242934]">
+                  <span className="text-[10px] font-mono text-indigo-400 block font-semibold">@Entity</span>
+                  <span className="text-xs text-slate-300">{nodes.length} tablas</span>
                 </div>
-                <div className="p-2 rounded-lg bg-amber-950/40 border border-amber-800/50">
-                  <span className="text-[10px] font-mono text-amber-400 block font-bold">@Repository</span>
-                  <span className="text-xs text-slate-200">{nodes.length} repos</span>
+                <div className="p-2 rounded-xl bg-[#181c24] border border-[#242934]">
+                  <span className="text-[10px] font-mono text-amber-400 block font-semibold">@Repository</span>
+                  <span className="text-xs text-slate-300">{nodes.length} repos</span>
                 </div>
-                <div className="p-2 rounded-lg bg-emerald-950/40 border border-emerald-800/50">
-                  <span className="text-[10px] font-mono text-emerald-400 block font-bold">@Service</span>
-                  <span className="text-xs text-slate-200">{nodes.length} servs</span>
+                <div className="p-2 rounded-xl bg-[#181c24] border border-[#242934]">
+                  <span className="text-[10px] font-mono text-emerald-400 block font-semibold">@Service</span>
+                  <span className="text-xs text-slate-300">{nodes.length} servs</span>
                 </div>
-                <div className="p-2 rounded-lg bg-purple-950/40 border border-purple-800/50">
-                  <span className="text-[10px] font-mono text-purple-400 block font-bold">@Controller</span>
-                  <span className="text-xs text-slate-200">{nodes.length} APIs</span>
+                <div className="p-2 rounded-xl bg-[#181c24] border border-[#242934]">
+                  <span className="text-[10px] font-mono text-purple-400 block font-semibold">@Controller</span>
+                  <span className="text-xs text-slate-300">{nodes.length} APIs</span>
                 </div>
               </div>
 
               {/* File Tree List */}
-              <div className="p-3 bg-slate-950 border border-slate-800 rounded-lg max-h-64 overflow-y-auto font-mono text-[11px] space-y-1 scrollbar-thin scrollbar-thumb-slate-800">
+              <div className="p-3 bg-[#0a0c10] border border-[#242934] rounded-xl max-h-64 overflow-y-auto font-mono text-[11px] space-y-1">
                 {isLoadingPreview ? (
                   <div className="py-8 flex flex-col items-center justify-center gap-2 text-slate-500">
-                    <Loader2 size={18} className="animate-spin text-blue-400" />
+                    <Loader2 size={18} className="animate-spin text-indigo-400" />
                     <span>Calculando árbol de código fuente...</span>
                   </div>
                 ) : preview && preview.fileTree.length > 0 ? (
@@ -332,7 +326,7 @@ export const GenerateBackendModal: React.FC<GenerateBackendModalProps> = ({ isOp
                     const isWrapper = filePath.includes('mvnw');
 
                     let badgeColor = 'text-slate-400';
-                    if (filePath.includes('/entity/')) badgeColor = 'text-blue-400';
+                    if (filePath.includes('/entity/')) badgeColor = 'text-indigo-400';
                     else if (filePath.includes('/repository/')) badgeColor = 'text-amber-400';
                     else if (filePath.includes('/service/')) badgeColor = 'text-emerald-400';
                     else if (filePath.includes('/controller/')) badgeColor = 'text-purple-400';
@@ -343,7 +337,7 @@ export const GenerateBackendModal: React.FC<GenerateBackendModalProps> = ({ isOp
                     else if (isWrapper) badgeColor = 'text-amber-300';
 
                     return (
-                      <div key={idx} className="flex items-center gap-2 hover:bg-slate-900/60 px-1.5 py-0.5 rounded transition-colors">
+                      <div key={idx} className="flex items-center gap-2 hover:bg-[#181c24] px-2 py-1 rounded-lg transition-colors">
                         <FileCode size={12} className={badgeColor} />
                         <span className={`truncate ${badgeColor}`}>{filePath}</span>
                       </div>
@@ -360,14 +354,11 @@ export const GenerateBackendModal: React.FC<GenerateBackendModalProps> = ({ isOp
         </div>
 
         {/* Modal Footer */}
-        <div 
-          className="flex items-center justify-between px-6 py-4 border-t shrink-0"
-          style={{ borderColor: 'var(--border-subtle)', backgroundColor: 'var(--bg-surface-elevated)' }}
-        >
+        <div className="flex items-center justify-between px-6 py-4 border-t border-[#242934] bg-[#11141a] shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+            className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white hover:bg-[#181c24] rounded-xl transition-colors cursor-pointer"
           >
             Cancelar
           </button>
@@ -376,10 +367,10 @@ export const GenerateBackendModal: React.FC<GenerateBackendModalProps> = ({ isOp
             type="button"
             onClick={handleDownload}
             disabled={isGenerating || isModelEmpty}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-semibold text-white shadow-md transition-all active:scale-95 cursor-pointer ${
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold text-white transition-all active:scale-95 cursor-pointer ${
               isGenerating || isModelEmpty
-                ? 'bg-slate-700 cursor-not-allowed opacity-50'
-                : 'bg-blue-600 hover:bg-blue-500 shadow-blue-500/20'
+                ? 'bg-[#181c24] text-slate-500 border border-[#242934] cursor-not-allowed'
+                : 'bg-indigo-600 hover:bg-indigo-500 shadow-lg shadow-indigo-600/20'
             }`}
           >
             {isGenerating ? (

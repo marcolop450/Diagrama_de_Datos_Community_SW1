@@ -1,17 +1,22 @@
 import React, { useEffect, useRef } from 'react';
-import { useAuthStore } from '../../stores/authStore';
-import { getAppPalette } from '../../constants/canvasThemes';
 
 interface AuroraBackgroundProps {
   opacity?: number;
 }
 
+interface Particle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  radius: number;
+  baseAlpha: number;
+}
+
 export const AuroraBackground: React.FC<AuroraBackgroundProps> = ({ opacity = 0.85 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animFrameId = useRef<number | null>(null);
-  const { user } = useAuthStore();
-  const activePaletteId = user?.preferences?.appPalette || 'warm-titanium';
-  const palette = getAppPalette(activePaletteId);
+  const mouseRef = useRef<{ x: number; y: number; active: boolean }>({ x: -1000, y: -1000, active: false });
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -22,97 +27,142 @@ export const AuroraBackground: React.FC<AuroraBackgroundProps> = ({ opacity = 0.
     let width = (canvas.width = window.innerWidth);
     let height = (canvas.height = window.innerHeight);
 
+    let particles: Particle[] = [];
+    const initParticles = () => {
+      const count = Math.floor(Math.min(width, height) / 18);
+      particles = [];
+      for (let i = 0; i < count; i++) {
+        particles.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          vx: (Math.random() - 0.5) * 0.45,
+          vy: (Math.random() - 0.5) * 0.45,
+          radius: Math.random() * 1.5 + 1.2,
+          baseAlpha: Math.random() * 0.4 + 0.3,
+        });
+      }
+    };
+
+    initParticles();
+
     const handleResize = () => {
       width = canvas.width = window.innerWidth;
       height = canvas.height = window.innerHeight;
+      initParticles();
     };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      mouseRef.current.x = e.clientX;
+      mouseRef.current.y = e.clientY;
+      mouseRef.current.active = true;
+    };
+
+    const handleMouseLeave = () => {
+      mouseRef.current.active = false;
+    };
+
     window.addEventListener('resize', handleResize);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseleave', handleMouseLeave);
 
     let t = 0;
 
-    // Palette-driven vibrant color waves
-    const isTitanium = activePaletteId === 'warm-titanium';
-    const auroraWaves = isTitanium
-      ? [
-          { color: '245, 158, 11', baseY: 0.22, amp: 70, freq: 0.0018, speed: 0.012, alpha: 0.55 }, // Amber Gold
-          { color: '217, 119, 6', baseY: 0.35, amp: 85, freq: 0.0014, speed: 0.009, alpha: 0.45 },  // Warm Bronze
-          { color: '251, 146, 60', baseY: 0.18, amp: 60, freq: 0.0022, speed: 0.015, alpha: 0.48 }, // Sunset Terracotta
-          { color: '139, 92, 246', baseY: 0.45, amp: 95, freq: 0.0011, speed: 0.007, alpha: 0.35 }, // Plum Violet depth
-        ]
-      : [
-          { color: '99, 102, 241', baseY: 0.20, amp: 75, freq: 0.0018, speed: 0.012, alpha: 0.55 }, // Electric Indigo
-          { color: '168, 85, 247', baseY: 0.32, amp: 85, freq: 0.0015, speed: 0.009, alpha: 0.50 }, // Vivid Violet
-          { color: '6, 182, 212', baseY: 0.16, amp: 65, freq: 0.0021, speed: 0.014, alpha: 0.52 },  // Arctic Cyan
-          { color: '236, 72, 153', baseY: 0.42, amp: 90, freq: 0.0012, speed: 0.008, alpha: 0.38 }, // Magenta Glow
-        ];
-
     const render = () => {
-      t += 1;
+      t += 0.005;
       ctx.clearRect(0, 0, width, height);
 
-      // 1. Rich base canvas tone from active palette (Warm Charcoal or Deep Obsidian, NOT pitch black)
-      ctx.fillStyle = palette.bgBase;
+      // 1. Deep Graphite/Obsidian Base
+      ctx.fillStyle = '#0a0c10';
       ctx.fillRect(0, 0, width, height);
 
-      // 2. Multi-Harmonic Radiant Aurora Ribbons
+      // 2. Soft Ambient Vignette & Glowing Spheres of Precision
+      const primaryGlowX = width * 0.3 + Math.sin(t * 0.7) * 80;
+      const primaryGlowY = height * 0.25 + Math.cos(t * 0.6) * 60;
+      const grad1 = ctx.createRadialGradient(primaryGlowX, primaryGlowY, 0, primaryGlowX, primaryGlowY, width * 0.45);
+      grad1.addColorStop(0, 'rgba(99, 102, 241, 0.14)'); // Indigo focal glow
+      grad1.addColorStop(0.5, 'rgba(99, 102, 241, 0.04)');
+      grad1.addColorStop(1, 'rgba(10, 12, 16, 0)');
+      ctx.fillStyle = grad1;
+      ctx.fillRect(0, 0, width, height);
+
+      const secondaryGlowX = width * 0.75 + Math.cos(t * 0.5) * 90;
+      const secondaryGlowY = height * 0.45 + Math.sin(t * 0.8) * 70;
+      const grad2 = ctx.createRadialGradient(secondaryGlowX, secondaryGlowY, 0, secondaryGlowX, secondaryGlowY, width * 0.4);
+      grad2.addColorStop(0, 'rgba(56, 189, 248, 0.09)'); // Sapphire/Cyan depth glow
+      grad2.addColorStop(0.6, 'rgba(56, 189, 248, 0.02)');
+      grad2.addColorStop(1, 'rgba(10, 12, 16, 0)');
+      ctx.fillStyle = grad2;
+      ctx.fillRect(0, 0, width, height);
+
+      // 3. Technical Blueprint Dot-Matrix Grid
       ctx.save();
-      ctx.globalAlpha = opacity;
-      ctx.globalCompositeOperation = 'screen';
-
-      auroraWaves.forEach((wave, idx) => {
-        // Draw fluid undulating ribbon curtain
-        ctx.beginPath();
-        const startY = wave.baseY * height;
-        ctx.moveTo(0, startY);
-
-        const step = 24;
-        for (let x = 0; x <= width + step; x += step) {
-          const y = startY + Math.sin(x * wave.freq + t * wave.speed + idx * 1.5) * wave.amp
-                          + Math.cos(x * wave.freq * 0.5 + t * wave.speed * 0.7) * (wave.amp * 0.5);
-          ctx.lineTo(x, y);
-        }
-
-        ctx.lineTo(width, 0);
-        ctx.lineTo(0, 0);
-        ctx.closePath();
-
-        // Vertical glowing curtain gradient
-        const ribbonGrad = ctx.createLinearGradient(0, startY - wave.amp, 0, startY + wave.amp * 2);
-        ribbonGrad.addColorStop(0, `rgba(${wave.color}, 0)`);
-        ribbonGrad.addColorStop(0.3, `rgba(${wave.color}, ${wave.alpha})`);
-        ribbonGrad.addColorStop(0.65, `rgba(${wave.color}, ${wave.alpha * 0.45})`);
-        ribbonGrad.addColorStop(1, `rgba(${wave.color}, 0)`);
-
-        ctx.fillStyle = ribbonGrad;
-        ctx.fill();
-
-        // Secondary breathing orbital plume for volumetric atmospheric depth
-        const plumeX = ((Math.sin(t * 0.003 + idx * 2) * 0.35) + 0.5) * width;
-        const plumeY = ((Math.cos(t * 0.0025 + idx * 1.8) * 0.25) + wave.baseY) * height;
-        const plumeRadius = Math.min(width, height) * 0.45;
-
-        const orbGrad = ctx.createRadialGradient(plumeX, plumeY, 0, plumeX, plumeY, plumeRadius);
-        orbGrad.addColorStop(0, `rgba(${wave.color}, ${wave.alpha * 0.6})`);
-        orbGrad.addColorStop(0.4, `rgba(${wave.color}, ${wave.alpha * 0.25})`);
-        orbGrad.addColorStop(1, `rgba(${wave.color}, 0)`);
-
-        ctx.fillStyle = orbGrad;
-        ctx.beginPath();
-        ctx.arc(plumeX, plumeY, plumeRadius, 0, Math.PI * 2);
-        ctx.fill();
-      });
-
-      ctx.restore();
-
-      // 3. Technical Grid Pattern for CASE Architectural Feel
-      ctx.save();
-      ctx.fillStyle = isTitanium ? 'rgba(82, 82, 91, 0.35)' : 'rgba(71, 85, 105, 0.35)';
-      const gridStep = 40;
+      const gridStep = 48;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.035)';
       for (let x = 0; x < width; x += gridStep) {
         for (let y = 0; y < height; y += gridStep) {
           ctx.fillRect(x, y, 1, 1);
         }
       }
+      ctx.restore();
+
+      // 4. Update & Draw Dynamic UML Constellation Network
+      ctx.save();
+      ctx.globalAlpha = opacity;
+
+      const maxConnectDist = 135;
+      const mouseInfluenceDist = 160;
+
+      // Update particle physics
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+
+        // Wrap screen edges smoothly
+        if (p.x < -10) p.x = width + 10;
+        if (p.x > width + 10) p.x = -10;
+        if (p.y < -10) p.y = height + 10;
+        if (p.y > height + 10) p.y = -10;
+
+        // Gentle mouse parallax / repulsion
+        if (mouseRef.current.active) {
+          const dx = p.x - mouseRef.current.x;
+          const dy = p.y - mouseRef.current.y;
+          const dist = Math.hypot(dx, dy);
+          if (dist < mouseInfluenceDist && dist > 0) {
+            const force = (1 - dist / mouseInfluenceDist) * 0.6;
+            p.x += (dx / dist) * force;
+            p.y += (dy / dist) * force;
+          }
+        }
+      }
+
+      // Draw connecting relationship links
+      for (let i = 0; i < particles.length; i++) {
+        const p1 = particles[i];
+
+        for (let j = i + 1; j < particles.length; j++) {
+          const p2 = particles[j];
+          const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+
+          if (dist < maxConnectDist) {
+            const lineAlpha = (1 - dist / maxConnectDist) * 0.22;
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.strokeStyle = `rgba(129, 140, 248, ${lineAlpha})`;
+            ctx.lineWidth = 0.8;
+            ctx.stroke();
+          }
+        }
+
+        // Draw node entity dot
+        ctx.beginPath();
+        ctx.arc(p1.x, p1.y, p1.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(165, 180, 252, ${p1.baseAlpha})`;
+        ctx.fill();
+      }
+
       ctx.restore();
 
       animFrameId.current = requestAnimationFrame(render);
@@ -123,8 +173,10 @@ export const AuroraBackground: React.FC<AuroraBackgroundProps> = ({ opacity = 0.
     return () => {
       if (animFrameId.current) cancelAnimationFrame(animFrameId.current);
       window.removeEventListener('resize', handleResize);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseleave', handleMouseLeave);
     };
-  }, [opacity, activePaletteId, palette.bgBase]);
+  }, [opacity]);
 
   return (
     <canvas
@@ -133,4 +185,6 @@ export const AuroraBackground: React.FC<AuroraBackgroundProps> = ({ opacity = 0.
     />
   );
 };
+
+export default AuroraBackground;
 

@@ -171,7 +171,7 @@ const Header: React.FC = () => {
               data-tour="header-save-button"
               className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-semibold transition-all shrink-0 ${
                 project?.id
-                  ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-xs shadow-blue-500/20 active:scale-95 cursor-pointer'
+                  ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-xs shadow-indigo-500/20 active:scale-95 cursor-pointer'
                   : 'bg-slate-800 text-slate-500 border border-slate-700/60 cursor-not-allowed opacity-50'
               }`}
               title={project?.id ? "Guardar cambios del diagrama" : "Abre o crea un proyecto para guardar"}
@@ -184,7 +184,7 @@ const Header: React.FC = () => {
             <button 
               onClick={openOnboarding}
               data-tour="header-quick-guide"
-              className="w-7 h-7 rounded-md bg-blue-600/15 hover:bg-blue-600/25 border border-blue-500/30 hover:border-blue-400 text-blue-400 hover:text-blue-300 flex items-center justify-center transition-all cursor-pointer shrink-0 relative group"
+              className="w-7 h-7 rounded-md bg-indigo-600/15 hover:bg-indigo-600/25 border border-indigo-500/30 hover:border-indigo-400 text-indigo-400 hover:text-indigo-300 flex items-center justify-center transition-all cursor-pointer shrink-0 relative group"
               title="Guía Rápida"
               aria-label="Guía Rápida"
             >

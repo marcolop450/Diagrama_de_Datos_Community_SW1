@@ -23,9 +23,8 @@ import {
   Check,
   ShieldAlert,
   ArrowRight,
-  Sparkles
 } from 'lucide-react';
-import { CANVAS_THEMES, CanvasThemeId, APP_PALETTES, AppPaletteId } from '../constants/canvasThemes';
+import { CANVAS_THEMES, CanvasThemeId } from '../constants/canvasThemes';
 
 export const SettingsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -48,7 +47,6 @@ export const SettingsPage: React.FC = () => {
     snapToGrid: true,
     autoSaveInterval: 30,
     defaultZoom: 1.0,
-    appPalette: 'warm-titanium' as AppPaletteId,
     autoSaveEnabled: true,
   };
 
@@ -58,7 +56,6 @@ export const SettingsPage: React.FC = () => {
   const [autoSaveEnabled, setAutoSaveEnabled] = useState<boolean>(currentPrefs.autoSaveEnabled ?? true);
   const [defaultZoom, setDefaultZoom] = useState<number>(currentPrefs.defaultZoom ?? 1.0);
   const [canvasTheme, setCanvasTheme] = useState<CanvasThemeId>((currentPrefs.canvasTheme as CanvasThemeId) || 'warm-titanium');
-  const [appPalette, setAppPalette] = useState<AppPaletteId>((currentPrefs.appPalette as AppPaletteId) || 'warm-titanium');
 
   // Security Form State
   const [currentPassword, setCurrentPassword] = useState('');
@@ -97,38 +94,11 @@ export const SettingsPage: React.FC = () => {
         if (user.preferences.canvasTheme) {
           setCanvasTheme(user.preferences.canvasTheme as CanvasThemeId);
         }
-        if (user.preferences.appPalette) {
-          setAppPalette(user.preferences.appPalette as AppPaletteId);
-        }
       }
     }
   }, [user]);
 
   const isSuperAdmin = user?.role === 'SUPER_ADMIN';
-
-  const handleSelectPalette = async (paletteId: AppPaletteId) => {
-    setAppPalette(paletteId);
-    document.documentElement.setAttribute('data-palette', paletteId);
-    localStorage.setItem('case_app_palette', paletteId);
-    if (user) {
-      updateUserProfile({
-        preferences: {
-          ...(user.preferences || {}),
-          appPalette: paletteId,
-        }
-      });
-    }
-
-    try {
-      await api.updatePreferences({
-        appPalette: paletteId,
-      });
-      toast.success(`Paleta ${APP_PALETTES[paletteId].name} aplicada`);
-    } catch (err) {
-      console.warn('Could not auto-save palette preference to backend:', err);
-      toast.success(`Paleta ${APP_PALETTES[paletteId].name} activada`);
-    }
-  };
 
   // Handle Profile Update
   const handleSaveProfile = async (e: React.FormEvent) => {
@@ -172,7 +142,7 @@ export const SettingsPage: React.FC = () => {
     setLoading(true);
     try {
       const payload: any = {
-        appPalette: appPalette,
+        appPalette: 'obsidian-graphite',
       };
 
       if (!isSuperAdmin) {
@@ -188,9 +158,7 @@ export const SettingsPage: React.FC = () => {
       const res = await api.updatePreferences(payload);
       if (res.success && res.data) {
         updateUserProfile({ preferences: res.data.preferences });
-        document.documentElement.setAttribute('data-palette', appPalette);
-        localStorage.setItem('case_app_palette', appPalette);
-        toast.success(isSuperAdmin ? 'Apariencia del sistema guardada con éxito' : 'Preferencias del editor guardadas con éxito');
+        toast.success('Preferencias guardadas con éxito');
       } else {
         toast.error('Error al guardar preferencias');
       }
@@ -427,122 +395,126 @@ export const SettingsPage: React.FC = () => {
 
         {/* TAB 2: CANVAS & SYSTEM PREFERENCES (IHC) */}
         {activeTab === 'preferences' && (
-          <div className="max-w-2xl mx-auto p-6 rounded-lg border border-slate-800/90 bg-slate-900/70 backdrop-blur-md shadow-xl space-y-6 animate-fade-in-up">
-            <div>
-              <h2 className="text-base font-bold text-white mb-1">
-                {isSuperAdmin ? 'Identidad Visual y Apariencia del Sistema' : 'Preferencias del Sistema y Editor CASE'}
+          <div className="max-w-4xl w-full mx-auto p-6 sm:p-8 rounded-2xl border border-[#242934] bg-[#14171d]/95 backdrop-blur-xl shadow-2xl space-y-8 animate-fade-in-up">
+            <div className="border-b border-[#242934] pb-4">
+              <h2 className="text-lg font-bold text-white mb-1 font-display">
+                Preferencias del Diagramador CASE UML
               </h2>
-              <p className="text-xs text-slate-400">
-                {isSuperAdmin
-                  ? 'Personaliza la atmósfera cromática global de la plataforma para tu panel de administración.'
-                  : 'Personaliza la identidad visual cromática, el modo de persistencia y el entorno de modelado.'}
+              <p className="text-xs text-slate-400 font-sans">
+                Personaliza el tema visual del lienzo de modelado, modo de persistencia y cuadrícula milimétrica.
               </p>
             </div>
 
-            {/* SECTION 1: 2 APP PALETTES (TITANIO CÁLIDO & GRAFITO OBSIDIANA) */}
-            <div className="pt-2 border-t border-slate-800/80">
-              <div className="flex items-center gap-2 mb-1.5">
-                <Sparkles size={16} className="text-amber-400" />
-                <h3 className="text-xs font-bold text-white">Paleta de Identidad Visual del Sistema</h3>
-              </div>
-              <p className="text-[11px] text-slate-400 mb-3.5">
-                Selecciona la atmósfera cromática global de la plataforma: interfaces, aurora luminosa, cursor reactivo y componentes.
-              </p>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                {/* 1. Titanio Cálido */}
-                <div
-                  onClick={() => handleSelectPalette('warm-titanium')}
-                  className={`relative p-4 rounded-xl border transition-all cursor-pointer select-none flex flex-col justify-between ${
-                    appPalette === 'warm-titanium'
-                      ? 'border-amber-500/80 bg-zinc-900/90 shadow-lg shadow-amber-500/10 ring-1 ring-amber-500/40'
-                      : 'border-zinc-800 bg-zinc-900/40 hover:border-zinc-700 hover:bg-zinc-900/70'
-                  }`}
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-2.5">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-amber-500 shadow-xs shadow-amber-500/50" />
-                        <span className="text-xs font-bold text-zinc-100">Titanio Cálido</span>
-                      </div>
-                      {appPalette === 'warm-titanium' ? (
-                        <span className="text-[10px] uppercase font-mono px-2 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-full font-bold flex items-center gap-1">
-                          <Check size={10} strokeWidth={3} /> Activo
-                        </span>
-                      ) : (
-                        <span className="text-[10px] text-zinc-500">Seleccionar</span>
-                      )}
-                    </div>
-
-                    {/* Color Swatch Previews */}
-                    <div className="flex items-center gap-1.5 mb-2.5">
-                      <div className="h-6 flex-1 rounded bg-[#18181b] border border-zinc-700/60 flex items-center justify-center text-[9px] text-zinc-400 font-mono">
-                        Base
-                      </div>
-                      <div className="h-6 flex-1 rounded bg-[#27272a] border border-zinc-700/60 flex items-center justify-center text-[9px] text-zinc-300 font-mono">
-                        Panel
-                      </div>
-                      <div className="h-6 flex-1 rounded bg-amber-500 flex items-center justify-center text-[9px] text-zinc-950 font-mono font-bold">
-                        Ámbar
-                      </div>
-                    </div>
-
-                    <p className="text-[11px] text-zinc-400 leading-relaxed">
-                      Carbón antracita con acentos ámbar dorado, bronce y calidez orgánica. Diseñado para reducir fatiga visual en sesiones prolongadas de arquitectura.
-                    </p>
-                  </div>
-                </div>
-
-                {/* 2. Grafito Obsidiana */}
-                <div
-                  onClick={() => handleSelectPalette('obsidian-graphite')}
-                  className={`relative p-4 rounded-xl border transition-all cursor-pointer select-none flex flex-col justify-between ${
-                    appPalette === 'obsidian-graphite'
-                      ? 'border-indigo-500/80 bg-slate-900/90 shadow-lg shadow-indigo-500/10 ring-1 ring-indigo-500/40'
-                      : 'border-slate-800 bg-slate-900/40 hover:border-slate-700 hover:bg-slate-900/70'
-                  }`}
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-2.5">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-indigo-500 shadow-xs shadow-indigo-500/50" />
-                        <span className="text-xs font-bold text-slate-100">Grafito Obsidiana</span>
-                      </div>
-                      {appPalette === 'obsidian-graphite' ? (
-                        <span className="text-[10px] uppercase font-mono px-2 py-0.5 bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 rounded-full font-bold flex items-center gap-1">
-                          <Check size={10} strokeWidth={3} /> Activo
-                        </span>
-                      ) : (
-                        <span className="text-[10px] text-slate-500">Seleccionar</span>
-                      )}
-                    </div>
-
-                    {/* Color Swatch Previews */}
-                    <div className="flex items-center gap-1.5 mb-2.5">
-                      <div className="h-6 flex-1 rounded bg-[#121316] border border-slate-700/60 flex items-center justify-center text-[9px] text-slate-400 font-mono">
-                        Base
-                      </div>
-                      <div className="h-6 flex-1 rounded bg-[#1a1d24] border border-slate-700/60 flex items-center justify-center text-[9px] text-slate-300 font-mono">
-                        Panel
-                      </div>
-                      <div className="h-6 flex-1 rounded bg-indigo-500 flex items-center justify-center text-[9px] text-white font-mono font-bold">
-                        Índigo
-                      </div>
-                    </div>
-
-                    <p className="text-[11px] text-slate-400 leading-relaxed">
-                      Grafito neutro de alta precisión con acentos índigo y zafiro cósmico. Inspirado en herramientas de ingeniería de software de clase mundial.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* SECTIONS 2, 3 & 4: CASE CANVAS PREFERENCES (ONLY FOR ARCHITECT & COLLABORATOR) */}
             {!isSuperAdmin && (
               <>
-                {/* SECTION 2: AUTO-SAVE CONTROLS & MANUAL SAVE SWITCH (IHC) */}
-                <div className="pt-4 border-t border-slate-800/80 space-y-3.5">
+                {/* SECTION 1: SELECTABLE CANVAS THEMES */}
+                <div className="space-y-3.5">
+                  <div className="flex items-center gap-2">
+                    <Palette size={16} className="text-indigo-400" />
+                    <h3 className="text-sm font-bold text-white font-display">Tema Visual del Lienzo CASE</h3>
+                  </div>
+                  <p className="text-xs text-slate-400 leading-relaxed font-sans">
+                    Personaliza la apariencia gráfica, contraste y colorimetría del espacio de trabajo y clases UML.
+                  </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
+                    {Object.values(CANVAS_THEMES).map((theme) => {
+                      const isSelected = canvasTheme === theme.id;
+                      return (
+                        <div
+                          key={theme.id}
+                          onClick={() => {
+                            setCanvasTheme(theme.id);
+                            updateUserProfile({
+                              preferences: {
+                                ...(user?.preferences || {
+                                  theme: 'dark',
+                                  grid: gridEnabled,
+                                  snapToGrid: snapEnabled,
+                                  autoSaveInterval: autoSave,
+                                  defaultZoom: defaultZoom,
+                                }),
+                                canvasTheme: theme.id,
+                              },
+                            });
+                          }}
+                          className={`group relative p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between select-none ${
+                            isSelected
+                              ? 'border-indigo-500/80 bg-[#171b25] ring-1 ring-indigo-500/40 shadow-md shadow-indigo-950/40'
+                              : 'border-[#242934] bg-[#0f1116]/60 hover:border-[#373e4f] hover:bg-[#141820]'
+                          }`}
+                        >
+                          {/* Theme preview swatch */}
+                          <div 
+                            className="w-full h-20 rounded-lg border mb-3 relative overflow-hidden flex items-center justify-center p-2 shadow-inner"
+                            style={{ backgroundColor: theme.canvasBg, borderColor: theme.preview.border }}
+                          >
+                            {/* Simulated Grid Lines in Preview */}
+                            <div 
+                              className="absolute inset-0 opacity-40 pointer-events-none" 
+                              style={{
+                                backgroundImage: `linear-gradient(to right, ${theme.gridMinor} 1px, transparent 1px), linear-gradient(to bottom, ${theme.gridMinor} 1px, transparent 1px)`,
+                                backgroundSize: '12px 12px'
+                              }}
+                            />
+
+                            {/* Mini Node Simulation */}
+                            <div 
+                              className="w-28 rounded-sm border shadow-sm flex flex-col overflow-hidden text-[8px] font-mono relative z-10"
+                              style={{ backgroundColor: theme.nodeBg, borderColor: theme.nodeBorder }}
+                            >
+                              <div 
+                                className="px-1.5 py-0.5 border-b font-bold truncate text-center"
+                                style={{ backgroundColor: theme.nodeHeaderBg, color: theme.nodeText, borderColor: theme.divider }}
+                              >
+                                Usuario
+                              </div>
+                              <div 
+                                className="px-1.5 py-0.5 truncate flex items-center justify-between"
+                                style={{ backgroundColor: theme.attrBg, color: theme.nodeTextMuted }}
+                              >
+                                <span>+ id: Long</span>
+                                <span 
+                                  className="px-1 text-[6px] rounded font-bold"
+                                  style={{ backgroundColor: theme.pkBg, color: theme.pkText }}
+                                >
+                                  PK
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Selected Checkmark Badge */}
+                            {isSelected && (
+                              <div className="absolute top-2 right-2 w-4 h-4 rounded-full bg-indigo-600 text-white flex items-center justify-center shadow-xs z-20">
+                                <Check size={10} strokeWidth={3} />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Name & Description */}
+                          <div>
+                            <div className="flex items-center justify-between">
+                              <span className={`text-xs font-bold ${isSelected ? 'text-indigo-300' : 'text-slate-200'}`}>
+                                {theme.name}
+                              </span>
+                              {isSelected && (
+                                <span className="text-[10px] uppercase font-mono px-1.5 py-0.2 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded font-semibold">
+                                  Activo
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-slate-400 mt-1 leading-snug line-clamp-2">
+                              {theme.description}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+            {/* SECTION 2: AUTO-SAVE CONTROLS & MANUAL SAVE SWITCH (IHC) */}
+            <div className="pt-4 border-t border-[#242934] space-y-3.5">
                   <div className="flex items-center gap-2 mb-1">
                     <Save size={15} className="text-blue-400" />
                     <h3 className="text-xs font-bold text-white">Control de Guardado y Persistencia</h3>
@@ -682,121 +654,15 @@ export const SettingsPage: React.FC = () => {
                 </select>
               </div>
             </div>
-
-            {/* 4 Selectable Canvas Themes */}
-            <div className="pt-4 border-t border-slate-800/80">
-              <div className="flex items-center gap-2 mb-1.5">
-                <Palette size={15} className="text-blue-400" />
-                <h3 className="text-xs font-bold text-white">Tema Visual del Lienzo CASE</h3>
-              </div>
-              <p className="text-[11px] text-slate-400 mb-4">
-                Personaliza la apariencia estética y de contraste del diagramador UML.
-              </p>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                {Object.values(CANVAS_THEMES).map((theme) => {
-                  const isSelected = canvasTheme === theme.id;
-                  return (
-                    <div
-                      key={theme.id}
-                      onClick={() => {
-                        setCanvasTheme(theme.id);
-                        updateUserProfile({
-                          preferences: {
-                            ...(user?.preferences || {
-                              theme: 'dark',
-                              grid: gridEnabled,
-                              snapToGrid: snapEnabled,
-                              autoSaveInterval: autoSave,
-                              defaultZoom: defaultZoom,
-                            }),
-                            canvasTheme: theme.id,
-                          },
-                        });
-                      }}
-                      className={`group relative p-3.5 rounded-lg border transition-all cursor-pointer flex flex-col justify-between select-none ${
-                        isSelected
-                          ? 'border-blue-500 bg-slate-950 ring-1 ring-blue-500/40 shadow-xs'
-                          : 'border-slate-800 bg-slate-950/40 hover:border-slate-700 hover:bg-slate-950/70'
-                      }`}
-                    >
-                      {/* Theme preview swatch */}
-                      <div 
-                        className="w-full h-18 rounded-md border mb-3 relative overflow-hidden flex items-center justify-center p-2 shadow-inner"
-                        style={{ backgroundColor: theme.canvasBg, borderColor: theme.preview.border }}
-                      >
-                        {/* Simulated Grid Lines in Preview */}
-                        <div 
-                          className="absolute inset-0 opacity-40 pointer-events-none" 
-                          style={{
-                            backgroundImage: `linear-gradient(to right, ${theme.gridMinor} 1px, transparent 1px), linear-gradient(to bottom, ${theme.gridMinor} 1px, transparent 1px)`,
-                            backgroundSize: '12px 12px'
-                          }}
-                        />
-
-                        {/* Mini Node Simulation */}
-                        <div 
-                          className="w-28 rounded-xs border shadow-xs flex flex-col overflow-hidden text-[8px] font-mono relative z-10"
-                          style={{ backgroundColor: theme.nodeBg, borderColor: theme.nodeBorder }}
-                        >
-                          <div 
-                            className="px-1.5 py-0.5 border-b font-bold truncate text-center"
-                            style={{ backgroundColor: theme.nodeHeaderBg, color: theme.nodeText, borderColor: theme.divider }}
-                          >
-                            Usuario
-                          </div>
-                          <div 
-                            className="px-1.5 py-0.5 truncate flex items-center justify-between"
-                            style={{ backgroundColor: theme.attrBg, color: theme.nodeTextMuted }}
-                          >
-                            <span>+ id: Long</span>
-                            <span 
-                              className="px-0.5 text-[6px] rounded-xs font-bold"
-                              style={{ backgroundColor: theme.pkBg, color: theme.pkText }}
-                            >
-                              PK
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Selected Checkmark Badge */}
-                        {isSelected && (
-                          <div className="absolute top-2 right-2 w-4 h-4 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-xs z-20">
-                            <Check size={10} strokeWidth={3} />
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Name & Description */}
-                      <div>
-                        <div className="flex items-center justify-between">
-                          <span className={`text-xs font-bold ${isSelected ? 'text-blue-400' : 'text-white'}`}>
-                            {theme.name}
-                          </span>
-                          {isSelected && (
-                            <span className="text-[10px] uppercase font-mono px-1.5 py-0.2 bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded font-semibold">
-                              Activo
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[11px] text-slate-400 mt-1 leading-snug">
-                          {theme.description}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
           </>
         )}
 
-            <div className="pt-4 flex justify-end">
+            <div className="pt-6 flex justify-end border-t border-[#242934]">
               <button
                 type="button"
                 onClick={handleSavePreferences}
                 disabled={loading}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-md text-xs font-semibold shadow-xs transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+                className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold shadow-sm transition-all active:scale-98 cursor-pointer disabled:opacity-50"
               >
                 {loading ? <RefreshCw size={13} className="animate-spin" /> : <Save size={13} />}
                 <span>{isSuperAdmin ? 'Guardar Apariencia' : 'Guardar Preferencias'}</span>

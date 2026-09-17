@@ -20,6 +20,9 @@ public interface UserProfileRepository extends JpaRepository<UserProfile, UUID> 
     boolean existsByEmailIgnoreCase(String email);
     boolean existsByUsernameIgnoreCase(String username);
     List<UserProfile> findAllByOrderByCreatedAtDesc();
+    List<UserProfile> findByArchitectIdOrderByCreatedAtDesc(UUID architectId);
+    List<UserProfile> findByRoleAndArchitectIdOrderByCreatedAtDesc(String role, UUID architectId);
     long countByRole(String role);
     long countByIsActive(Boolean isActive);
+    long countByArchitectId(UUID architectId);
 }

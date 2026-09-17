@@ -15,19 +15,19 @@ import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { useAuthStore } from './stores/authStore';
 import { CursorSpotlight } from './components/common/CursorSpotlight';
 import { JoinCollabPage } from './pages/JoinCollabPage';
+import { CollaboratorsPage } from './pages/CollaboratorsPage';
 
 function App() {
-  const { user, initialize } = useAuthStore();
-  const palette = user?.preferences?.appPalette || (localStorage.getItem('case_app_palette') as any) || 'warm-titanium';
+  const { initialize } = useAuthStore();
 
   useEffect(() => {
     initialize();
   }, [initialize]);
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-palette', palette);
-    localStorage.setItem('case_app_palette', palette);
-  }, [palette]);
+    document.documentElement.setAttribute('data-palette', 'obsidian-graphite');
+    localStorage.setItem('case_app_palette', 'obsidian-graphite');
+  }, []);
 
   return (
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
@@ -95,6 +95,16 @@ function App() {
           element={
             <ProtectedRoute>
               <ProjectsPage />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* Protected Architect Collaborators Team Page (ARQUITECTO only) */}
+        <Route 
+          path="/collaborators" 
+          element={
+            <ProtectedRoute requiredRole="ARQUITECTO">
+              <CollaboratorsPage />
             </ProtectedRoute>
           } 
         />

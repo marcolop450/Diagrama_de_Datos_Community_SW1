@@ -2,6 +2,7 @@ import axios from 'axios';
 import { DiagramProject, ClassNodeData, RelationshipData } from '../types/diagram';
 import { DomainTemplate } from '../types/template';
 import { AuditQueryParams } from '../types/audit';
+import { CreateCollaboratorData } from '../types/collaborator';
 
 const API_BASE_URL = (import.meta.env?.VITE_API_URL || 'http://localhost:8080') + '/api';
 
@@ -278,6 +279,21 @@ export const api = {
     const res = await apiClient.post(`/projects/${projectId}/import/xmi`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
+    return res.data;
+  },
+
+  // Gestión de Colaboradores del Arquitecto
+  getArchitectCollaborators: async (search?: string) => {
+    const params = search ? { search } : {};
+    const res = await apiClient.get('/architect/collaborators', { params });
+    return res.data;
+  },
+  createArchitectCollaborator: async (data: CreateCollaboratorData) => {
+    const res = await apiClient.post('/architect/collaborators', data);
+    return res.data;
+  },
+  toggleCollaboratorStatus: async (collaboratorId: string) => {
+    const res = await apiClient.patch(`/architect/collaborators/${collaboratorId}/toggle-status`);
     return res.data;
   },
 };

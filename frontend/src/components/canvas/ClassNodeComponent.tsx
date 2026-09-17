@@ -94,7 +94,7 @@ const ClassNodeComponent = ({ id, data, selected }: CustomNodeProps) => {
           backgroundColor: theme.handleBg,
           borderColor: theme.handleBorder 
         }}
-        className="!w-3 !h-3 !border-2 !rounded-full opacity-0 group-hover:opacity-100 hover:!ring-4 hover:!ring-blue-400/50 transition-all duration-150 shadow-md z-20 cursor-crosshair" 
+        className="!w-2.5 !h-2.5 !border-2 !rounded-full opacity-0 group-hover:opacity-100 hover:!ring-2 hover:!ring-indigo-400/60 transition-all duration-150 shadow-md z-20 cursor-crosshair" 
       />
       <Handle 
         type="source" 
@@ -108,7 +108,7 @@ const ClassNodeComponent = ({ id, data, selected }: CustomNodeProps) => {
           backgroundColor: theme.handleBg,
           borderColor: theme.handleBorder 
         }}
-        className="!w-3 !h-3 !border-2 !rounded-full opacity-0 group-hover:opacity-100 hover:!ring-4 hover:!ring-blue-400/50 transition-all duration-150 shadow-md z-20 cursor-crosshair" 
+        className="!w-2.5 !h-2.5 !border-2 !rounded-full opacity-0 group-hover:opacity-100 hover:!ring-2 hover:!ring-indigo-400/60 transition-all duration-150 shadow-md z-20 cursor-crosshair" 
       />
       <Handle 
         type="source" 
@@ -122,7 +122,7 @@ const ClassNodeComponent = ({ id, data, selected }: CustomNodeProps) => {
           backgroundColor: theme.handleBg,
           borderColor: theme.handleBorder 
         }}
-        className="!w-3 !h-3 !border-2 !rounded-full opacity-0 group-hover:opacity-100 hover:!ring-4 hover:!ring-blue-400/50 transition-all duration-150 shadow-md z-20 cursor-crosshair" 
+        className="!w-2.5 !h-2.5 !border-2 !rounded-full opacity-0 group-hover:opacity-100 hover:!ring-2 hover:!ring-indigo-400/60 transition-all duration-150 shadow-md z-20 cursor-crosshair" 
       />
       <Handle 
         type="source" 
@@ -136,7 +136,7 @@ const ClassNodeComponent = ({ id, data, selected }: CustomNodeProps) => {
           backgroundColor: theme.handleBg,
           borderColor: theme.handleBorder 
         }}
-        className="!w-3 !h-3 !border-2 !rounded-full opacity-0 group-hover:opacity-100 hover:!ring-4 hover:!ring-blue-400/50 transition-all duration-150 shadow-md z-20 cursor-crosshair" 
+        className="!w-2.5 !h-2.5 !border-2 !rounded-full opacity-0 group-hover:opacity-100 hover:!ring-2 hover:!ring-indigo-400/60 transition-all duration-150 shadow-md z-20 cursor-crosshair" 
       />
 
       {/* Compartment 1: UML Header (Stereotype + Class Name) */}
@@ -158,7 +158,7 @@ const ClassNodeComponent = ({ id, data, selected }: CustomNodeProps) => {
 
         <div className="flex items-center justify-center gap-1.5 w-full">
           <h3 
-            className={`font-sans font-bold text-[13px] tracking-tight truncate text-center ${isAbstract ? 'italic' : ''}`}
+            className={`font-display font-semibold text-[13px] tracking-tight truncate text-center ${isAbstract ? 'italic' : ''}`}
             style={{ color: theme.nodeText }}
           >
             {data.name || 'ClaseSinNombre'}
@@ -199,7 +199,7 @@ const ClassNodeComponent = ({ id, data, selected }: CustomNodeProps) => {
               <span className="font-medium" style={{ color: theme.nodeStereotypeText }}>{attr.type}</span>
               {(attr.isId || attr.isPrimaryKey) && (
                 <span 
-                  className="ml-1.5 px-1 py-0.2 text-[9px] font-bold rounded-xs border shadow-xs"
+                  className="ml-1.5 px-1 py-0.2 text-[9px] font-bold rounded-[3px] border shadow-xs"
                   style={{ 
                     backgroundColor: theme.pkBg, 
                     color: theme.pkText, 
@@ -212,7 +212,7 @@ const ClassNodeComponent = ({ id, data, selected }: CustomNodeProps) => {
               )}
               {attr.isNotNull && !attr.isId && !attr.isPrimaryKey && (
                 <span 
-                  className="ml-1 px-1 py-0.2 text-[9px] font-semibold rounded-xs border border-blue-500/40 bg-blue-500/15 text-blue-400 shadow-xs"
+                  className="ml-1 px-1 py-0.2 text-[9px] font-semibold rounded-[3px] border border-indigo-500/40 bg-indigo-500/15 text-indigo-300 shadow-xs"
                   title="Campo Obligatorio (NOT NULL)"
                 >
                   &#123;NN&#125;

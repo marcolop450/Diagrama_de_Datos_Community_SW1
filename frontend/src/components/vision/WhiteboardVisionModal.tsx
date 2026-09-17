@@ -252,29 +252,29 @@ export const WhiteboardVisionModal: React.FC<WhiteboardVisionModalProps> = ({
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-2xl bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fade-in font-sans">
+      <div className="relative w-full max-w-2xl bg-[#14171d] border border-[#242934] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/80">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#242934] bg-[#11141a]">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
+            <div className="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
               <Camera className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-slate-100 flex items-center gap-2">
+              <h2 className="text-base font-semibold text-white flex items-center gap-2 font-display">
                 Digitalizar Foto de Pizarra
-                <span className="px-2 py-0.5 text-[11px] font-medium tracking-wide uppercase rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                <span className="px-2 py-0.5 text-[10px] font-mono font-medium tracking-wide uppercase rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
                   IA Visión
                 </span>
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-400 font-sans">
                 Convierte bocetos en pizarras físicas o papel a diagramas interactivos OMG UML 2.5
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#181c24] transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -282,16 +282,16 @@ export const WhiteboardVisionModal: React.FC<WhiteboardVisionModalProps> = ({
 
         {/* Tab Selection (Subir Archivo vs Cámara) */}
         {!resultSummary && (
-          <div className="flex border-b border-slate-800 bg-slate-950/40 px-6 pt-3 gap-2">
+          <div className="flex border-b border-[#242934] bg-[#0f1115]/60 px-6 pt-3 gap-2">
             <button
               onClick={() => {
                 setActiveTab('upload');
                 stopCamera();
               }}
-              className={`flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-t-lg transition-all border-b-2 ${
+              className={`flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-t-xl transition-all border-b-2 cursor-pointer ${
                 activeTab === 'upload'
-                  ? 'border-amber-400 text-amber-300 bg-slate-800/40'
-                  : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/20'
+                  ? 'border-indigo-500 text-indigo-300 bg-[#181c24]'
+                  : 'border-transparent text-slate-400 hover:text-white hover:bg-[#181c24]/50'
               }`}
             >
               <UploadCloud className="w-4 h-4" />
@@ -302,10 +302,10 @@ export const WhiteboardVisionModal: React.FC<WhiteboardVisionModalProps> = ({
                 setActiveTab('camera');
                 startCamera();
               }}
-              className={`flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-t-lg transition-all border-b-2 ${
+              className={`flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-t-xl transition-all border-b-2 cursor-pointer ${
                 activeTab === 'camera'
-                  ? 'border-amber-400 text-amber-300 bg-slate-800/40'
-                  : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/20'
+                  ? 'border-indigo-500 text-indigo-300 bg-[#181c24]'
+                  : 'border-transparent text-slate-400 hover:text-white hover:bg-[#181c24]/50'
               }`}
             >
               <Video className="w-4 h-4" />
@@ -319,26 +319,26 @@ export const WhiteboardVisionModal: React.FC<WhiteboardVisionModalProps> = ({
           {/* Result View */}
           {resultSummary ? (
             <div className="space-y-4">
-              <div className="p-4 rounded-xl bg-emerald-950/30 border border-emerald-500/30 flex items-start gap-3">
+              <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-start gap-3">
                 <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
                 <div className="space-y-1">
-                  <h4 className="text-sm font-medium text-emerald-200">
+                  <h4 className="text-sm font-semibold text-emerald-200 font-display">
                     Boceto Vectorizado Exitosamente
                   </h4>
                   <p className="text-xs text-slate-300">
                     {resultSummary.message}
                   </p>
                   <div className="flex flex-wrap items-center gap-2 pt-2">
-                    <span className="px-2 py-0.5 text-[11px] rounded-md bg-slate-800 text-slate-200 border border-slate-700">
-                      Proveedor: <strong className="text-amber-400 font-semibold">{resultSummary.provider}</strong>
+                    <span className="px-2 py-0.5 text-[11px] rounded-lg bg-[#181c24] text-slate-200 border border-[#242934] font-mono">
+                      Proveedor: <strong className="text-indigo-400 font-semibold">{resultSummary.provider}</strong>
                     </span>
-                    <span className="px-2 py-0.5 text-[11px] rounded-md bg-slate-800 text-slate-200 border border-slate-700">
+                    <span className="px-2 py-0.5 text-[11px] rounded-lg bg-[#181c24] text-slate-200 border border-[#242934] font-mono">
                       Latencia: <strong className="text-indigo-400 font-semibold">{resultSummary.latencyMs} ms</strong>
                     </span>
-                    <span className="px-2 py-0.5 text-[11px] rounded-md bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                    <span className="px-2 py-0.5 text-[11px] rounded-lg bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 font-mono">
                       {resultSummary.classesCount} Clases
                     </span>
-                    <span className="px-2 py-0.5 text-[11px] rounded-md bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
+                    <span className="px-2 py-0.5 text-[11px] rounded-lg bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 font-mono">
                       {resultSummary.relationshipsCount} Relaciones
                     </span>
                   </div>
@@ -347,13 +347,13 @@ export const WhiteboardVisionModal: React.FC<WhiteboardVisionModalProps> = ({
 
               {/* Small preview of processed image */}
               {previewUrl && (
-                <div className="relative rounded-xl overflow-hidden border border-slate-800 max-h-48 bg-black/40 flex items-center justify-center">
+                <div className="relative rounded-xl overflow-hidden border border-[#242934] max-h-48 bg-[#0a0c10] flex items-center justify-center">
                   <img
                     src={previewUrl}
                     alt="Pizarra procesada"
                     className="max-h-48 object-contain"
                   />
-                  <div className="absolute top-2 right-2 px-2 py-1 bg-black/70 backdrop-blur-md rounded-md text-[10px] text-slate-300">
+                  <div className="absolute top-2 right-2 px-2 py-1 bg-black/70 backdrop-blur-md rounded-lg text-[10px] text-slate-300 border border-white/10 font-mono">
                     Fotografía analizada
                   </div>
                 </div>
@@ -361,7 +361,7 @@ export const WhiteboardVisionModal: React.FC<WhiteboardVisionModalProps> = ({
 
               {/* Detected classes overview */}
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider font-display">
                   Entidades Detectadas en la Pizarra:
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-44 overflow-y-auto pr-1">
@@ -370,11 +370,11 @@ export const WhiteboardVisionModal: React.FC<WhiteboardVisionModalProps> = ({
                     .map((mut, idx) => (
                       <div
                         key={idx}
-                        className="p-2.5 rounded-lg bg-slate-800/60 border border-slate-700/60 flex items-center justify-between"
+                        className="p-2.5 rounded-xl bg-[#181c24] border border-[#242934] flex items-center justify-between"
                       >
                         <div className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                          <span className="text-xs font-medium text-slate-200">
+                          <span className="text-xs font-medium text-white font-display">
                             {mut.classData?.name}
                           </span>
                         </div>
@@ -387,10 +387,10 @@ export const WhiteboardVisionModal: React.FC<WhiteboardVisionModalProps> = ({
               </div>
 
               {/* Strategy reminder */}
-              <div className="p-3 rounded-lg bg-slate-800/40 border border-slate-700/40 text-xs text-slate-300 flex items-center gap-2">
-                <Layers className="w-4 h-4 text-amber-400 shrink-0" />
+              <div className="p-3 rounded-xl bg-[#181c24] border border-[#242934] text-xs text-slate-300 flex items-center gap-2">
+                <Layers className="w-4 h-4 text-indigo-400 shrink-0" />
                 <span>
-                  Modo seleccionado: <strong>{mergeMode ? 'Incorporar al diagrama actual' : 'Reemplazar diagrama actual'}</strong>.
+                  Modo seleccionado: <strong className="text-white">{mergeMode ? 'Incorporar al diagrama actual' : 'Reemplazar diagrama actual'}</strong>.
                 </span>
               </div>
             </div>
@@ -408,10 +408,10 @@ export const WhiteboardVisionModal: React.FC<WhiteboardVisionModalProps> = ({
                       onDragLeave={() => setDragOver(false)}
                       onDrop={handleDrop}
                       onClick={() => fileInputRef.current?.click()}
-                      className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-3 ${
+                      className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-3 ${
                         dragOver
-                          ? 'border-amber-400 bg-amber-500/5'
-                          : 'border-slate-700 hover:border-slate-500 bg-slate-950/40'
+                          ? 'border-indigo-500 bg-indigo-500/10'
+                          : 'border-[#242934] hover:border-indigo-500/40 bg-[#0f1115]/60 hover:bg-[#0f1115]'
                       }`}
                     >
                       <input
@@ -421,29 +421,29 @@ export const WhiteboardVisionModal: React.FC<WhiteboardVisionModalProps> = ({
                         className="hidden"
                         onChange={handleFileChange}
                       />
-                      <div className="p-3 rounded-2xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                      <div className="p-3 rounded-2xl bg-[#181c24] text-indigo-400 border border-[#242934]">
                         <UploadCloud className="w-8 h-8" />
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-slate-200">
+                        <p className="text-sm font-medium text-slate-200 font-display">
                           Arrastra y suelta la foto de tu pizarra aquí
                         </p>
-                        <p className="text-xs text-slate-400 mt-1">
+                        <p className="text-xs text-slate-400 mt-1 font-mono">
                           o haz clic para explorar archivos en tu equipo (PNG, JPG, WEBP hasta 15MB)
                         </p>
                       </div>
                     </div>
                   ) : (
-                    <div className="relative rounded-xl overflow-hidden border border-slate-700 bg-black/40">
+                    <div className="relative rounded-xl overflow-hidden border border-[#242934] bg-[#0a0c10]">
                       <img
                         src={previewUrl}
                         alt="Boceto cargado"
-                        className="max-h-64 w-full object-contain bg-slate-950"
+                        className="max-h-64 w-full object-contain bg-[#0a0c10]"
                       />
                       <div className="absolute top-3 right-3 flex gap-2">
                         <button
                           onClick={handleReset}
-                          className="px-2.5 py-1.5 rounded-lg bg-red-500/80 hover:bg-red-500 text-white text-xs font-medium backdrop-blur-md flex items-center gap-1.5 transition-colors shadow-lg"
+                          className="px-2.5 py-1.5 rounded-lg bg-rose-600/80 hover:bg-rose-600 text-white text-xs font-medium backdrop-blur-md flex items-center gap-1.5 transition-colors shadow-lg cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                           Cambiar Foto
@@ -457,7 +457,7 @@ export const WhiteboardVisionModal: React.FC<WhiteboardVisionModalProps> = ({
               {/* Tab 2: Live Camera Mode */}
               {activeTab === 'camera' && (
                 <div className="space-y-4">
-                  <div className="relative rounded-xl overflow-hidden border border-slate-700 bg-black aspect-video flex items-center justify-center">
+                  <div className="relative rounded-2xl overflow-hidden border border-[#242934] bg-black aspect-video flex items-center justify-center">
                     <video
                       ref={videoRef}
                       playsInline
@@ -465,12 +465,12 @@ export const WhiteboardVisionModal: React.FC<WhiteboardVisionModalProps> = ({
                       className="w-full h-full object-cover"
                     />
                     {!isCameraActive && (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-slate-950/90">
+                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-[#0f1115]/90">
                         <VideoOff className="w-8 h-8 text-slate-500" />
                         <p className="text-xs text-slate-400">Cámara apagada o sin permisos</p>
                         <button
                           onClick={startCamera}
-                          className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition-colors"
+                          className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-colors cursor-pointer"
                         >
                           Reintentar Acceso
                         </button>
@@ -482,7 +482,7 @@ export const WhiteboardVisionModal: React.FC<WhiteboardVisionModalProps> = ({
                     <div className="flex justify-center">
                       <button
                         onClick={capturePhoto}
-                        className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs flex items-center gap-2 shadow-lg shadow-amber-500/20 transition-all hover:scale-105"
+                        className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs flex items-center gap-2 shadow-lg shadow-indigo-600/20 transition-all cursor-pointer active:scale-95"
                       >
                         <Camera className="w-4 h-4" />
                         Capturar Fotograma
@@ -493,16 +493,16 @@ export const WhiteboardVisionModal: React.FC<WhiteboardVisionModalProps> = ({
               )}
 
               {/* Injection Strategy (Reemplazar vs Fusionar) */}
-              <div className="p-4 rounded-xl bg-slate-800/40 border border-slate-700/60 space-y-2">
-                <label className="text-xs font-semibold text-slate-200 block">
+              <div className="p-4 rounded-xl bg-[#0f1115]/60 border border-[#242934] space-y-2">
+                <label className="text-xs font-semibold text-slate-200 block font-display">
                   Estrategia de Inyección en el Lienzo:
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <label
-                    className={`flex items-start gap-2.5 p-2.5 rounded-lg border cursor-pointer transition-all ${
+                    className={`flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition-all ${
                       !mergeMode
-                        ? 'border-amber-400/80 bg-amber-500/5'
-                        : 'border-slate-700/60 bg-slate-900/40 hover:border-slate-600'
+                        ? 'border-indigo-500/80 bg-indigo-500/10'
+                        : 'border-[#242934] bg-[#181c24] hover:border-slate-700'
                     }`}
                   >
                     <input
@@ -510,10 +510,10 @@ export const WhiteboardVisionModal: React.FC<WhiteboardVisionModalProps> = ({
                       name="injectionStrategy"
                       checked={!mergeMode}
                       onChange={() => setMergeMode(false)}
-                      className="mt-0.5 text-amber-500 focus:ring-amber-400"
+                      className="mt-0.5 text-indigo-600 focus:ring-0"
                     />
                     <div>
-                      <span className="text-xs font-medium text-slate-200 block">
+                      <span className="text-xs font-semibold text-white block">
                         Reemplazar Modelo
                       </span>
                       <span className="text-[11px] text-slate-400 block mt-0.5">
@@ -523,10 +523,10 @@ export const WhiteboardVisionModal: React.FC<WhiteboardVisionModalProps> = ({
                   </label>
 
                   <label
-                    className={`flex items-start gap-2.5 p-2.5 rounded-lg border cursor-pointer transition-all ${
+                    className={`flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition-all ${
                       mergeMode
-                        ? 'border-amber-400/80 bg-amber-500/5'
-                        : 'border-slate-700/60 bg-slate-900/40 hover:border-slate-600'
+                        ? 'border-indigo-500/80 bg-indigo-500/10'
+                        : 'border-[#242934] bg-[#181c24] hover:border-slate-700'
                     }`}
                   >
                     <input
@@ -534,10 +534,10 @@ export const WhiteboardVisionModal: React.FC<WhiteboardVisionModalProps> = ({
                       name="injectionStrategy"
                       checked={mergeMode}
                       onChange={() => setMergeMode(true)}
-                      className="mt-0.5 text-amber-500 focus:ring-amber-400"
+                      className="mt-0.5 text-indigo-600 focus:ring-0"
                     />
                     <div>
-                      <span className="text-xs font-medium text-slate-200 block">
+                      <span className="text-xs font-semibold text-white block">
                         Incorporar / Fusionar
                       </span>
                       <span className="text-[11px] text-slate-400 block mt-0.5">
@@ -550,13 +550,13 @@ export const WhiteboardVisionModal: React.FC<WhiteboardVisionModalProps> = ({
 
               {/* Progress Indicator */}
               {isProcessing && (
-                <div className="p-4 rounded-xl bg-indigo-950/30 border border-indigo-500/30 space-y-2.5">
+                <div className="p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 space-y-2.5">
                   <div className="flex items-center gap-2 text-indigo-300">
                     <RefreshCw className="w-4 h-4 animate-spin text-indigo-400" />
                     <span className="text-xs font-medium">{processingStage}</span>
                   </div>
-                  <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
-                    <div className="bg-gradient-to-r from-amber-400 via-indigo-400 to-emerald-400 h-1.5 rounded-full animate-pulse w-full" />
+                  <div className="w-full bg-[#181c24] rounded-full h-1.5 overflow-hidden">
+                    <div className="bg-indigo-500 h-1.5 rounded-full animate-pulse w-full" />
                   </div>
                 </div>
               )}
@@ -565,10 +565,10 @@ export const WhiteboardVisionModal: React.FC<WhiteboardVisionModalProps> = ({
         </div>
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-slate-800 bg-slate-900/90">
+        <div className="flex items-center justify-between px-6 py-4 border-t border-[#242934] bg-[#11141a]">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+            className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white bg-[#181c24] hover:bg-[#1f2430] border border-[#242934] rounded-xl transition-colors cursor-pointer"
           >
             {resultSummary ? 'Cerrar' : 'Cancelar'}
           </button>
@@ -578,14 +578,14 @@ export const WhiteboardVisionModal: React.FC<WhiteboardVisionModalProps> = ({
               <>
                 <button
                   onClick={handleReset}
-                  className="px-3.5 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 rounded-lg transition-colors flex items-center gap-1.5"
+                  className="px-3.5 py-2 text-xs font-semibold text-slate-300 hover:text-white bg-[#181c24] hover:bg-[#1f2430] border border-[#242934] rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
                   Volver a Analizar
                 </button>
                 <button
                   onClick={handleApplyToCanvas}
-                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-semibold text-xs flex items-center gap-2 shadow-lg shadow-emerald-500/20 transition-all hover:scale-105"
+                  className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs flex items-center gap-2 shadow-lg shadow-indigo-600/20 transition-all cursor-pointer active:scale-95"
                 >
                   <Sparkles className="w-4 h-4" />
                   Aplicar al Diagrama
@@ -595,10 +595,10 @@ export const WhiteboardVisionModal: React.FC<WhiteboardVisionModalProps> = ({
               <button
                 onClick={handleDigitize}
                 disabled={!selectedFile || isProcessing}
-                className={`px-5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all shadow-lg ${
+                className={`px-5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${
                   !selectedFile || isProcessing
-                    ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 shadow-amber-500/20 hover:scale-105'
+                    ? 'bg-[#181c24] text-slate-500 border border-[#242934] cursor-not-allowed'
+                    : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/20 active:scale-95'
                 }`}
               >
                 {isProcessing ? (

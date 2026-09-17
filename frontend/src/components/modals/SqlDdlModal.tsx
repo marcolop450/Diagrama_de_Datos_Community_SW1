@@ -111,26 +111,26 @@ export const SqlDdlModal: React.FC<SqlDdlModalProps> = ({ isOpen, onClose }) => 
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 bg-black/75 backdrop-blur-md animate-fade-in font-sans">
       <div 
-        className="relative w-full max-w-5xl max-h-[92vh] flex flex-col rounded-xl bg-slate-900 border border-slate-800 shadow-2xl overflow-hidden animate-scale-in"
+        className="relative w-full max-w-5xl max-h-[92vh] flex flex-col rounded-2xl bg-[#14171d] border border-[#242934] shadow-2xl overflow-hidden animate-scale-in"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-800 bg-slate-900/90 shrink-0">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#242934] bg-[#11141a] shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
               <Database size={18} />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h2 className="text-sm sm:text-base font-semibold text-white truncate">
+                <h2 className="text-sm sm:text-base font-semibold text-white truncate font-display">
                   Generar Esquema DDL SQL
                 </h2>
-                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 shrink-0">
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 shrink-0">
                   PostgreSQL 17
                 </span>
-                <span className="hidden sm:inline-flex px-2 py-0.5 rounded text-[10px] font-medium bg-blue-500/10 border border-blue-500/20 text-blue-300 shrink-0">
+                <span className="hidden sm:inline-flex px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 shrink-0">
                   Supabase Ready
                 </span>
               </div>
@@ -143,10 +143,10 @@ export const SqlDdlModal: React.FC<SqlDdlModalProps> = ({ isOpen, onClose }) => 
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => setShowOptions(!showOptions)}
-              className={`p-1.5 rounded-lg border text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+              className={`p-1.5 rounded-xl border text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
                 showOptions
-                  ? 'bg-emerald-600/15 text-emerald-400 border-emerald-500/30'
-                  : 'bg-slate-850 hover:bg-slate-800 text-slate-300 border-slate-700/60'
+                  ? 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30'
+                  : 'bg-[#181c24] hover:bg-[#1f2430] text-slate-300 border-[#242934]'
               }`}
               title="Configuración avanzada de DDL"
             >
@@ -156,7 +156,7 @@ export const SqlDdlModal: React.FC<SqlDdlModalProps> = ({ isOpen, onClose }) => 
 
             <button
               onClick={onClose}
-              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+              className="p-1.5 text-slate-400 hover:text-white hover:bg-[#181c24] rounded-lg transition-colors cursor-pointer"
               title="Cerrar ventana"
             >
               <X size={18} />
@@ -166,20 +166,20 @@ export const SqlDdlModal: React.FC<SqlDdlModalProps> = ({ isOpen, onClose }) => 
 
         {/* Configuration Drawer (Collapsible) */}
         {showOptions && (
-          <div className="p-4 border-b border-slate-800 bg-slate-850/60 transition-all shrink-0 animate-fade-in">
-            <div className="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-              <Settings2 size={13} className="text-emerald-400" />
+          <div className="p-4 border-b border-[#242934] bg-[#0f1115]/90 transition-all shrink-0 animate-fade-in">
+            <div className="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-1.5 font-display">
+              <Settings2 size={13} className="text-indigo-400" />
               Parámetros de Generación SQL
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {/* Option 1: Drop Tables */}
-              <label className="flex items-center gap-2.5 p-2.5 rounded-lg bg-slate-900/80 border border-slate-800 hover:border-slate-700 transition-colors cursor-pointer select-none">
+              <label className="flex items-center gap-2.5 p-2.5 rounded-xl bg-[#181c24] border border-[#242934] hover:border-indigo-500/30 transition-colors cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={dropTables}
                   onChange={(e) => setDropTables(e.target.checked)}
-                  className="rounded border-slate-700 text-emerald-500 focus:ring-emerald-500/20 w-4 h-4 bg-slate-950 cursor-pointer"
+                  className="rounded border-[#242934] text-indigo-600 focus:ring-indigo-500/20 w-4 h-4 bg-[#0f1115] cursor-pointer"
                 />
                 <div className="min-w-0">
                   <div className="text-xs font-medium text-slate-200">DROP TABLE IF EXISTS</div>
@@ -188,12 +188,12 @@ export const SqlDdlModal: React.FC<SqlDdlModalProps> = ({ isOpen, onClose }) => 
               </label>
 
               {/* Option 2: Foreign Key Constraints */}
-              <label className="flex items-center gap-2.5 p-2.5 rounded-lg bg-slate-900/80 border border-slate-800 hover:border-slate-700 transition-colors cursor-pointer select-none">
+              <label className="flex items-center gap-2.5 p-2.5 rounded-xl bg-[#181c24] border border-[#242934] hover:border-indigo-500/30 transition-colors cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={includeForeignKeys}
                   onChange={(e) => setIncludeForeignKeys(e.target.checked)}
-                  className="rounded border-slate-700 text-emerald-500 focus:ring-emerald-500/20 w-4 h-4 bg-slate-950 cursor-pointer"
+                  className="rounded border-[#242934] text-indigo-600 focus:ring-indigo-500/20 w-4 h-4 bg-[#0f1115] cursor-pointer"
                 />
                 <div className="min-w-0">
                   <div className="text-xs font-medium text-slate-200">Claves Foráneas (FK)</div>
@@ -202,12 +202,12 @@ export const SqlDdlModal: React.FC<SqlDdlModalProps> = ({ isOpen, onClose }) => 
               </label>
 
               {/* Option 3: Create Indexes */}
-              <label className="flex items-center gap-2.5 p-2.5 rounded-lg bg-slate-900/80 border border-slate-800 hover:border-slate-700 transition-colors cursor-pointer select-none">
+              <label className="flex items-center gap-2.5 p-2.5 rounded-xl bg-[#181c24] border border-[#242934] hover:border-indigo-500/30 transition-colors cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={createIndexes}
                   onChange={(e) => setCreateIndexes(e.target.checked)}
-                  className="rounded border-slate-700 text-emerald-500 focus:ring-emerald-500/20 w-4 h-4 bg-slate-950 cursor-pointer"
+                  className="rounded border-[#242934] text-indigo-600 focus:ring-indigo-500/20 w-4 h-4 bg-[#0f1115] cursor-pointer"
                 />
                 <div className="min-w-0">
                   <div className="text-xs font-medium text-slate-200">Índices B-Tree</div>
@@ -216,12 +216,12 @@ export const SqlDdlModal: React.FC<SqlDdlModalProps> = ({ isOpen, onClose }) => 
               </label>
 
               {/* Option 4: Include Comments */}
-              <label className="flex items-center gap-2.5 p-2.5 rounded-lg bg-slate-900/80 border border-slate-800 hover:border-slate-700 transition-colors cursor-pointer select-none">
+              <label className="flex items-center gap-2.5 p-2.5 rounded-xl bg-[#181c24] border border-[#242934] hover:border-indigo-500/30 transition-colors cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={includeComments}
                   onChange={(e) => setIncludeComments(e.target.checked)}
-                  className="rounded border-slate-700 text-emerald-500 focus:ring-emerald-500/20 w-4 h-4 bg-slate-950 cursor-pointer"
+                  className="rounded border-[#242934] text-indigo-600 focus:ring-indigo-500/20 w-4 h-4 bg-[#0f1115] cursor-pointer"
                 />
                 <div className="min-w-0">
                   <div className="text-xs font-medium text-slate-200">Comentarios Diccionario</div>
@@ -230,7 +230,7 @@ export const SqlDdlModal: React.FC<SqlDdlModalProps> = ({ isOpen, onClose }) => 
               </label>
             </div>
 
-            <div className="mt-3 flex items-center justify-between gap-3 pt-2 border-t border-slate-800/80">
+            <div className="mt-3 flex items-center justify-between gap-3 pt-2 border-t border-[#242934]">
               <div className="flex items-center gap-2">
                 <span className="text-xs text-slate-400">Esquema PostgreSQL:</span>
                 <input
@@ -238,14 +238,14 @@ export const SqlDdlModal: React.FC<SqlDdlModalProps> = ({ isOpen, onClose }) => 
                   value={schema}
                   onChange={(e) => setSchema(e.target.value)}
                   placeholder="public"
-                  className="px-2.5 py-1 text-xs rounded bg-slate-900 border border-slate-700 text-white focus:outline-hidden focus:border-emerald-500 font-mono w-28"
+                  className="px-2.5 py-1 text-xs rounded-xl bg-[#0f1115] border border-[#242934] text-white focus:outline-hidden focus:border-indigo-500 font-mono w-28"
                 />
               </div>
 
               <button
                 onClick={fetchDdl}
                 disabled={loading || isModelEmpty}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-500 transition-all cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 disabled:bg-[#181c24] disabled:text-slate-500 transition-all cursor-pointer shadow-md shadow-indigo-600/20"
               >
                 <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
                 Regenerar Script
@@ -262,7 +262,7 @@ export const SqlDdlModal: React.FC<SqlDdlModalProps> = ({ isOpen, onClose }) => 
               <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mb-3">
                 <AlertTriangle size={24} />
               </div>
-              <h3 className="text-sm font-semibold text-white mb-1">
+              <h3 className="text-sm font-semibold text-white mb-1 font-display">
                 Modelo sin clases definidas
               </h3>
               <p className="text-xs text-slate-400 max-w-md">
@@ -273,49 +273,49 @@ export const SqlDdlModal: React.FC<SqlDdlModalProps> = ({ isOpen, onClose }) => 
             <>
               {/* Metrics Header Cards */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 shrink-0">
-                <div className="p-3 rounded-lg bg-slate-850 border border-slate-800 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-md bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center shrink-0">
+                <div className="p-3 rounded-xl bg-[#181c24] border border-[#242934] flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
                     <TableProperties size={16} />
                   </div>
                   <div className="min-w-0">
                     <div className="text-[11px] font-medium text-slate-400">Total Tablas</div>
-                    <div className="text-base font-bold text-white">
+                    <div className="text-base font-bold text-white font-mono">
                       {loading ? '...' : ddlData?.totalTables ?? 0}
                     </div>
                   </div>
                 </div>
 
-                <div className="p-3 rounded-lg bg-slate-850 border border-slate-800 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                <div className="p-3 rounded-xl bg-[#181c24] border border-[#242934] flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
                     <Layers size={16} />
                   </div>
                   <div className="min-w-0">
                     <div className="text-[11px] font-medium text-slate-400">Total Columnas</div>
-                    <div className="text-base font-bold text-white">
+                    <div className="text-base font-bold text-white font-mono">
                       {loading ? '...' : ddlData?.totalColumns ?? 0}
                     </div>
                   </div>
                 </div>
 
-                <div className="p-3 rounded-lg bg-slate-850 border border-slate-800 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+                <div className="p-3 rounded-xl bg-[#181c24] border border-[#242934] flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
                     <KeyRound size={16} />
                   </div>
                   <div className="min-w-0">
                     <div className="text-[11px] font-medium text-slate-400">Claves Foráneas</div>
-                    <div className="text-base font-bold text-white">
+                    <div className="text-base font-bold text-white font-mono">
                       {loading ? '...' : ddlData?.totalForeignKeys ?? 0}
                     </div>
                   </div>
                 </div>
 
-                <div className="p-3 rounded-lg bg-slate-850 border border-slate-800 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-md bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center shrink-0">
+                <div className="p-3 rounded-xl bg-[#181c24] border border-[#242934] flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center shrink-0">
                     <ListFilter size={16} />
                   </div>
                   <div className="min-w-0">
                     <div className="text-[11px] font-medium text-slate-400">Índices B-Tree</div>
-                    <div className="text-base font-bold text-white">
+                    <div className="text-base font-bold text-white font-mono">
                       {loading ? '...' : ddlData?.totalIndexes ?? 0}
                     </div>
                   </div>
@@ -323,15 +323,15 @@ export const SqlDdlModal: React.FC<SqlDdlModalProps> = ({ isOpen, onClose }) => 
               </div>
 
               {/* Code Viewer Container */}
-              <div className="flex-1 flex flex-col min-h-0 rounded-lg border border-slate-800 bg-slate-950 overflow-hidden shadow-inner">
+              <div className="flex-1 flex flex-col min-h-0 rounded-xl border border-[#242934] bg-[#0a0c10] overflow-hidden shadow-inner">
                 {/* Code Viewer Bar */}
-                <div className="flex items-center justify-between px-3.5 py-2 bg-slate-900 border-b border-slate-800 text-xs shrink-0">
+                <div className="flex items-center justify-between px-3.5 py-2 bg-[#11141a] border-b border-[#242934] text-xs shrink-0">
                   <div className="flex items-center gap-2 min-w-0">
-                    <FileCode2 size={14} className="text-emerald-400 shrink-0" />
+                    <FileCode2 size={14} className="text-indigo-400 shrink-0" />
                     <span className="font-mono text-slate-300 font-semibold truncate">
                       {ddlData?.fileName || 'schema.sql'}
                     </span>
-                    <span className="hidden sm:inline-block px-1.5 py-0.2 rounded text-[10px] font-mono text-slate-500 bg-slate-800">
+                    <span className="hidden sm:inline-block px-1.5 py-0.5 rounded text-[10px] font-mono text-slate-400 bg-[#181c24] border border-[#242934]">
                       UTF-8
                     </span>
                   </div>
@@ -340,13 +340,13 @@ export const SqlDdlModal: React.FC<SqlDdlModalProps> = ({ isOpen, onClose }) => 
                     <button
                       onClick={handleCopy}
                       disabled={loading || !ddlData?.sql}
-                      className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-700 text-xs font-medium transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#181c24] hover:bg-[#1f2430] text-slate-200 border border-[#242934] text-xs font-medium transition-all active:scale-95 cursor-pointer disabled:opacity-50"
                       title="Copiar script SQL al portapapeles"
                     >
                       {copied ? (
                         <>
                           <Check size={13} className="text-emerald-400" />
-                          <span className="text-emerald-400">Copiado</span>
+                          <span className="text-emerald-400 font-medium">Copiado</span>
                         </>
                       ) : (
                         <>
@@ -359,7 +359,7 @@ export const SqlDdlModal: React.FC<SqlDdlModalProps> = ({ isOpen, onClose }) => 
                     <button
                       onClick={handleDownload}
                       disabled={downloading || loading || !ddlData?.sql}
-                      className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition-all active:scale-95 cursor-pointer disabled:opacity-50 shadow-xs shadow-emerald-500/20"
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-all active:scale-95 cursor-pointer disabled:opacity-50 shadow-md shadow-indigo-600/20"
                       title="Descargar archivo schema.sql"
                     >
                       {downloading ? (
@@ -378,14 +378,14 @@ export const SqlDdlModal: React.FC<SqlDdlModalProps> = ({ isOpen, onClose }) => 
                 </div>
 
                 {/* Preformatted SQL Output */}
-                <div className="relative flex-1 overflow-auto p-4 font-mono text-[12px] sm:text-[13px] leading-relaxed text-slate-300 select-text max-h-[52vh]">
+                <div className="relative flex-1 overflow-auto p-4 font-mono text-[12px] sm:text-[13px] leading-relaxed text-slate-200 select-text max-h-[52vh]">
                   {loading ? (
                     <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-400">
-                      <Loader2 size={24} className="animate-spin text-emerald-400" />
+                      <Loader2 size={24} className="animate-spin text-indigo-400" />
                       <span className="text-xs">Sintetizando esquema DDL para PostgreSQL 17...</span>
                     </div>
                   ) : ddlData?.sql ? (
-                    <pre className="whitespace-pre font-mono selection:bg-emerald-500/30 selection:text-emerald-200">
+                    <pre className="whitespace-pre font-mono selection:bg-indigo-500/30 selection:text-indigo-200">
                       {ddlData.sql}
                     </pre>
                   ) : (
@@ -400,7 +400,7 @@ export const SqlDdlModal: React.FC<SqlDdlModalProps> = ({ isOpen, onClose }) => 
         </div>
 
         {/* Modal Footer */}
-        <div className="flex items-center justify-between px-5 py-3 border-t border-slate-800 bg-slate-900/90 shrink-0 text-xs text-slate-400">
+        <div className="flex items-center justify-between px-5 py-3 border-t border-[#242934] bg-[#11141a] shrink-0 text-xs text-slate-400">
           <div className="flex items-center gap-2">
             <CheckCircle2 size={14} className="text-emerald-400" />
             <span className="hidden sm:inline">
@@ -414,14 +414,14 @@ export const SqlDdlModal: React.FC<SqlDdlModalProps> = ({ isOpen, onClose }) => 
           <div className="flex items-center gap-2">
             <button
               onClick={onClose}
-              className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 border border-slate-700/60 transition-colors cursor-pointer"
+              className="px-3.5 py-1.5 rounded-xl text-xs font-medium text-slate-300 hover:text-white hover:bg-[#181c24] border border-[#242934] transition-colors cursor-pointer"
             >
               Cerrar
             </button>
             <button
               onClick={handleDownload}
               disabled={downloading || loading || isModelEmpty || !ddlData?.sql}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-500 transition-all cursor-pointer shadow-xs shadow-emerald-500/20"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 disabled:bg-[#181c24] disabled:text-slate-500 transition-all cursor-pointer shadow-md shadow-indigo-600/20"
             >
               <Download size={14} />
               <span>Descargar .sql</span>

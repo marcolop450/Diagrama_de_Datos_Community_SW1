@@ -207,7 +207,7 @@ export default function RelationshipEdge({
         style={{
           ...(style || {}),
           strokeWidth: selected ? 2 : 1.5,
-          stroke: selected ? '#3b82f6' : theme.edgeStroke,
+          stroke: selected ? '#5c68e2' : theme.edgeStroke,
           strokeDasharray: isDashed ? '5,4' : 'none',
           transition: 'stroke 0.15s ease, stroke-width 0.15s ease',
         }} 
@@ -238,17 +238,17 @@ export default function RelationshipEdge({
               transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY - (relData?.label ? 28 : 22)}px)`,
               pointerEvents: 'all',
             }}
-            className="nodrag nopan flex items-center gap-0.5 p-0.5 bg-slate-900/95 border border-slate-700/80 rounded-lg shadow-lg z-30 backdrop-blur-xs"
+            className="nodrag nopan flex items-center gap-0.5 p-1 bg-[#14171d]/95 border border-[#242934] rounded-xl shadow-2xl z-30 backdrop-blur-md ring-1 ring-white/5"
           >
             {/* SmoothStep (Ortogonal Suave) */}
             <button
               type="button"
               onClick={(e) => handleSetRouting(e, 'smoothstep')}
               title="Ortogonal Suave"
-              className={`p-1 rounded-sm transition-all cursor-pointer ${
+              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
                 routing === 'smoothstep'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-indigo-300 hover:bg-[#1f2430]'
               }`}
             >
               <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -261,10 +261,10 @@ export default function RelationshipEdge({
               type="button"
               onClick={(e) => handleSetRouting(e, 'step')}
               title="Ortogonal 90°"
-              className={`p-1 rounded-sm transition-all cursor-pointer ${
+              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
                 routing === 'step'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-indigo-300 hover:bg-[#1f2430]'
               }`}
             >
               <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square">
@@ -277,10 +277,10 @@ export default function RelationshipEdge({
               type="button"
               onClick={(e) => handleSetRouting(e, 'straight')}
               title="Línea Recta / Diagonal"
-              className={`p-1 rounded-sm transition-all cursor-pointer ${
+              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
                 routing === 'straight'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-indigo-300 hover:bg-[#1f2430]'
               }`}
             >
               <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -293,10 +293,10 @@ export default function RelationshipEdge({
               type="button"
               onClick={(e) => handleSetRouting(e, 'bezier')}
               title="Curva Bézier"
-              className={`p-1 rounded-sm transition-all cursor-pointer ${
+              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
                 routing === 'bezier'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-indigo-300 hover:bg-[#1f2430]'
               }`}
             >
               <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -316,13 +316,13 @@ export default function RelationshipEdge({
               backgroundColor: theme.edgeLabelBg,
               color: theme.edgeLabelText,
             }}
-            className="flex flex-col items-center px-1 py-0.5 rounded-xs select-none shadow-xs text-[10px] font-mono leading-tight"
+            className="flex flex-col items-center px-1.5 py-0.5 rounded-[3px] select-none shadow-sm text-[10px] font-mono leading-tight border border-white/5"
           >
             {!hideCardinality && relData?.sourceCardinality && (
               <span className="font-bold text-[11px]">{relData.sourceCardinality}</span>
             )}
             {relData?.sourceRole && (
-              <span className="text-slate-400 font-normal text-[10px]">{relData.sourceRole}</span>
+              <span className="text-slate-400 font-normal text-[10px] font-sans">{relData.sourceRole}</span>
             )}
           </div>
         )}
@@ -337,13 +337,13 @@ export default function RelationshipEdge({
               backgroundColor: theme.edgeLabelBg,
               color: theme.edgeLabelText,
             }}
-            className="flex flex-col items-center px-1 py-0.5 rounded-xs select-none shadow-xs text-[10px] font-mono leading-tight"
+            className="flex flex-col items-center px-1.5 py-0.5 rounded-[3px] select-none shadow-sm text-[10px] font-mono leading-tight border border-white/5"
           >
             {!hideCardinality && relData?.targetCardinality && (
               <span className="font-bold text-[11px]">{relData.targetCardinality}</span>
             )}
             {relData?.targetRole && (
-              <span className="text-slate-400 font-normal text-[10px]">{relData.targetRole}</span>
+              <span className="text-slate-400 font-normal text-[10px] font-sans">{relData.targetRole}</span>
             )}
           </div>
         )}

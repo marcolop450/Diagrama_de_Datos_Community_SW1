@@ -104,7 +104,7 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({
     if (act.includes('RESTORE') || act.includes('RESTAUR') || act.includes('CLON')) {
       return 'bg-purple-500/10 text-purple-400 border-purple-500/20';
     }
-    return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+    return 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20';
   };
 
   const getActionIcon = (actionType: string) => {
@@ -114,18 +114,18 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({
     if (act.includes('CLONE')) return <GitBranch size={15} className="text-purple-400" />;
     if (act.includes('NODE') || act.includes('CLASS')) return <Box size={15} className="text-emerald-400" />;
     if (act.includes('RELATIONSHIP')) return <GitBranch size={15} className="text-amber-400" />;
-    return <Layers size={15} className="text-blue-400" />;
+    return <Layers size={15} className="text-indigo-400" />;
   };
 
   const getRoleBadge = (role?: string) => {
     const r = role ? role.toUpperCase() : 'COLABORADOR';
     if (r === 'SUPER_ADMIN') {
-      return <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20 font-medium">SUPER ADMIN</span>;
+      return <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 font-mono font-medium">SUPER ADMIN</span>;
     }
     if (r === 'ARQUITECTO') {
-      return <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 font-medium">ARQUITECTO</span>;
+      return <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-mono font-medium">ARQUITECTO</span>;
     }
-    return <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">COLABORADOR</span>;
+    return <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono font-medium">COLABORADOR</span>;
   };
 
   const formatEntityTypeSpanish = (entityType?: string) => {
@@ -166,7 +166,7 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({
 
   const renderStateObject = (state: Record<string, any> | null | undefined, type: 'before' | 'after') => {
     if (!state || Object.keys(state).length === 0) {
-      return <span className="text-xs text-slate-500 italic">Sin datos previos</span>;
+      return <span className="text-xs text-slate-500 italic font-mono">Sin datos previos</span>;
     }
 
     const isBefore = type === 'before';
@@ -195,23 +195,23 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({
   };
 
   return createPortal(
-    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center z-50 p-4 select-none">
-      <div className="bg-slate-900 border border-slate-800 rounded-lg w-full max-w-3xl max-h-[85vh] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 bg-[#0f1115]/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 select-none">
+      <div className="bg-[#14171d] border border-[#242934] rounded-2xl w-full max-w-3xl max-h-[85vh] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         
         {/* Header */}
-        <div className="flex justify-between items-center px-6 py-4 border-b border-slate-800 bg-slate-950/60">
+        <div className="flex justify-between items-center px-6 py-4 border-b border-[#242934] bg-[#0f1115]">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-md">
+            <div className="p-2.5 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-xl">
               <History size={20} />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-base font-semibold text-slate-100">Historial y Trazabilidad</h2>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">
+              <div className="flex items-center gap-2.5">
+                <h2 className="text-base font-display font-bold text-slate-100">Historial y Trazabilidad</h2>
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#181c24] text-indigo-400 border border-[#242934] font-mono">
                   {history.length} {history.length === 1 ? 'evento' : 'eventos'}
                 </span>
               </div>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs font-sans text-slate-400">
                 {projectName ? `Línea de tiempo de cambios en "${projectName}"` : 'Trazabilidad cronológica de mutaciones del proyecto'}
               </p>
             </div>
@@ -221,13 +221,13 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({
               onClick={fetchHistory}
               disabled={loading}
               title="Recargar historial"
-              className="text-slate-400 hover:text-slate-200 p-2 hover:bg-slate-800 rounded-md transition-colors disabled:opacity-50 cursor-pointer"
+              className="text-slate-400 hover:text-slate-200 p-2 hover:bg-[#181c24] rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
             >
               <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
             </button>
             <button
               onClick={onClose}
-              className="text-slate-400 hover:text-slate-200 p-2 hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
+              className="text-slate-400 hover:text-slate-200 p-2 hover:bg-[#181c24] rounded-lg transition-colors cursor-pointer"
             >
               <X size={18} />
             </button>
@@ -235,45 +235,45 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({
         </div>
 
         {/* Filter Bar */}
-        <div className="px-6 py-3 border-b border-slate-800/80 bg-slate-950/30 flex flex-wrap items-center justify-between gap-3">
+        <div className="px-6 py-3 border-b border-[#242934] bg-[#14171d] flex flex-wrap items-center justify-between gap-3">
           {/* Category Tabs */}
-          <div className="flex items-center gap-1.5 bg-slate-950/60 p-1 rounded-md border border-slate-800">
+          <div className="flex items-center gap-1.5 bg-[#0f1115] p-1 rounded-xl border border-[#242934]">
             <button
               onClick={() => setSelectedCategory('ALL')}
-              className={`px-3 py-1 text-xs rounded-md font-medium transition-all cursor-pointer ${
+              className={`px-3 py-1 text-xs rounded-lg font-sans font-medium transition-all cursor-pointer ${
                 selectedCategory === 'ALL'
-                  ? 'bg-blue-600 text-white shadow-xs'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                  ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-500/20'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-[#181c24]'
               }`}
             >
               Todos ({history.length})
             </button>
             <button
               onClick={() => setSelectedCategory('PROJECT')}
-              className={`px-3 py-1 text-xs rounded-md font-medium transition-all cursor-pointer ${
+              className={`px-3 py-1 text-xs rounded-lg font-sans font-medium transition-all cursor-pointer ${
                 selectedCategory === 'PROJECT'
-                  ? 'bg-blue-600 text-white shadow-xs'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                  ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-500/20'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-[#181c24]'
               }`}
             >
               Proyecto
             </button>
             <button
               onClick={() => setSelectedCategory('NODE')}
-              className={`px-3 py-1 text-xs rounded-md font-medium transition-all cursor-pointer ${
+              className={`px-3 py-1 text-xs rounded-lg font-sans font-medium transition-all cursor-pointer ${
                 selectedCategory === 'NODE'
-                  ? 'bg-blue-600 text-white shadow-xs'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                  ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-500/20'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-[#181c24]'
               }`}
             >
               Clases UML
             </button>
             <button
               onClick={() => setSelectedCategory('RELATIONSHIP')}
-              className={`px-3 py-1 text-xs rounded-md font-medium transition-all cursor-pointer ${
+              className={`px-3 py-1 text-xs rounded-lg font-sans font-medium transition-all cursor-pointer ${
                 selectedCategory === 'RELATIONSHIP'
-                  ? 'bg-blue-600 text-white shadow-xs'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                  ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-500/20'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-[#181c24]'
               }`}
             >
               Relaciones
@@ -288,28 +288,28 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder="Buscar por usuario o acción..."
-              className="w-full pl-9 pr-3 py-1.5 bg-slate-950/60 border border-slate-800 rounded-md text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500/50"
+              className="w-full pl-9 pr-3 py-1.5 bg-[#0f1115] border border-[#242934] focus:border-indigo-500 rounded-lg text-xs text-slate-200 placeholder-slate-500 focus:outline-hidden font-sans transition-colors"
             />
           </div>
         </div>
 
         {/* Timeline Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-[#0f1115]/30 scrollbar-thin scrollbar-thumb-[#242934] scrollbar-track-transparent">
           {loading ? (
-            <div className="py-16 text-center text-slate-500 flex flex-col items-center justify-center gap-3">
-              <RefreshCw size={24} className="animate-spin text-blue-500" />
+            <div className="py-16 text-center text-slate-500 flex flex-col items-center justify-center gap-3 font-sans">
+              <RefreshCw size={24} className="animate-spin text-indigo-400" />
               <p className="text-sm">Cargando trazabilidad del proyecto...</p>
             </div>
           ) : isDemoProject ? (
-            <div className="py-16 text-center text-slate-500 flex flex-col items-center justify-center gap-3">
-              <div className="p-3.5 bg-blue-950/50 rounded-lg border border-blue-800/40 text-blue-400">
+            <div className="py-16 text-center text-slate-500 flex flex-col items-center justify-center gap-3 font-sans">
+              <div className="p-3.5 bg-indigo-500/10 rounded-xl border border-indigo-500/20 text-indigo-400">
                 <Clock size={28} />
               </div>
               <p className="text-sm font-semibold text-slate-200">Modo Demostración en Memoria</p>
               <p className="text-xs text-slate-400 max-w-md leading-relaxed">
-                El diagrama actual (<span className="text-blue-300 font-mono font-medium">{projectName || 'Sistema de Gestión Académica'}</span>) se encuentra precargado en memoria local para demostración interactiva.
+                El diagrama actual (<span className="text-indigo-300 font-mono font-medium">{projectName || 'Sistema de Gestión Académica'}</span>) se encuentra precargado en memoria local para demostración interactiva.
               </p>
-              <div className="p-3 bg-slate-900/80 border border-slate-800 rounded-md text-xs text-slate-400 max-w-md text-left space-y-1.5 mt-2">
+              <div className="p-3 bg-[#181c24] border border-[#242934] rounded-xl text-xs text-slate-400 max-w-md text-left space-y-1.5 mt-2">
                 <p className="text-slate-300 font-medium flex items-center gap-1.5">
                   <Shield size={13} className="text-emerald-400" />
                   ¿Cómo auditar la trazabilidad formal del proyecto?
@@ -320,8 +320,8 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({
               </div>
             </div>
           ) : filteredHistory.length === 0 ? (
-            <div className="py-16 text-center text-slate-500 flex flex-col items-center justify-center gap-3">
-              <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
+            <div className="py-16 text-center text-slate-500 flex flex-col items-center justify-center gap-3 font-sans">
+              <div className="p-3 bg-[#181c24] rounded-xl border border-[#242934]">
                 <Clock size={28} className="text-slate-400" />
               </div>
               <p className="text-sm font-medium text-slate-300">No hay registros de trazabilidad disponibles</p>
@@ -330,7 +330,7 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({
               </p>
             </div>
           ) : (
-            <div className="relative pl-6 space-y-6 before:absolute before:left-[11px] before:top-3 before:bottom-3 before:w-[2px] before:bg-slate-800">
+            <div className="relative pl-6 space-y-6 before:absolute before:left-[11px] before:top-3 before:bottom-3 before:w-[2px] before:bg-[#242934]">
               {filteredHistory.map(entry => {
                 const isExpanded = expandedIds.has(entry.id);
                 const hasStateDiff = (entry.beforeState && Object.keys(entry.beforeState).length > 0) || 
@@ -339,49 +339,49 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({
                 return (
                   <div key={entry.id} className="relative group">
                     {/* Node Dot on Timeline */}
-                    <div className="absolute -left-[30px] top-1.5 p-1.5 rounded-full bg-slate-900 border border-slate-700 shadow-xs group-hover:border-blue-500 transition-colors">
+                    <div className="absolute -left-[30px] top-1.5 p-1.5 rounded-full bg-[#14171d] border border-[#242934] shadow-xs group-hover:border-indigo-500/50 transition-colors">
                       {getActionIcon(entry.actionType)}
                     </div>
 
                     {/* Card */}
-                    <div className="bg-slate-950/40 hover:bg-slate-950/70 border border-slate-800/90 hover:border-slate-700/90 rounded-lg p-4 transition-all shadow-xs">
+                    <div className="bg-[#14171d] hover:bg-[#181c24]/80 border border-[#242934] hover:border-[#242934]/90 rounded-xl p-4 transition-all shadow-sm">
                       {/* Top row: Action badge, entity type, timestamp */}
                       <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
                         <div className="flex items-center gap-2">
-                          <span className={`text-xs px-2.5 py-0.5 rounded-md font-semibold border ${getActionBadgeColor(entry.actionType)}`}>
+                          <span className={`text-xs px-2.5 py-0.5 rounded-md font-mono font-semibold border ${getActionBadgeColor(entry.actionType)}`}>
                             {entry.actionLabelSpanish || entry.actionType}
                           </span>
-                          <span className="text-[10px] px-2 py-0.5 rounded-md bg-slate-800/80 text-slate-300 font-medium border border-slate-700/50">
+                          <span className="text-[10px] px-2 py-0.5 rounded-md bg-[#181c24] text-slate-300 font-medium border border-[#242934]">
                             {formatEntityTypeSpanish(entry.entityType)}
                           </span>
                         </div>
-                        <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                        <div className="flex items-center gap-1.5 text-xs text-slate-400 font-mono">
                           <Clock size={13} className="text-slate-500" />
                           <span>{formatTimestamp(entry.createdAt)}</span>
                         </div>
                       </div>
 
                       {/* Author row */}
-                      <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-800/40">
+                      <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#242934]/60">
                         <div className="flex items-center gap-2.5">
                           {entry.userAvatarUrl ? (
                             <img
                               src={entry.userAvatarUrl}
                               alt={entry.userFullName}
-                              className="w-6 h-6 rounded-full object-cover border border-slate-700"
+                              className="w-6 h-6 rounded-full object-cover border border-[#242934]"
                             />
                           ) : (
-                            <div className="w-6 h-6 rounded-full bg-blue-900/40 border border-blue-500/30 flex items-center justify-center text-blue-300 font-bold text-[10px]">
+                            <div className="w-6 h-6 rounded-full bg-indigo-950/40 border border-indigo-500/30 flex items-center justify-center text-indigo-300 font-bold text-[10px]">
                               {entry.userFullName ? entry.userFullName.charAt(0).toUpperCase() : 'U'}
                             </div>
                           )}
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-medium text-slate-200">
+                            <span className="text-xs font-semibold text-slate-200 font-sans">
                               {entry.userFullName || 'Colaborador'}
                             </span>
                             {getRoleBadge(entry.userRole)}
                             {entry.userEmail && (
-                              <span className="text-[11px] text-slate-500 hidden sm:inline">
+                              <span className="text-[11px] text-slate-500 font-mono hidden sm:inline">
                                 ({entry.userEmail})
                               </span>
                             )}
@@ -392,7 +392,7 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({
                         {hasStateDiff && (
                           <button
                             onClick={() => toggleExpand(entry.id)}
-                            className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 font-medium py-1 px-2 rounded-md hover:bg-blue-500/10 transition-colors cursor-pointer"
+                            className="flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 font-sans font-medium py-1 px-2 rounded-lg hover:bg-indigo-500/10 transition-colors cursor-pointer"
                           >
                             <span>{isExpanded ? 'Ocultar detalles' : 'Ver detalles'}</span>
                             {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
@@ -402,13 +402,13 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({
 
                       {/* State Diff Details */}
                       {isExpanded && hasStateDiff && (
-                        <div className="mt-3 pt-3 border-t border-slate-800/60 grid grid-cols-1 md:grid-cols-2 gap-3 animate-in fade-in duration-150">
+                        <div className="mt-3 pt-3 border-t border-[#242934] grid grid-cols-1 md:grid-cols-2 gap-3 animate-in fade-in duration-150">
                           <div>
-                            <div className="text-[11px] font-semibold text-slate-400 mb-1">Antes de la mutación:</div>
+                            <div className="text-[11px] font-sans font-semibold text-slate-400 mb-1">Antes de la mutación:</div>
                             {renderStateObject(entry.beforeState, 'before')}
                           </div>
                           <div>
-                            <div className="text-[11px] font-semibold text-slate-400 mb-1">Después de la mutación:</div>
+                            <div className="text-[11px] font-sans font-semibold text-slate-400 mb-1">Después de la mutación:</div>
                             {renderStateObject(entry.afterState, 'after')}
                           </div>
                         </div>
@@ -422,14 +422,14 @@ export const ProjectHistoryModal: React.FC<ProjectHistoryModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3 border-t border-slate-800 bg-slate-950/60 flex items-center justify-between text-xs text-slate-400">
+        <div className="px-6 py-3 border-t border-[#242934] bg-[#0f1115] flex items-center justify-between text-xs text-slate-400 font-sans">
           <div className="flex items-center gap-2">
             <Shield size={14} className="text-emerald-400" />
             <span>Registro inmutable de trazabilidad y auditoría</span>
           </div>
           <button
             onClick={onClose}
-            className="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-md transition-colors font-medium cursor-pointer"
+            className="px-4 py-1.5 bg-[#181c24] hover:bg-[#242934] text-slate-200 border border-[#242934] rounded-lg transition-colors font-medium cursor-pointer"
           >
             Cerrar
           </button>

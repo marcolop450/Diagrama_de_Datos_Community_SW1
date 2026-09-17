@@ -82,6 +82,7 @@ export const Toolbar: React.FC = () => {
   };
 
   const { user } = useAuthStore();
+  const isArchitect = user?.role === 'ARQUITECTO' || user?.role === 'SUPER_ADMIN';
   const { isLive, participants, setModalOpen, isViewer, role: collabRole } = useCollabStore();
   const viewerMode = isLive && isViewer();
   const isHost = Boolean(
@@ -156,10 +157,10 @@ export const Toolbar: React.FC = () => {
             }}
             onMouseEnter={showTip('Puntero de Navegación • V')}
             onMouseLeave={hideTip}
-            className={`p-2 rounded-md transition-all cursor-pointer ${
+            className={`p-2 rounded-lg transition-all cursor-pointer ${
               activeTool === 'pointer'
-                ? 'bg-blue-600 text-white shadow-xs ring-1 ring-blue-400'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                ? 'bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-400/50'
+                : 'text-slate-400 hover:text-white hover:bg-[#1a1f2b]'
             }`}
             title="Puntero de Navegación"
           >
@@ -178,10 +179,10 @@ export const Toolbar: React.FC = () => {
             }}
             onMouseEnter={showTip('Selección por Área • S')}
             onMouseLeave={hideTip}
-            className={`p-2 rounded-md transition-all cursor-pointer ${
+            className={`p-2 rounded-lg transition-all cursor-pointer ${
               activeTool === 'select-area'
-                ? 'bg-blue-600 text-white shadow-xs ring-1 ring-blue-400'
-                : 'text-slate-400 hover:text-blue-400 hover:bg-slate-900'
+                ? 'bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-400/50'
+                : 'text-slate-400 hover:text-indigo-400 hover:bg-[#1a1f2b]'
             }`}
             title="Seleccionar con Mouse en Área"
           >
@@ -196,9 +197,9 @@ export const Toolbar: React.FC = () => {
             onMouseEnter={showTip('Deshacer • Ctrl+Z')}
             onMouseLeave={hideTip}
             disabled={!canUndo || viewerMode}
-            className={`p-2 rounded-md transition-all cursor-pointer ${
+            className={`p-2 rounded-lg transition-all cursor-pointer ${
               canUndo && !viewerMode
-                ? 'text-slate-300 hover:text-white hover:bg-slate-900 active:scale-95'
+                ? 'text-slate-300 hover:text-white hover:bg-[#1a1f2b] active:scale-95'
                 : 'text-slate-600 cursor-not-allowed opacity-35'
             }`}
             title="Deshacer"
@@ -211,9 +212,9 @@ export const Toolbar: React.FC = () => {
             onMouseEnter={showTip('Rehacer • Ctrl+Y')}
             onMouseLeave={hideTip}
             disabled={!canRedo || viewerMode}
-            className={`p-2 rounded-md transition-all cursor-pointer ${
+            className={`p-2 rounded-lg transition-all cursor-pointer ${
               canRedo && !viewerMode
-                ? 'text-slate-300 hover:text-white hover:bg-slate-900 active:scale-95'
+                ? 'text-slate-300 hover:text-white hover:bg-[#1a1f2b] active:scale-95'
                 : 'text-slate-600 cursor-not-allowed opacity-35'
             }`}
             title="Rehacer"
@@ -226,7 +227,7 @@ export const Toolbar: React.FC = () => {
             onMouseEnter={showTip('Eliminar Selección • Supr')}
             onMouseLeave={hideTip}
             disabled={!hasSelection || viewerMode}
-            className={`p-2 rounded-md transition-all cursor-pointer ${
+            className={`p-2 rounded-lg transition-all cursor-pointer ${
               hasSelection && !viewerMode
                 ? 'text-rose-400 hover:text-rose-200 hover:bg-rose-950/40 active:scale-95 ring-1 ring-rose-500/30'
                 : 'text-slate-600 cursor-not-allowed opacity-35'
@@ -237,7 +238,7 @@ export const Toolbar: React.FC = () => {
           </button>
         </div>
 
-        <div className="w-7 h-px bg-slate-800 my-1" />
+        <div className="w-7 h-px bg-[#242934] my-1" />
 
         {/* UML Class Creation Tools (Click to Arm & Drop) */}
         <div data-tour="toolbar-classes" className="flex flex-col items-center gap-1.5">
@@ -246,12 +247,12 @@ export const Toolbar: React.FC = () => {
             onMouseEnter={showTip('Clase Entidad')}
             onMouseLeave={hideTip}
             disabled={viewerMode}
-            className={`p-2 rounded-md transition-all ${
+            className={`p-2 rounded-lg transition-all ${
               viewerMode
                 ? 'text-slate-600 cursor-not-allowed opacity-35'
                 : activeTool === 'add-class'
-                ? 'bg-blue-600 text-white shadow-xs ring-1 ring-blue-400 cursor-pointer'
-                : 'text-slate-400 hover:text-blue-400 hover:bg-slate-900 cursor-pointer'
+                ? 'bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-400/50 cursor-pointer'
+                : 'text-slate-400 hover:text-indigo-400 hover:bg-[#1a1f2b] cursor-pointer'
             }`}
             title="Añadir Clase Entidad"
           >
@@ -263,12 +264,12 @@ export const Toolbar: React.FC = () => {
             onMouseEnter={showTip('Interfaz')}
             onMouseLeave={hideTip}
             disabled={viewerMode}
-            className={`p-2 rounded-md transition-all ${
+            className={`p-2 rounded-lg transition-all ${
               viewerMode
                 ? 'text-slate-600 cursor-not-allowed opacity-35'
                 : activeTool === 'add-interface'
-                ? 'bg-indigo-600 text-white shadow-xs ring-1 ring-indigo-400 cursor-pointer'
-                : 'text-slate-400 hover:text-indigo-400 hover:bg-slate-900 cursor-pointer'
+                ? 'bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-400/50 cursor-pointer'
+                : 'text-slate-400 hover:text-indigo-400 hover:bg-[#1a1f2b] cursor-pointer'
             }`}
             title="Añadir Interfaz"
           >
@@ -280,12 +281,12 @@ export const Toolbar: React.FC = () => {
             onMouseEnter={showTip('Clase Abstracta')}
             onMouseLeave={hideTip}
             disabled={viewerMode}
-            className={`p-2 rounded-md transition-all ${
+            className={`p-2 rounded-lg transition-all ${
               viewerMode
                 ? 'text-slate-600 cursor-not-allowed opacity-35'
                 : activeTool === 'add-abstract'
-                ? 'bg-amber-600 text-white shadow-xs ring-1 ring-amber-400 cursor-pointer'
-                : 'text-slate-400 hover:text-amber-400 hover:bg-slate-900 cursor-pointer'
+                ? 'bg-amber-600 text-white shadow-sm ring-1 ring-amber-400/50 cursor-pointer'
+                : 'text-slate-400 hover:text-amber-400 hover:bg-[#1a1f2b] cursor-pointer'
             }`}
             title="Añadir Clase Abstracta"
           >
@@ -293,7 +294,7 @@ export const Toolbar: React.FC = () => {
           </button>
         </div>
 
-        <div className="w-7 h-px bg-slate-800 my-1" />
+        <div className="w-7 h-px bg-[#242934] my-1" />
 
         {/* AI Tools */}
         <div data-tour="toolbar-ai-tools" className="flex flex-col items-center gap-1.5">
@@ -302,37 +303,39 @@ export const Toolbar: React.FC = () => {
             onMouseEnter={showTip('Modelar por Voz (PLN)')}
             onMouseLeave={hideTip}
             disabled={viewerMode}
-            className={`p-2 rounded-md transition-all ${
+            className={`p-2 rounded-lg transition-all ${
               viewerMode
                 ? 'text-slate-600 cursor-not-allowed opacity-35'
                 : isVoiceModalOpen
-                ? 'bg-purple-600 text-white shadow-xs ring-1 ring-purple-400 cursor-pointer'
-                : 'text-slate-400 hover:text-purple-400 hover:bg-slate-900 cursor-pointer'
+                ? 'bg-purple-600 text-white shadow-sm ring-1 ring-purple-400 cursor-pointer'
+                : 'text-slate-400 hover:text-purple-400 hover:bg-[#181c24] cursor-pointer'
             }`}
             title="Modelar por Voz (PLN)"
           >
             <Mic size={16} />
           </button>
 
-          <button
-            onClick={handlePhotoImport}
-            onMouseEnter={showTip('Digitalizar Foto de Pizarra')}
-            onMouseLeave={hideTip}
-            disabled={viewerMode}
-            className={`p-2 rounded-md transition-all ${
-              viewerMode
-                ? 'text-slate-600 cursor-not-allowed opacity-35'
+          {isArchitect && (
+            <button
+              onClick={handlePhotoImport}
+              onMouseEnter={showTip('Digitalizar Foto de Pizarra')}
+              onMouseLeave={hideTip}
+              disabled={viewerMode}
+              className={`p-2 rounded-lg transition-all ${
+                viewerMode
+                  ? 'text-slate-600 cursor-not-allowed opacity-35'
                 : isVisionModalOpen
-                ? 'bg-amber-600 text-white shadow-xs ring-1 ring-amber-400 cursor-pointer'
-                : 'text-slate-400 hover:text-amber-400 hover:bg-slate-900 cursor-pointer'
-            }`}
-            title="Digitalizar Foto de Pizarra"
-          >
-            <Camera size={16} />
-          </button>
+                ? 'bg-amber-600 text-white shadow-sm ring-1 ring-amber-400 cursor-pointer'
+                : 'text-slate-400 hover:text-amber-400 hover:bg-[#181c24] cursor-pointer'
+              }`}
+              title="Digitalizar Foto de Pizarra"
+            >
+              <Camera size={16} />
+            </button>
+          )}
         </div>
 
-        <div className="w-7 h-px bg-slate-800 my-1" />
+        <div className="w-7 h-px bg-[#242934] my-1" />
 
         {/* CASE Architecture, Generation & History Tools */}
         <div data-tour="toolbar-case-tools" className="flex flex-col items-center gap-1.5">
@@ -341,13 +344,13 @@ export const Toolbar: React.FC = () => {
             onClick={() => setIsNormalizationOpen(true)}
             onMouseEnter={showTip('Validar Normalización')}
             onMouseLeave={hideTip}
-            className="p-2 rounded-md text-slate-400 hover:text-emerald-400 hover:bg-emerald-950/30 transition-all cursor-pointer"
+            className="p-2 rounded-lg text-slate-400 hover:text-emerald-400 hover:bg-emerald-950/30 transition-all cursor-pointer"
             title="Validar Normalización"
           >
             <div className="relative">
               <ShieldCheck size={16} />
               <span 
-                className={`absolute -top-1 -right-1 w-2 h-2 rounded-full ring-2 ring-slate-950 ${
+                className={`absolute -top-1 -right-1 w-2 h-2 rounded-full ring-2 ring-[#0f1115] ${
                   normReport.status === 'COMPLIANT'
                     ? 'bg-emerald-400'
                     : normReport.status === 'WARNINGS'
@@ -363,46 +366,51 @@ export const Toolbar: React.FC = () => {
             onClick={() => setIsHistoryOpen(true)}
             onMouseEnter={showTip('Historial y Trazabilidad')}
             onMouseLeave={hideTip}
-            className="p-2 rounded-md text-slate-400 hover:text-purple-400 hover:bg-purple-950/30 transition-all cursor-pointer"
+            className="p-2 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-indigo-950/30 transition-all cursor-pointer"
             title="Consultar Historial y Trazabilidad"
           >
             <History size={16} />
           </button>
 
-          {/* Generate Backend Spring Boot (CU13) */}
-          <button
-            onClick={() => setIsGenerateBackendOpen(true)}
-            onMouseEnter={showTip('Generar Backend Spring Boot')}
-            onMouseLeave={hideTip}
-            className="p-2 rounded-md text-slate-400 hover:text-blue-400 hover:bg-blue-950/30 transition-all cursor-pointer"
-            title="Generar Backend Spring Boot (4 Capas en ZIP)"
-          >
-            <Code2 size={16} />
-          </button>
+          {/* Deliverables de Producción (Exclusivo Arquitecto) */}
+          {isArchitect && (
+            <>
+              {/* Generate Backend Spring Boot */}
+              <button
+                onClick={() => setIsGenerateBackendOpen(true)}
+                onMouseEnter={showTip('Generar Backend Spring Boot')}
+                onMouseLeave={hideTip}
+                className="p-2 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-indigo-950/30 transition-all cursor-pointer"
+                title="Generar Backend Spring Boot (4 Capas en ZIP)"
+              >
+                <Code2 size={16} />
+              </button>
 
-          {/* Generate SQL DDL Script PostgreSQL 17 (CU14) */}
-          <button
-            onClick={() => setIsSqlDdlOpen(true)}
-            onMouseEnter={showTip('Generar Script SQL DDL')}
-            onMouseLeave={hideTip}
-            className="p-2 rounded-md text-slate-400 hover:text-emerald-400 hover:bg-emerald-950/30 transition-all cursor-pointer"
-            title="Generar Script SQL DDL (PostgreSQL 17)"
-          >
-            <Database size={16} />
-          </button>
+              {/* Generate SQL DDL Script PostgreSQL 17 */}
+              <button
+                onClick={() => setIsSqlDdlOpen(true)}
+                onMouseEnter={showTip('Generar Script SQL DDL')}
+                onMouseLeave={hideTip}
+                className="p-2 rounded-lg text-slate-400 hover:text-emerald-400 hover:bg-emerald-950/30 transition-all cursor-pointer"
+                title="Generar Script SQL DDL (PostgreSQL 17)"
+              >
+                <Database size={16} />
+              </button>
 
-          {/* Generate Postman Collection v2.1 (CU15) */}
-          <button
-            onClick={() => setIsPostmanOpen(true)}
-            onMouseEnter={showTip('Generar Colección Postman')}
-            onMouseLeave={hideTip}
-            className="p-2 rounded-md text-slate-400 hover:text-amber-400 hover:bg-amber-950/30 transition-all cursor-pointer"
-            title="Generar Colección Postman v2.1"
-          >
-            <Send size={16} />
-          </button>
+              {/* Generate Postman Collection v2.1 */}
+              <button
+                onClick={() => setIsPostmanOpen(true)}
+                onMouseEnter={showTip('Generar Colección Postman')}
+                onMouseLeave={hideTip}
+                className="p-2 rounded-lg text-slate-400 hover:text-amber-400 hover:bg-amber-950/30 transition-all cursor-pointer"
+                title="Generar Colección Postman v2.1"
+              >
+                <Send size={16} />
+              </button>
+            </>
+          )}
 
-          {/* Espacio Colaborativo & Ajustes de Proyecto (CU18 - Solo visible para Anfitrión) */}
+          {/* Espacio Colaborativo & Ajustes de Proyecto (Solo visible para Anfitrión) */}
           {isHost && (
             <button
               onClick={handleLiveCollab}
@@ -414,12 +422,12 @@ export const Toolbar: React.FC = () => {
                   : `Sala Colaborativa Activa (${participants.length} conectados)`
               )}
               onMouseLeave={hideTip}
-              className={`p-2 rounded-md transition-all cursor-pointer relative ${
+              className={`p-2 rounded-lg transition-all cursor-pointer relative ${
                 isLive
                   ? participants.length <= 1
                     ? 'bg-amber-600/20 text-amber-400 ring-1 ring-amber-500/50 hover:bg-amber-600/30'
                     : 'bg-emerald-600/20 text-emerald-400 ring-1 ring-emerald-500/50 hover:bg-emerald-600/30'
-                  : 'text-slate-400 hover:text-blue-400 hover:bg-blue-950/30'
+                  : 'text-slate-400 hover:text-indigo-400 hover:bg-indigo-950/30'
               }`}
               title="Espacio Colaborativo & Ajustes"
             >
@@ -448,14 +456,14 @@ export const Toolbar: React.FC = () => {
           )}
         </div>
 
-        <div className="w-7 h-px bg-slate-800 my-1" />
+        <div className="w-7 h-px bg-[#242934] my-1" />
 
         {/* Canvas Viewport Controls */}
         <button
           onClick={() => zoomIn()}
           onMouseEnter={showTip('Acercar Zoom')}
           onMouseLeave={hideTip}
-          className="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-900 rounded-md transition-colors cursor-pointer"
+          className="p-2 text-slate-400 hover:text-slate-200 hover:bg-[#181c24] rounded-lg transition-colors cursor-pointer"
           title="Acercar Zoom"
         >
           <ZoomIn size={15} />
@@ -465,7 +473,7 @@ export const Toolbar: React.FC = () => {
           onClick={() => zoomOut()}
           onMouseEnter={showTip('Alejar Zoom')}
           onMouseLeave={hideTip}
-          className="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-900 rounded-md transition-colors cursor-pointer"
+          className="p-2 text-slate-400 hover:text-slate-200 hover:bg-[#181c24] rounded-lg transition-colors cursor-pointer"
           title="Alejar Zoom"
         >
           <ZoomOut size={15} />
@@ -475,7 +483,7 @@ export const Toolbar: React.FC = () => {
           onClick={() => fitView({ padding: 0.25 })}
           onMouseEnter={showTip('Ajustar Vista')}
           onMouseLeave={hideTip}
-          className="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-900 rounded-md transition-colors cursor-pointer"
+          className="p-2 text-slate-400 hover:text-slate-200 hover:bg-[#181c24] rounded-lg transition-colors cursor-pointer"
           title="Ajustar Vista"
         >
           <Maximize size={15} />
@@ -486,7 +494,7 @@ export const Toolbar: React.FC = () => {
       {hoverTooltip && (
         <div 
           style={{ top: hoverTooltip.top, left: hoverTooltip.left }} 
-          className="fixed -translate-y-1/2 px-2.5 py-1 bg-slate-900 text-slate-200 text-[11px] font-medium rounded-md shadow-xl border border-slate-800 whitespace-nowrap pointer-events-none z-50 animate-fade-in"
+          className="fixed -translate-y-1/2 px-3 py-1.5 bg-[#14171d] text-slate-100 text-[11px] font-medium font-sans rounded-lg shadow-2xl border border-[#242934] whitespace-nowrap pointer-events-none z-50 animate-fade-in"
         >
           {hoverTooltip.text}
         </div>

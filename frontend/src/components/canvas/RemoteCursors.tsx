@@ -42,7 +42,7 @@ export const RemoteCursors: React.FC = () => {
 
             {/* Colaborador Name Pill */}
             <div
-              className="px-2 py-0.5 rounded-full text-[10px] font-semibold text-white whitespace-nowrap shadow-lg tracking-wide select-none ml-3 -mt-1 flex items-center gap-1 border border-black/20"
+              className="px-2.5 py-0.5 rounded-full text-[10px] font-sans font-semibold text-white whitespace-nowrap shadow-xl tracking-wide select-none ml-3 -mt-1 flex items-center gap-1 border border-black/30 backdrop-blur-xs"
               style={{ backgroundColor: cursor.color }}
             >
               <span>{cursor.name}</span>

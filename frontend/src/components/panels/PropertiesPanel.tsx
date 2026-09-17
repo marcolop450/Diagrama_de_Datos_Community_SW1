@@ -232,29 +232,31 @@ const PropertiesPanel: React.FC = () => {
   };
 
   return (
-    <aside className="w-96 bg-slate-950 text-slate-200 border-l border-slate-800/90 flex flex-col h-full shadow-2xl z-20 select-none animate-fade-in">
+    <aside className="w-96 bg-[#14171d]/95 backdrop-blur-xl text-slate-200 border-l border-[#242934] flex flex-col h-full shadow-2xl z-20 select-none animate-fade-in font-sans">
       {/* Header */}
-      <div className="px-4 py-3.5 border-b border-slate-800/80 flex justify-between items-center bg-slate-900/70">
-        <div className="flex items-center gap-2">
-          <Sliders size={15} className="text-blue-400" />
-          <h2 className="font-semibold text-xs uppercase tracking-wider text-slate-100">
+      <div className="px-5 py-4 border-b border-[#242934] flex justify-between items-center bg-[#11141a]">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+            <Sliders size={14} />
+          </div>
+          <h2 className="font-bold text-xs uppercase tracking-wider text-white font-display">
             {selectedNode ? 'Propiedades de Clase' : 'Propiedades de Relación'}
           </h2>
         </div>
         <button 
           onClick={() => { setSelectedNode(null); setSelectedEdge(null); }}
-          className="p-1 hover:bg-slate-800 text-slate-400 hover:text-slate-200 rounded-md transition-colors"
+          className="p-1.5 hover:bg-[#1a1f2b] text-slate-400 hover:text-white rounded-lg transition-colors cursor-pointer"
           title="Cerrar panel"
         >
-          <X size={16} />
+          <X size={15} />
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-5">
+      <div className="flex-1 overflow-y-auto p-5 space-y-5">
         {/* Banner de Modo Solo Lectura (Lector) */}
         {viewerMode && (
-          <div className="flex items-center gap-2 p-2.5 bg-blue-500/10 border border-blue-500/30 rounded-xl text-blue-300 text-xs font-mono shadow-sm">
-            <Eye size={14} className="shrink-0 text-blue-400 animate-pulse" />
+          <div className="flex items-center gap-2.5 p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl text-indigo-300 text-xs font-mono shadow-sm">
+            <Eye size={14} className="shrink-0 text-indigo-400 animate-pulse" />
             <span className="font-semibold">Modo Solo Lectura (Lector) — Solo inspección</span>
           </div>
         )}
@@ -263,27 +265,27 @@ const PropertiesPanel: React.FC = () => {
         {selectedNode && (
           <>
             {/* Tabs for Class */}
-            <div className="flex bg-slate-900 p-0.5 rounded-lg border border-slate-800 text-xs font-medium">
+            <div className="flex bg-[#0f1115] p-1 rounded-xl border border-[#242934] text-xs font-medium">
               <button
                 onClick={() => setActiveTab('general')}
-                className={`flex-1 py-1.5 rounded-md transition-all ${
-                  activeTab === 'general' ? 'bg-blue-600 text-white font-semibold shadow-sm' : 'text-slate-400 hover:text-slate-200'
+                className={`flex-1 py-1.5 rounded-lg transition-all cursor-pointer ${
+                  activeTab === 'general' ? 'bg-indigo-600 text-white font-semibold shadow-sm' : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
                 General
               </button>
               <button
                 onClick={() => setActiveTab('attributes')}
-                className={`flex-1 py-1.5 rounded-md transition-all ${
-                  activeTab === 'attributes' ? 'bg-blue-600 text-white font-semibold shadow-sm' : 'text-slate-400 hover:text-slate-200'
+                className={`flex-1 py-1.5 rounded-lg transition-all cursor-pointer ${
+                  activeTab === 'attributes' ? 'bg-indigo-600 text-white font-semibold shadow-sm' : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
                 Atributos ({selectedNode.data.attributes?.length || 0})
               </button>
               <button
                 onClick={() => setActiveTab('methods')}
-                className={`flex-1 py-1.5 rounded-md transition-all ${
-                  activeTab === 'methods' ? 'bg-blue-600 text-white font-semibold shadow-sm' : 'text-slate-400 hover:text-slate-200'
+                className={`flex-1 py-1.5 rounded-lg transition-all cursor-pointer ${
+                  activeTab === 'methods' ? 'bg-indigo-600 text-white font-semibold shadow-sm' : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
                 Métodos ({selectedNode.data.methods?.length || 0})
@@ -294,7 +296,7 @@ const PropertiesPanel: React.FC = () => {
             {activeTab === 'general' && (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                  <label className="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider mb-1.5 font-sans">
                     Nombre de la Clase
                   </label>
                   <input 
@@ -302,12 +304,12 @@ const PropertiesPanel: React.FC = () => {
                     value={selectedNode.data.name} 
                     disabled={viewerMode}
                     onChange={(e) => handleNodeNameChange(e.target.value)}
-                    className={`w-full bg-slate-900 border rounded-lg px-3 py-2 text-xs font-mono text-slate-100 focus:outline-none transition-colors ${
-                      viewerMode ? 'opacity-70 cursor-not-allowed bg-slate-950' : ''
+                    className={`w-full bg-[#0f1115] border rounded-xl px-3.5 py-2 text-xs font-mono text-white focus:outline-none transition-colors ${
+                      viewerMode ? 'opacity-70 cursor-not-allowed bg-[#0b0d10]' : ''
                     } ${
                       isClassNameTaken(selectedNode.data.name, selectedNode.id)
                         ? 'border-amber-500/80 focus:border-amber-400 ring-1 ring-amber-500/30'
-                        : 'border-slate-800 focus:border-blue-500'
+                        : 'border-[#242934] focus:border-indigo-500'
                     }`}
                   />
                   {isClassNameTaken(selectedNode.data.name, selectedNode.id) && (
@@ -328,8 +330,8 @@ const PropertiesPanel: React.FC = () => {
                     value={selectedNode.data.stereotype || ''} 
                     disabled={viewerMode}
                     onChange={(e) => handleNodeStereotypeChange(e.target.value)}
-                    className={`w-full bg-slate-900 border border-slate-800 focus:border-blue-500 rounded-lg px-3 py-2 text-xs font-sans text-slate-200 focus:outline-none transition-colors ${
-                      viewerMode ? 'opacity-70 cursor-not-allowed bg-slate-950' : ''
+                    className={`w-full bg-[#0f1115] border border-[#242934] focus:border-indigo-500 rounded-xl px-3.5 py-2 text-xs font-sans text-slate-200 focus:outline-none transition-colors ${
+                      viewerMode ? 'opacity-70 cursor-not-allowed bg-[#0b0d10]' : ''
                     }`}
                   >
                     <option value="">(Ninguno)</option>
@@ -349,19 +351,19 @@ const PropertiesPanel: React.FC = () => {
                       checked={!!selectedNode.data.isAbstract} 
                       disabled={viewerMode}
                       onChange={(e) => handleNodeAbstractToggle(e.target.checked)}
-                      className="w-4 h-4 rounded border-slate-700 bg-slate-900 text-blue-600 focus:ring-0 cursor-pointer"
+                      className="w-4 h-4 rounded border-[#242934] bg-[#0f1115] text-indigo-600 focus:ring-0 cursor-pointer"
                     />
                     <span className="text-xs text-slate-300 font-medium">Es Clase Abstracta</span>
                   </label>
                 </div>
 
                 {!viewerMode && (
-                  <div className="pt-3 border-t border-slate-800/80 space-y-2">
+                  <div className="pt-3 border-t border-[#242934] space-y-2">
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         type="button"
                         onClick={() => copyClassNode(selectedNode.id)}
-                        className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-slate-900 hover:bg-slate-850 text-slate-200 hover:text-white border border-slate-700/80 hover:border-slate-600 rounded-lg text-[11px] font-semibold transition-all active:scale-98 cursor-pointer shadow-xs"
+                        className="flex items-center justify-center gap-1.5 px-2.5 py-2 bg-[#181c24] hover:bg-[#1f2430] text-slate-200 hover:text-white border border-[#242934] hover:border-indigo-500/50 rounded-xl text-[11px] font-semibold transition-all active:scale-98 cursor-pointer shadow-xs"
                         title="Copiar clase al portapapeles (Ctrl+C)"
                       >
                         <ClipboardCopy size={13} className="text-sky-400" />
@@ -372,10 +374,10 @@ const PropertiesPanel: React.FC = () => {
                         type="button"
                         disabled={!copiedClassNode}
                         onClick={() => pasteClassNode()}
-                        className={`flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition-all shadow-xs ${
+                        className={`flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl text-[11px] font-semibold border transition-all shadow-xs ${
                           copiedClassNode
-                            ? 'bg-slate-900 hover:bg-slate-850 text-slate-200 hover:text-white border-slate-700/80 hover:border-slate-600 active:scale-98 cursor-pointer'
-                            : 'bg-slate-950 text-slate-600 border-slate-800 cursor-not-allowed opacity-50'
+                            ? 'bg-[#181c24] hover:bg-[#1f2430] text-slate-200 hover:text-white border-[#242934] hover:border-indigo-500/50 active:scale-98 cursor-pointer'
+                            : 'bg-[#0f1115] text-slate-600 border-[#242934] cursor-not-allowed opacity-50'
                         }`}
                         title={copiedClassNode ? `Pegar '${copiedClassNode.name}' (Ctrl+V)` : 'Primero copia una clase con Ctrl+C'}
                       >
@@ -390,10 +392,10 @@ const PropertiesPanel: React.FC = () => {
                         await cloneClassNode(selectedNode.id);
                         toast.success('Clase duplicada exitosamente');
                       }}
-                      className="w-full flex items-center justify-center gap-2 px-3 py-1.5 bg-slate-900 hover:bg-slate-850 text-slate-200 hover:text-white border border-slate-700/80 hover:border-slate-600 rounded-lg text-xs font-semibold transition-all active:scale-98 cursor-pointer shadow-xs"
+                      className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-[#181c24] hover:bg-[#1f2430] text-slate-200 hover:text-white border border-[#242934] hover:border-indigo-500/50 rounded-xl text-xs font-semibold transition-all active:scale-98 cursor-pointer shadow-xs"
                       title="Duplicar clase inmediatamente (Ctrl+D)"
                     >
-                      <Copy size={13} className="text-blue-400" />
+                      <Copy size={13} className="text-indigo-400" />
                       <span>Duplicar Clase (Ctrl+D)</span>
                     </button>
                   </div>
@@ -407,14 +409,14 @@ const PropertiesPanel: React.FC = () => {
                 <div className="flex justify-between items-center pb-1">
                   <div>
                     <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Atributos / Campos</span>
-                    <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-slate-800 text-[10px] font-mono text-slate-400">
+                    <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-[#181c24] border border-[#242934] text-[10px] font-mono text-slate-400">
                       {selectedNode.data.attributes?.length || 0}
                     </span>
                   </div>
                   {!viewerMode && (
                     <button 
                       onClick={handleAddAttribute}
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold shadow-xs shadow-blue-500/20 transition-all active:scale-95 cursor-pointer"
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold shadow-xs shadow-indigo-500/20 transition-all active:scale-95 cursor-pointer"
                     >
                       <Plus size={13} />
                       <span>Añadir</span>
@@ -424,12 +426,12 @@ const PropertiesPanel: React.FC = () => {
 
                 <div className="space-y-2.5 max-h-[440px] overflow-y-auto pr-1">
                   {(!selectedNode.data.attributes || selectedNode.data.attributes.length === 0) ? (
-                    <div className="p-6 text-center rounded-xl border border-dashed border-slate-800 bg-slate-900/40">
+                    <div className="p-6 text-center rounded-xl border border-dashed border-[#242934] bg-[#0f1115]/60">
                       <p className="text-xs text-slate-500 italic">Sin atributos definidos en esta clase</p>
                       {!viewerMode && (
                         <button 
                           onClick={handleAddAttribute}
-                          className="mt-2 text-xs text-blue-400 hover:text-blue-300 font-semibold"
+                          className="mt-2 text-xs text-indigo-400 hover:text-indigo-300 font-semibold"
                         >
                           + Añadir primer atributo
                         </button>
@@ -437,7 +439,7 @@ const PropertiesPanel: React.FC = () => {
                     </div>
                   ) : (
                     selectedNode.data.attributes.map((attr) => (
-                      <div key={attr.id} className="p-3 bg-slate-900/90 border border-slate-800/90 hover:border-slate-700/80 rounded-xl space-y-2.5 transition-colors shadow-xs">
+                      <div key={attr.id} className="p-3 bg-[#181c24] border border-[#242934] hover:border-indigo-500/40 rounded-xl space-y-2.5 transition-colors shadow-xs">
                         {/* Row 1: Visibility, Name (Amplio Espacio) y Eliminar */}
                         <div className="flex items-center gap-2">
                           {/* Visibility dropdown */}
@@ -458,10 +460,10 @@ const PropertiesPanel: React.FC = () => {
                             }`}
                             title="Modificador de visibilidad UML"
                           >
-                            <option value="public" className="bg-slate-950 text-emerald-400">+ Public</option>
-                            <option value="private" className="bg-slate-950 text-rose-400">- Private</option>
-                            <option value="protected" className="bg-slate-950 text-amber-400"># Protected</option>
-                            <option value="package" className="bg-slate-950 text-sky-400">~ Package</option>
+                            <option value="public" className="bg-[#0f1115] text-emerald-400">+ Public</option>
+                            <option value="private" className="bg-[#0f1115] text-rose-400">- Private</option>
+                            <option value="protected" className="bg-[#0f1115] text-amber-400"># Protected</option>
+                            <option value="package" className="bg-[#0f1115] text-sky-400">~ Package</option>
                           </select>
 
                           {/* Attribute Name Input - ESPACIO PRINCIPAL COMPLETO */}
@@ -470,7 +472,7 @@ const PropertiesPanel: React.FC = () => {
                             value={attr.name}
                             disabled={viewerMode}
                             onChange={(e) => handleUpdateAttribute(attr.id, { name: e.target.value })}
-                            className={`flex-1 min-w-0 bg-slate-950 border border-slate-700/80 focus:border-blue-500 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-100 placeholder:text-slate-600 focus:outline-none transition-colors ${
+                            className={`flex-1 min-w-0 bg-[#0f1115] border border-[#242934] focus:border-indigo-500 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-100 placeholder:text-slate-600 focus:outline-none transition-colors ${
                               viewerMode ? 'opacity-70 cursor-not-allowed' : ''
                             }`}
                             placeholder="nombreAtributo"
@@ -497,17 +499,17 @@ const PropertiesPanel: React.FC = () => {
                               value={attr.type}
                               disabled={viewerMode}
                               onChange={(e) => handleUpdateAttribute(attr.id, { type: e.target.value })}
-                              className={`flex-1 min-w-0 bg-slate-950 border border-slate-700/80 focus:border-blue-500 rounded-lg px-2 py-1 text-xs font-mono text-sky-300 focus:outline-none transition-colors ${
+                              className={`flex-1 min-w-0 bg-[#0f1115] border border-[#242934] focus:border-indigo-500 rounded-lg px-2 py-1 text-xs font-mono text-sky-300 focus:outline-none transition-colors ${
                                 viewerMode ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'
                               }`}
                             >
                               {BACKEND_BD_TYPES.map((t) => (
-                                <option key={t} value={t} className="bg-slate-950 text-slate-200 font-mono">
+                                <option key={t} value={t} className="bg-[#0f1115] text-slate-200 font-mono">
                                   {t}
                                 </option>
                               ))}
                               {!BACKEND_BD_TYPES.includes(attr.type) && (
-                                <option value={attr.type} className="bg-slate-950 text-amber-300 font-mono">
+                                <option value={attr.type} className="bg-[#0f1115] text-amber-300 font-mono">
                                   {attr.type} (Personalizado)
                                 </option>
                               )}
@@ -526,7 +528,7 @@ const PropertiesPanel: React.FC = () => {
                               } ${
                                 (attr.isId || attr.isPrimaryKey)
                                   ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 ring-1 ring-amber-400/40 shadow-xs'
-                                  : 'bg-slate-950 border-slate-800 text-slate-500 hover:text-slate-300 hover:border-slate-700'
+                                  : 'bg-[#0f1115] border-[#242934] text-slate-500 hover:text-slate-300 hover:border-slate-600'
                               }`}
                               title={(attr.isId || attr.isPrimaryKey) ? 'Clave Primaria activa ({PK})' : 'Marcar como Clave Primaria ({PK})'}
                             >
@@ -543,10 +545,10 @@ const PropertiesPanel: React.FC = () => {
                                 viewerMode ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'
                               } ${
                                 (attr.isId || attr.isPrimaryKey)
-                                  ? 'bg-blue-500/10 border-blue-500/30 text-blue-400/60 cursor-not-allowed opacity-75'
+                                  ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400/60 cursor-not-allowed opacity-75'
                                   : attr.isNotNull
-                                    ? 'bg-blue-500/20 border-blue-500/60 text-blue-300 ring-1 ring-blue-400/40 shadow-xs'
-                                    : 'bg-slate-950 border-slate-800 text-slate-500 hover:text-slate-300 hover:border-slate-700'
+                                    ? 'bg-indigo-500/20 border-indigo-500/60 text-indigo-300 ring-1 ring-indigo-400/40 shadow-xs'
+                                    : 'bg-[#0f1115] border-[#242934] text-slate-500 hover:text-slate-300 hover:border-slate-600'
                               }`}
                               title={
                                 (attr.isId || attr.isPrimaryKey)
@@ -569,7 +571,7 @@ const PropertiesPanel: React.FC = () => {
                               } ${
                                 attr.isStatic
                                   ? 'bg-purple-500/20 border-purple-500/50 text-purple-300 ring-1 ring-purple-400/40 shadow-xs'
-                                  : 'bg-slate-950 border-slate-800 text-slate-500 hover:text-slate-300 hover:border-slate-700'
+                                  : 'bg-[#0f1115] border-[#242934] text-slate-500 hover:text-slate-300 hover:border-slate-600'
                               }`}
                               title={attr.isStatic ? 'Atributo estático (subrayado OMG UML 2.5)' : 'Marcar como estático (UML)'}
                             >
@@ -589,7 +591,7 @@ const PropertiesPanel: React.FC = () => {
                                 className={`text-[10px] font-mono px-1.5 py-0.5 rounded transition-colors cursor-pointer ${
                                   attr.type === t
                                     ? 'bg-sky-600/30 text-sky-300 border border-sky-500/40'
-                                    : 'bg-slate-950/80 text-slate-400 hover:text-slate-200 border border-slate-800'
+                                    : 'bg-[#0f1115] text-slate-400 hover:text-slate-200 border border-[#242934]'
                                 }`}
                               >
                                 {t}
@@ -610,14 +612,14 @@ const PropertiesPanel: React.FC = () => {
                 <div className="flex justify-between items-center pb-1">
                   <div>
                     <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Operaciones / Métodos</span>
-                    <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-slate-800 text-[10px] font-mono text-slate-400">
+                    <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-[#181c24] border border-[#242934] text-[10px] font-mono text-slate-400">
                       {selectedNode.data.methods?.length || 0}
                     </span>
                   </div>
                   {!viewerMode && (
                     <button 
                       onClick={handleAddMethod}
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold shadow-xs shadow-blue-500/20 transition-all active:scale-95 cursor-pointer"
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold shadow-xs shadow-indigo-500/20 transition-all active:scale-95 cursor-pointer"
                     >
                       <Plus size={13} />
                       <span>Añadir</span>
@@ -627,12 +629,12 @@ const PropertiesPanel: React.FC = () => {
 
                 <div className="space-y-2.5 max-h-[440px] overflow-y-auto pr-1">
                   {(!selectedNode.data.methods || selectedNode.data.methods.length === 0) ? (
-                    <div className="p-6 text-center rounded-xl border border-dashed border-slate-800 bg-slate-900/40">
+                    <div className="p-6 text-center rounded-xl border border-dashed border-[#242934] bg-[#0f1115]/60">
                       <p className="text-xs text-slate-500 italic">Sin operaciones definidas en esta clase</p>
                       {!viewerMode && (
                         <button 
                           onClick={handleAddMethod}
-                          className="mt-2 text-xs text-blue-400 hover:text-blue-300 font-semibold"
+                          className="mt-2 text-xs text-indigo-400 hover:text-indigo-300 font-semibold"
                         >
                           + Añadir primera operación
                         </button>
@@ -640,7 +642,7 @@ const PropertiesPanel: React.FC = () => {
                     </div>
                   ) : (
                     selectedNode.data.methods.map((method) => (
-                      <div key={method.id} className="p-3 bg-slate-900/90 border border-slate-800/90 hover:border-slate-700/80 rounded-xl space-y-2.5 transition-colors shadow-xs">
+                      <div key={method.id} className="p-3 bg-[#181c24] border border-[#242934] hover:border-indigo-500/40 rounded-xl space-y-2.5 transition-colors shadow-xs">
                         {/* Row 1: Visibility, Name (Amplio Espacio) y Eliminar */}
                         <div className="flex items-center gap-2">
                           {/* Visibility dropdown */}
@@ -661,10 +663,10 @@ const PropertiesPanel: React.FC = () => {
                             }`}
                             title="Modificador de visibilidad UML"
                           >
-                            <option value="public" className="bg-slate-950 text-emerald-400">+ Public</option>
-                            <option value="private" className="bg-slate-950 text-rose-400">- Private</option>
-                            <option value="protected" className="bg-slate-950 text-amber-400"># Protected</option>
-                            <option value="package" className="bg-slate-950 text-sky-400">~ Package</option>
+                            <option value="public" className="bg-[#0f1115] text-emerald-400">+ Public</option>
+                            <option value="private" className="bg-[#0f1115] text-rose-400">- Private</option>
+                            <option value="protected" className="bg-[#0f1115] text-amber-400"># Protected</option>
+                            <option value="package" className="bg-[#0f1115] text-sky-400">~ Package</option>
                           </select>
 
                           {/* Method Name Input - ESPACIO PRINCIPAL COMPLETO */}
@@ -673,7 +675,7 @@ const PropertiesPanel: React.FC = () => {
                             value={method.name}
                             disabled={viewerMode}
                             onChange={(e) => handleUpdateMethod(method.id, { name: e.target.value })}
-                            className={`flex-1 min-w-0 bg-slate-950 border border-slate-700/80 focus:border-blue-500 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-100 placeholder:text-slate-600 focus:outline-none transition-colors ${
+                            className={`flex-1 min-w-0 bg-[#0f1115] border border-[#242934] focus:border-indigo-500 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-100 placeholder:text-slate-600 focus:outline-none transition-colors ${
                               viewerMode ? 'opacity-70 cursor-not-allowed' : ''
                             }`}
                             placeholder="nombreMetodo"
@@ -701,7 +703,7 @@ const PropertiesPanel: React.FC = () => {
                               value={method.returnType}
                               disabled={viewerMode}
                               onChange={(e) => handleUpdateMethod(method.id, { returnType: e.target.value })}
-                              className={`flex-1 min-w-0 bg-slate-950 border border-slate-700/80 focus:border-blue-500 rounded-lg px-2 py-1 text-xs font-mono text-emerald-300 placeholder:text-slate-600 focus:outline-none transition-colors ${
+                              className={`flex-1 min-w-0 bg-[#0f1115] border border-[#242934] focus:border-indigo-500 rounded-lg px-2 py-1 text-xs font-mono text-emerald-300 placeholder:text-slate-600 focus:outline-none transition-colors ${
                                 viewerMode ? 'opacity-70 cursor-not-allowed' : ''
                               }`}
                               placeholder="void, String, etc."
@@ -719,7 +721,7 @@ const PropertiesPanel: React.FC = () => {
                               } ${
                                 method.isStatic
                                   ? 'bg-purple-500/20 border-purple-500/50 text-purple-300 ring-1 ring-purple-400/40 shadow-xs'
-                                  : 'bg-slate-950 border-slate-800 text-slate-500 hover:text-slate-300 hover:border-slate-700'
+                                  : 'bg-[#0f1115] border-[#242934] text-slate-500 hover:text-slate-300 hover:border-slate-600'
                               }`}
                               title={method.isStatic ? 'Método estático (subrayado OMG UML 2.5)' : 'Marcar como estático'}
                             >
@@ -736,7 +738,7 @@ const PropertiesPanel: React.FC = () => {
                               } ${
                                 method.isAbstract
                                   ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 ring-1 ring-amber-400/40 shadow-xs'
-                                  : 'bg-slate-950 border-slate-800 text-slate-500 hover:text-slate-300 hover:border-slate-700'
+                                  : 'bg-[#0f1115] border-[#242934] text-slate-500 hover:text-slate-300 hover:border-slate-600'
                               }`}
                               title={method.isAbstract ? 'Método abstracto (cursiva OMG UML 2.5)' : 'Marcar como abstracto'}
                             >
@@ -756,7 +758,7 @@ const PropertiesPanel: React.FC = () => {
                                 className={`text-[10px] font-mono px-1.5 py-0.2 rounded transition-colors cursor-pointer ${
                                   method.returnType === rt
                                     ? 'bg-emerald-600/30 text-emerald-300 border border-emerald-500/40'
-                                    : 'bg-slate-950/80 text-slate-400 hover:text-slate-200 border border-slate-800'
+                                    : 'bg-[#0f1115] text-slate-400 hover:text-slate-200 border border-[#242934]'
                                 }`}
                               >
                                 {rt}
@@ -766,7 +768,7 @@ const PropertiesPanel: React.FC = () => {
                         )}
 
                         {/* Row 3: Parameter Manager */}
-                        <div className="pt-2 border-t border-slate-800/80 space-y-1.5">
+                        <div className="pt-2 border-t border-[#242934] space-y-1.5">
                           <div className="flex items-center justify-between">
                             <span className="text-[10px] text-slate-400 uppercase font-mono tracking-wider">
                               Parámetros ({method.parameters?.length || 0}):
@@ -775,7 +777,7 @@ const PropertiesPanel: React.FC = () => {
                               <button
                                 type="button"
                                 onClick={() => handleAddParameter(method.id)}
-                                className="text-[10px] text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+                                className="text-[10px] text-indigo-400 hover:text-indigo-300 font-semibold flex items-center gap-1 cursor-pointer transition-colors"
                               >
                                 <Plus size={11} /> Añadir parámetro
                               </button>
@@ -791,7 +793,7 @@ const PropertiesPanel: React.FC = () => {
                                     disabled={viewerMode}
                                     onChange={(e) => handleUpdateParameter(method.id, pIdx, { name: e.target.value })}
                                     placeholder="nombre"
-                                    className={`w-24 bg-slate-950 border border-slate-700/80 focus:border-blue-500 rounded px-1.5 py-0.5 text-[11px] font-mono text-slate-200 placeholder:text-slate-600 focus:outline-none transition-colors ${
+                                    className={`w-24 bg-[#0f1115] border border-[#242934] focus:border-indigo-500 rounded px-1.5 py-0.5 text-[11px] font-mono text-slate-200 placeholder:text-slate-600 focus:outline-none transition-colors ${
                                       viewerMode ? 'opacity-70 cursor-not-allowed' : ''
                                     }`}
                                   />
@@ -802,7 +804,7 @@ const PropertiesPanel: React.FC = () => {
                                     disabled={viewerMode}
                                     onChange={(e) => handleUpdateParameter(method.id, pIdx, { type: e.target.value })}
                                     placeholder="tipo"
-                                    className={`flex-1 min-w-0 bg-slate-950 border border-slate-700/80 focus:border-blue-500 rounded px-1.5 py-0.5 text-[11px] font-mono text-sky-300 placeholder:text-slate-600 focus:outline-none transition-colors ${
+                                    className={`flex-1 min-w-0 bg-[#0f1115] border border-[#242934] focus:border-indigo-500 rounded px-1.5 py-0.5 text-[11px] font-mono text-sky-300 placeholder:text-slate-600 focus:outline-none transition-colors ${
                                       viewerMode ? 'opacity-70 cursor-not-allowed' : ''
                                     }`}
                                   />
@@ -830,7 +832,7 @@ const PropertiesPanel: React.FC = () => {
 
             {/* Delete Class Button */}
             {!viewerMode && (
-              <div className="pt-4 border-t border-slate-800/80">
+              <div className="pt-4 border-t border-[#242934]">
                 <button
                   type="button"
                   onClick={() => {
@@ -963,12 +965,12 @@ const PropertiesPanel: React.FC = () => {
                           viewerMode ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'
                         } ${
                           isSelected
-                            ? 'bg-blue-600/20 border-blue-500/80 text-blue-300 ring-1 ring-blue-500/40 shadow-xs'
-                            : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                            ? 'bg-indigo-600/20 border-indigo-500/80 text-indigo-300 ring-1 ring-indigo-500/40 shadow-xs'
+                            : 'bg-[#181c24] border-[#242934] text-slate-400 hover:text-slate-200 hover:border-slate-700'
                         }`}
                       >
                         <div className="flex items-center gap-1.5 font-medium text-xs">
-                          <span className={isSelected ? 'text-blue-400' : 'text-slate-400'}>
+                          <span className={isSelected ? 'text-indigo-400' : 'text-slate-400'}>
                             {t.icon}
                           </span>
                           <span className="truncate">{t.name}</span>
@@ -1041,12 +1043,12 @@ const PropertiesPanel: React.FC = () => {
                           viewerMode ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'
                         } ${
                           isSelected
-                            ? 'bg-blue-600/20 border-blue-500/80 text-blue-300 ring-1 ring-blue-500/40 shadow-xs'
-                            : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                            ? 'bg-indigo-600/20 border-indigo-500/80 text-indigo-300 ring-1 ring-indigo-500/40 shadow-xs'
+                            : 'bg-[#181c24] border-[#242934] text-slate-400 hover:text-slate-200 hover:border-slate-700'
                         }`}
                       >
                         <div className="flex items-center gap-1.5 font-medium text-xs">
-                          <span className={isSelected ? 'text-blue-400' : 'text-slate-400'}>
+                          <span className={isSelected ? 'text-indigo-400' : 'text-slate-400'}>
                             {rt.icon}
                           </span>
                           <span className="truncate">{rt.name}</span>
@@ -1060,10 +1062,10 @@ const PropertiesPanel: React.FC = () => {
                 </div>
 
                 {selectedEdge.data?.waypoints && selectedEdge.data.waypoints.length > 0 && (
-                  <div className="mt-2 flex items-center justify-between p-2.5 bg-blue-950/30 border border-blue-800/40 rounded-xl">
+                  <div className="mt-2 flex items-center justify-between p-2.5 bg-indigo-950/30 border border-indigo-800/40 rounded-xl">
                     <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-blue-400" />
-                      <span className="text-xs text-blue-300">
+                      <span className="w-2 h-2 rounded-full bg-indigo-400" />
+                      <span className="text-xs text-indigo-300">
                         Trazo personalizado ({selectedEdge.data.waypoints.length} {selectedEdge.data.waypoints.length === 1 ? 'punto' : 'puntos'})
                       </span>
                     </div>
@@ -1082,7 +1084,7 @@ const PropertiesPanel: React.FC = () => {
 
               {/* Association Direction Toggle */}
               {edgeType === 'association' && (
-                <div className="flex items-center justify-between p-3 bg-slate-900/60 border border-slate-800 rounded-xl">
+                <div className="flex items-center justify-between p-3 bg-[#181c24] border border-[#242934] rounded-xl">
                   <div>
                     <span className="text-xs font-medium text-slate-200 block">
                       Flecha Abierta en Destino
@@ -1098,7 +1100,7 @@ const PropertiesPanel: React.FC = () => {
                     className={`w-9 h-5 rounded-full transition-colors relative ${
                       viewerMode ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'
                     } ${
-                      selectedEdge.data?.isDirected !== false ? 'bg-blue-600' : 'bg-slate-700'
+                      selectedEdge.data?.isDirected !== false ? 'bg-indigo-600' : 'bg-[#242934]'
                     }`}
                   >
                     <span 
@@ -1121,8 +1123,8 @@ const PropertiesPanel: React.FC = () => {
                   disabled={viewerMode}
                   onChange={(e) => handleEdgeLabelChange(e.target.value)}
                   placeholder="ej: pertenece_a, gestiona, contiene"
-                  className={`w-full bg-slate-900 border border-slate-800 focus:border-blue-500 rounded-xl px-3 py-2 text-xs font-mono text-slate-100 placeholder:text-slate-600 focus:outline-none transition-colors ${
-                    viewerMode ? 'opacity-70 cursor-not-allowed bg-slate-950' : ''
+                  className={`w-full bg-[#0f1115] border border-[#242934] focus:border-indigo-500 rounded-xl px-3 py-2 text-xs font-mono text-slate-100 placeholder:text-slate-600 focus:outline-none transition-colors ${
+                    viewerMode ? 'opacity-70 cursor-not-allowed bg-[#0b0d10]' : ''
                   }`}
                 />
               </div>
@@ -1139,8 +1141,8 @@ const PropertiesPanel: React.FC = () => {
                     disabled={viewerMode}
                     onChange={(e) => updateRelationship(selectedEdge.id, { sourceRole: e.target.value })}
                     placeholder="ej: propietario"
-                    className={`w-full bg-slate-900 border border-slate-800 focus:border-blue-500 rounded-xl px-2.5 py-2 text-xs font-mono text-slate-100 placeholder:text-slate-600 focus:outline-none transition-colors ${
-                      viewerMode ? 'opacity-70 cursor-not-allowed bg-slate-950' : ''
+                    className={`w-full bg-[#0f1115] border border-[#242934] focus:border-indigo-500 rounded-xl px-2.5 py-2 text-xs font-mono text-slate-100 placeholder:text-slate-600 focus:outline-none transition-colors ${
+                      viewerMode ? 'opacity-70 cursor-not-allowed bg-[#0b0d10]' : ''
                     }`}
                   />
                 </div>
@@ -1154,8 +1156,8 @@ const PropertiesPanel: React.FC = () => {
                     disabled={viewerMode}
                     onChange={(e) => updateRelationship(selectedEdge.id, { targetRole: e.target.value })}
                     placeholder="ej: cuenta"
-                    className={`w-full bg-slate-900 border border-slate-800 focus:border-blue-500 rounded-xl px-2.5 py-2 text-xs font-mono text-slate-100 placeholder:text-slate-600 focus:outline-none transition-colors ${
-                      viewerMode ? 'opacity-70 cursor-not-allowed bg-slate-950' : ''
+                    className={`w-full bg-[#0f1115] border border-[#242934] focus:border-indigo-500 rounded-xl px-2.5 py-2 text-xs font-mono text-slate-100 placeholder:text-slate-600 focus:outline-none transition-colors ${
+                      viewerMode ? 'opacity-70 cursor-not-allowed bg-[#0b0d10]' : ''
                     }`}
                   />
                 </div>
@@ -1175,12 +1177,12 @@ const PropertiesPanel: React.FC = () => {
               ) : (
                 <>
                   {/* Quick Cardinality Presets (con soporte explícito N:N, 1:N, N:M) */}
-                  <div className="p-3 bg-slate-900/70 border border-slate-800/90 rounded-xl space-y-2">
+                  <div className="p-3 bg-[#181c24] border border-[#242934] rounded-xl space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-semibold text-slate-300 uppercase tracking-wider">
                         Preajustes Rápidos (1:1, 1:N, N:N, N:M)
                       </span>
-                      <Sparkles size={12} className="text-blue-400" />
+                      <Sparkles size={12} className="text-indigo-400" />
                     </div>
                     <div className="grid grid-cols-4 gap-1.5">
                       {[
@@ -1206,8 +1208,8 @@ const PropertiesPanel: React.FC = () => {
                               viewerMode ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'
                             } ${
                               isActive
-                                ? 'bg-blue-600 text-white border-blue-400 shadow-xs shadow-blue-500/20'
-                                : 'bg-slate-950 text-slate-300 hover:text-white border-slate-800 hover:border-slate-700'
+                                ? 'bg-indigo-600 text-white border-indigo-400 shadow-xs shadow-indigo-500/20'
+                                : 'bg-[#0f1115] text-slate-300 hover:text-white border-[#242934] hover:border-slate-700'
                             }`}
                             title={`Aplicar ${preset.label}`}
                           >
@@ -1240,8 +1242,8 @@ const PropertiesPanel: React.FC = () => {
                             handleEdgeCardinalityChange(e.target.value, selectedEdge.data?.targetCardinality || '');
                           }
                         }}
-                        className={`w-full bg-slate-900 border border-slate-800 focus:border-blue-500 rounded-xl px-2.5 py-2 text-xs font-mono text-blue-300 focus:outline-none transition-colors ${
-                          viewerMode ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'
+                        className={`w-full bg-[#0f1115] border border-[#242934] focus:border-indigo-500 rounded-xl px-2.5 py-2 text-xs font-mono text-indigo-300 focus:outline-none transition-colors ${
+                          viewerMode ? 'opacity-70 cursor-not-allowed bg-[#0b0d10]' : 'cursor-pointer'
                         }`}
                       >
                         <option value="1">1 (Exactamente 1)</option>
@@ -1262,8 +1264,8 @@ const PropertiesPanel: React.FC = () => {
                           disabled={viewerMode}
                           onChange={(e) => handleEdgeCardinalityChange(e.target.value, selectedEdge.data?.targetCardinality || '')}
                           placeholder="ej: 1..10"
-                          className={`w-full mt-1.5 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs font-mono text-blue-300 focus:outline-none transition-colors ${
-                            viewerMode ? 'opacity-70 cursor-not-allowed' : ''
+                          className={`w-full mt-1.5 bg-[#0f1115] border border-[#242934] rounded-lg px-2.5 py-1 text-xs font-mono text-indigo-300 focus:outline-none transition-colors ${
+                            viewerMode ? 'opacity-70 cursor-not-allowed bg-[#0b0d10]' : ''
                           }`}
                         />
                       )}
@@ -1284,8 +1286,8 @@ const PropertiesPanel: React.FC = () => {
                             handleEdgeCardinalityChange(selectedEdge.data?.sourceCardinality || '', e.target.value);
                           }
                         }}
-                        className={`w-full bg-slate-900 border border-slate-800 focus:border-blue-500 rounded-xl px-2.5 py-2 text-xs font-mono text-indigo-300 focus:outline-none transition-colors ${
-                          viewerMode ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'
+                        className={`w-full bg-[#0f1115] border border-[#242934] focus:border-indigo-500 rounded-xl px-2.5 py-2 text-xs font-mono text-indigo-300 focus:outline-none transition-colors ${
+                          viewerMode ? 'opacity-70 cursor-not-allowed bg-[#0b0d10]' : 'cursor-pointer'
                         }`}
                       >
                         <option value="1">1 (Exactamente 1)</option>
@@ -1306,8 +1308,8 @@ const PropertiesPanel: React.FC = () => {
                           disabled={viewerMode}
                           onChange={(e) => handleEdgeCardinalityChange(selectedEdge.data?.sourceCardinality || '', e.target.value)}
                           placeholder="ej: 0..5"
-                          className={`w-full mt-1.5 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs font-mono text-indigo-300 focus:outline-none transition-colors ${
-                            viewerMode ? 'opacity-70 cursor-not-allowed' : ''
+                          className={`w-full mt-1.5 bg-[#0f1115] border border-[#242934] rounded-lg px-2.5 py-1 text-xs font-mono text-indigo-300 focus:outline-none transition-colors ${
+                            viewerMode ? 'opacity-70 cursor-not-allowed bg-[#0b0d10]' : ''
                           }`}
                         />
                       )}
@@ -1318,7 +1320,7 @@ const PropertiesPanel: React.FC = () => {
 
               {/* Delete Edge Button */}
               {!viewerMode && (
-                <div className="pt-4 border-t border-slate-800/80">
+                <div className="pt-4 border-t border-[#242934]">
                   <button
                     type="button"
                     onClick={() => {

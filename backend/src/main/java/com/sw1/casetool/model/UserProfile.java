@@ -57,6 +57,9 @@ public class UserProfile {
     @Builder.Default
     private Boolean isActive = true;
 
+    @Column(name = "architect_id")
+    private UUID architectId;
+
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "preferences", columnDefinition = "jsonb")
     private Map<String, Object> preferences;

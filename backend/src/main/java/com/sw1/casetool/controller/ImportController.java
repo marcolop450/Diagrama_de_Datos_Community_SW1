@@ -12,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
@@ -20,6 +21,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/projects")
 @RequiredArgsConstructor
+@PreAuthorize("hasAnyRole('ARQUITECTO', 'SUPER_ADMIN')")
 @Tag(name = "Importación de Modelo (CU12)", description = "Importación de modelos UML desde archivos OMG XMI 2.1 (ArchiTec, Enterprise Architect, StarUML)")
 public class ImportController {
 

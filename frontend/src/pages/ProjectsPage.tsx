@@ -319,43 +319,43 @@ export const ProjectsPage: React.FC = () => {
     <AppLayout>
       <div className="max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6 pb-20">
         {/* Header Banner */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-800 pb-5">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400 shrink-0">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[#242934] pb-6">
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
               <FolderKanban size={22} />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl md:text-2xl font-bold text-slate-100 tracking-tight">
-                  {isColaborador ? 'Modelos UML Compartidos' : 'Mis Proyectos UML'}
+              <div className="flex items-center gap-2.5">
+                <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight font-display">
+                  {isColaborador ? 'Modelos UML Compartidos y Práctica' : 'Mis Proyectos UML'}
                 </h1>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-blue-950/60 border border-blue-800 text-blue-300">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-indigo-500/10 border border-indigo-500/20 text-indigo-300">
                   {role}
                 </span>
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-400 mt-1 font-sans">
                 {isColaborador 
-                  ? 'Explora, audita y co-diseña los diagramas de clases asignados a tu cuenta.' 
+                  ? 'Modelos de práctica propios y diagramas de clases compartidos para co-diseño en equipo.' 
                   : 'Gestión integral de modelos UML, control de versiones semánticas y trazabilidad histórica.'}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5 flex-wrap">
             <button
               onClick={handleRefresh}
               disabled={refreshing}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-300 rounded-lg text-xs font-semibold transition-all cursor-pointer shadow-xs active:scale-95"
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-[#14171d] hover:bg-[#181c24] border border-[#242934] text-slate-300 rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-sm active:scale-95 font-sans"
               title="Actualizar proyectos"
             >
-              <RefreshCw size={13} className={refreshing ? 'animate-spin text-blue-400' : 'text-slate-400'} />
+              <RefreshCw size={13} className={refreshing ? 'animate-spin text-indigo-400' : 'text-slate-400'} />
               <span>Actualizar</span>
             </button>
 
             {!isColaborador && (
               <button
                 onClick={() => setIsImportModalOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 rounded-lg text-xs font-semibold transition-all shadow-xs active:scale-95 cursor-pointer"
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-[#14171d] hover:bg-[#181c24] text-slate-200 border border-[#242934] hover:border-emerald-500/40 rounded-xl text-xs font-semibold transition-all shadow-sm active:scale-95 cursor-pointer font-sans"
                 title="Importar modelo desde archivo OMG XMI 2.1 (ArchiTec, StarUML, EA)"
               >
                 <Upload size={14} className="text-emerald-400" />
@@ -363,34 +363,33 @@ export const ProjectsPage: React.FC = () => {
               </button>
             )}
 
-            {!isColaborador && (
-              <button
-                onClick={() => setIsCreateModalOpen(true)}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-lg text-xs font-semibold transition-all shadow-sm shadow-blue-500/20 active:scale-95 cursor-pointer"
-              >
-                <FolderPlus size={14} />
-                <span>Nuevo Proyecto UML</span>
-              </button>
-            )}
+            <button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition-all shadow-md shadow-indigo-600/20 active:scale-95 cursor-pointer font-sans"
+              title={isColaborador ? 'Crear modelo UML para práctica' : 'Crear nuevo proyecto UML'}
+            >
+              <FolderPlus size={14} />
+              <span>{isColaborador ? 'Nuevo Proyecto (Práctica)' : 'Nuevo Proyecto UML'}</span>
+            </button>
           </div>
         </div>
 
         {/* Live Collaboration Quick Join Card (CU18) */}
-        <div className="p-4 sm:p-5 rounded-xl bg-gradient-to-r from-amber-500/10 via-slate-900/90 to-indigo-950/40 border border-amber-500/30 shadow-md relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="flex items-start sm:items-center gap-3.5 min-w-0">
-            <div className="p-2.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-400 shadow-inner shrink-0">
+        <div className="p-5 sm:p-6 rounded-2xl bg-[#14171d]/90 border border-[#242934] shadow-xl relative overflow-hidden flex flex-col xl:flex-row items-start xl:items-center justify-between gap-5">
+          <div className="flex items-start sm:items-center gap-4 min-w-0 flex-1">
+            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-400 shadow-inner shrink-0">
               <Radio className="w-5 h-5 animate-pulse text-amber-400" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold text-slate-100 tracking-wide">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <h3 className="text-sm font-bold text-white tracking-wide font-display">
                   Unirse a Pizarra Compartida en Vivo
                 </h3>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 shrink-0">
                   WSS Activo
                 </span>
               </div>
-              <p className="text-xs text-slate-400 mt-0.5 max-w-xl leading-relaxed">
+              <p className="text-xs text-slate-400 mt-1 leading-relaxed font-sans">
                 Ingresa el código de sesión (ej. SW1-902) para conectarte en vivo a la pizarra UML con chat y sincronización en tiempo real.
               </p>
             </div>
@@ -398,27 +397,27 @@ export const ProjectsPage: React.FC = () => {
 
           <form 
             onSubmit={handleJoinCollabSubmit}
-            className="flex items-center gap-2 w-full md:w-auto shrink-0"
+            className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full xl:w-auto shrink-0"
           >
-            <div className="relative flex-1 md:w-44">
+            <div className="relative w-full sm:w-48">
               <input
                 type="text"
                 value={collabRoomCode}
                 onChange={(e) => setCollabRoomCode(e.target.value.toUpperCase())}
                 placeholder="SW1-XXX"
                 maxLength={10}
-                className="w-full px-3 py-2 rounded-lg bg-slate-950/80 border border-slate-700 text-slate-100 placeholder-slate-500 font-mono text-center text-xs font-bold tracking-widest uppercase focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition-all"
+                className="w-full px-4 py-2.5 rounded-xl bg-[#0f1115] border border-[#242934] text-white placeholder-slate-500 font-mono text-center text-xs font-bold tracking-widest uppercase focus:outline-none focus:border-amber-400/80 focus:ring-1 focus:ring-amber-400/40 transition-all shadow-inner"
               />
             </div>
             <button
               type="submit"
               disabled={isJoiningCollab}
-              className="px-4 py-2 rounded-lg text-xs font-semibold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-sm shadow-amber-500/20 transition-all flex items-center gap-1.5 shrink-0 cursor-pointer disabled:opacity-50"
+              className="px-5 py-2.5 rounded-xl text-xs font-semibold bg-amber-500/90 hover:bg-amber-400 text-slate-950 shadow-md shadow-amber-500/20 transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer disabled:opacity-50 active:scale-98 font-sans"
             >
               {isJoiningCollab ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                <Radio className="w-3.5 h-3.5" />
+                <Radio className="w-4 h-4" />
               )}
               <span>{isJoiningCollab ? 'Conectando...' : 'Unirse a la Sala'}</span>
             </button>
@@ -426,22 +425,22 @@ export const ProjectsPage: React.FC = () => {
         </div>
 
         {/* Tab Switcher: Proyectos Activos vs Papelera de Reciclaje */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           <button
             onClick={() => {
               setActiveTab('active');
               setCurrentPage(1);
               setSelectedTag('ALL');
             }}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer border ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer border font-sans ${
               activeTab === 'active'
-                ? 'bg-blue-600/20 text-blue-300 border-blue-500/40 shadow-xs'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900 border-slate-800'
+                ? 'bg-indigo-500/10 text-indigo-300 border-indigo-500/30 shadow-sm'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-[#14171d] border-[#242934]'
             }`}
           >
             <FolderKanban size={14} />
             <span>Proyectos Activos</span>
-            <span className="ml-1 px-1.5 py-0.2 rounded text-[10px] font-mono bg-slate-800 text-slate-300">
+            <span className="ml-1 px-1.5 py-0.2 rounded text-[10px] font-mono bg-[#181c24] border border-[#242934] text-slate-300">
               {projects.length}
             </span>
           </button>
@@ -452,24 +451,24 @@ export const ProjectsPage: React.FC = () => {
               setCurrentPage(1);
               setSelectedTag('ALL');
             }}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer border ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer border font-sans ${
               activeTab === 'trash'
-                ? 'bg-rose-950/40 text-rose-300 border-rose-800/60 shadow-xs'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900 border-slate-800'
+                ? 'bg-rose-500/10 text-rose-300 border-rose-500/30 shadow-sm'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-[#14171d] border-[#242934]'
             }`}
           >
             <RotateCcw size={14} />
             <span>Papelera de Reciclaje</span>
-            <span className="ml-1 px-1.5 py-0.2 rounded text-[10px] font-mono bg-slate-800 text-slate-300">
+            <span className="ml-1 px-1.5 py-0.2 rounded text-[10px] font-mono bg-[#181c24] border border-[#242934] text-slate-300">
               {trashProjects.length}
             </span>
           </button>
         </div>
 
         {/* Search & Tag Filter Bar */}
-        <div className="flex flex-col md:flex-row gap-2.5 bg-slate-900/50 border border-slate-800/80 p-3 rounded-lg">
+        <div className="flex flex-col md:flex-row gap-3 bg-[#14171d]/90 border border-[#242934] p-3.5 rounded-xl shadow-sm">
           <div className="relative flex-1">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+            <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
             <input
               type="text"
               placeholder="Buscar proyectos por nombre, descripción o etiquetas..."
@@ -478,7 +477,7 @@ export const ProjectsPage: React.FC = () => {
                 setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full bg-slate-950 border border-slate-800 text-slate-100 placeholder:text-slate-500 focus:border-blue-500 rounded-md pl-8.5 pr-3 py-1.5 text-xs focus:outline-none transition-colors"
+              className="w-full bg-[#0f1115] border border-[#242934] text-slate-100 placeholder:text-slate-500 focus:border-indigo-500 rounded-lg pl-9 pr-3.5 py-2 text-xs focus:outline-none transition-colors font-sans"
             />
           </div>
 
@@ -490,10 +489,10 @@ export const ProjectsPage: React.FC = () => {
                   setSelectedTag('ALL');
                   setCurrentPage(1);
                 }}
-                className={`px-2 py-1 rounded text-xs font-medium transition-all shrink-0 cursor-pointer ${
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all shrink-0 cursor-pointer font-sans ${
                   selectedTag === 'ALL'
-                    ? 'bg-blue-600 text-white shadow-xs'
-                    : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'bg-[#0f1115] text-slate-400 hover:text-slate-200 border border-[#242934]'
                 }`}
               >
                 Todos ({currentList.length})
@@ -505,10 +504,10 @@ export const ProjectsPage: React.FC = () => {
                     setSelectedTag(tag);
                     setCurrentPage(1);
                   }}
-                  className={`px-2 py-1 rounded text-xs font-mono transition-all shrink-0 cursor-pointer ${
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-mono transition-all shrink-0 cursor-pointer ${
                     selectedTag === tag
-                      ? 'bg-blue-600 text-white shadow-xs'
-                      : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
+                      ? 'bg-indigo-600 text-white shadow-xs'
+                      : 'bg-[#0f1115] text-slate-400 hover:text-slate-200 border border-[#242934]'
                   }`}
                 >
                   #{tag}
@@ -521,63 +520,63 @@ export const ProjectsPage: React.FC = () => {
         {/* Content Section */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <RefreshCw size={24} className="animate-spin text-blue-500" />
-            <span className="text-xs text-slate-400">Cargando proyectos...</span>
+            <RefreshCw size={24} className="animate-spin text-indigo-500" />
+            <span className="text-xs text-slate-400 font-sans">Cargando proyectos...</span>
           </div>
         ) : filteredProjects.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 px-4 bg-slate-900/20 border border-dashed border-slate-800 rounded-2xl text-center">
-            <div className="w-12 h-12 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 mb-3">
+          <div className="flex flex-col items-center justify-center py-20 px-4 bg-[#14171d]/50 border border-dashed border-[#242934] rounded-2xl text-center">
+            <div className="w-12 h-12 rounded-2xl bg-[#181c24] border border-[#242934] flex items-center justify-center text-slate-500 mb-3">
               <FolderKanban size={22} />
             </div>
-            <h3 className="text-sm font-semibold text-slate-200">
+            <h3 className="text-sm font-bold text-slate-200 font-display">
               {activeTab === 'active' ? 'No se encontraron proyectos activos' : 'La papelera de reciclaje está vacía'}
             </h3>
-            <p className="text-xs text-slate-500 max-w-sm mt-1">
+            <p className="text-xs text-slate-500 max-w-sm mt-1 font-sans">
               {searchTerm || selectedTag !== 'ALL'
                 ? 'Prueba modificando tus términos de búsqueda o etiquetas filtradas.'
                 : activeTab === 'active'
                   ? 'Comienza creando un nuevo proyecto UML con metadatos personalizados.'
                   : 'No existen proyectos eliminados en la papelera de reciclaje.'}
             </p>
-            {activeTab === 'active' && !isColaborador && (
+            {activeTab === 'active' && (
               <button
                 onClick={() => setIsCreateModalOpen(true)}
-                className="mt-4 flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-all cursor-pointer"
+                className="mt-4 flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-md font-sans"
               >
                 <FolderPlus size={14} />
-                <span>Crear Primer Proyecto</span>
+                <span>{isColaborador ? 'Crear Modelo de Práctica' : 'Crear Primer Proyecto'}</span>
               </button>
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {paginatedProjects.map(proj => (
               <div 
                 key={proj.id}
-                className="flex flex-col justify-between bg-slate-900/50 hover:bg-slate-900/80 border border-slate-800/80 hover:border-slate-700 rounded-lg p-4 transition-all shadow-xs group overflow-hidden"
+                className="flex flex-col justify-between bg-[#14171d]/90 hover:bg-[#181c24] border border-[#242934] hover:border-indigo-500/40 rounded-xl p-5 transition-all shadow-sm group overflow-hidden"
               >
                 <div>
-                  <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                     <div className="flex flex-wrap items-center gap-1.5 min-w-0">
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-blue-950/60 border border-blue-800/60 text-blue-300 shrink-0">
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 shrink-0">
                         {proj.version || 'v1.0.0'}
                       </span>
                       {proj.clonedFromId && (
-                        <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono bg-purple-950/60 border border-purple-800/60 text-purple-300 shrink-0">
+                        <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-mono bg-purple-500/10 border border-purple-500/20 text-purple-300 shrink-0">
                           <GitFork size={10} />
                           Fork
                         </span>
                       )}
                       {proj.isDeleted && (
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-rose-950/60 border border-rose-800 text-rose-300 shrink-0">
+                        <span className="px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-rose-500/10 border border-rose-500/20 text-rose-300 shrink-0">
                           En Papelera
                         </span>
                       )}
                       {proj.ownerName && (
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium shrink-0 ${
+                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-medium shrink-0 font-sans ${
                           proj.ownerId === user?.userId
-                            ? 'bg-emerald-950/60 border border-emerald-800/60 text-emerald-300'
-                            : 'bg-slate-800/80 border border-slate-700/80 text-slate-300'
+                            ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-300'
+                            : 'bg-[#181c24] border border-[#242934] text-slate-300'
                         }`}>
                           {proj.ownerId === user?.userId ? 'Anfitrión (Tú)' : `Host: ${proj.ownerName}`}
                         </span>
@@ -592,7 +591,7 @@ export const ProjectsPage: React.FC = () => {
                               setCloneModalProject(proj);
                               setCloneName(`${proj.name} Copia`);
                             }}
-                            className="p-1 text-slate-400 hover:text-blue-400 hover:bg-slate-800 rounded transition-colors cursor-pointer shrink-0"
+                            className="p-1.5 text-slate-400 hover:text-indigo-300 hover:bg-[#1f2430] rounded-lg transition-colors cursor-pointer shrink-0"
                             title="Clonar proyecto"
                           >
                             <Copy size={13} />
@@ -607,7 +606,7 @@ export const ProjectsPage: React.FC = () => {
                                 setEditVersion(proj.version || 'v1.0.0');
                                 setEditTags(Array.isArray(proj.tags) ? [...proj.tags] : []);
                               }}
-                              className="p-1 text-slate-400 hover:text-emerald-400 hover:bg-slate-800 rounded transition-colors cursor-pointer shrink-0"
+                              className="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-[#1f2430] rounded-lg transition-colors cursor-pointer shrink-0"
                               title="Editar metadatos"
                             >
                               <Edit3 size={13} />
@@ -616,7 +615,7 @@ export const ProjectsPage: React.FC = () => {
 
                           <button
                             onClick={() => setHistoryModalProject(proj)}
-                            className="p-1 text-slate-400 hover:text-purple-400 hover:bg-slate-800 rounded transition-colors cursor-pointer shrink-0"
+                            className="p-1.5 text-slate-400 hover:text-indigo-300 hover:bg-[#1f2430] rounded-lg transition-colors cursor-pointer shrink-0"
                             title="Consultar historial y trazabilidad"
                           >
                             <History size={13} />
@@ -625,7 +624,7 @@ export const ProjectsPage: React.FC = () => {
                           {(proj.ownerId ? proj.ownerId === user?.userId : !isColaborador) && (
                             <button
                               onClick={() => setDeleteModalProject(proj)}
-                              className="p-1 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded transition-colors cursor-pointer shrink-0"
+                              className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-[#1f2430] rounded-lg transition-colors cursor-pointer shrink-0"
                               title="Mover a papelera de reciclaje"
                             >
                               <Trash2 size={13} />
@@ -638,7 +637,7 @@ export const ProjectsPage: React.FC = () => {
                             <button
                               onClick={() => handleRestoreProject(proj.id, proj.name)}
                               disabled={restoringId === proj.id}
-                              className="flex items-center gap-1 px-2 py-0.5 bg-emerald-950/60 hover:bg-emerald-900/60 text-emerald-300 border border-emerald-800/80 rounded text-xs font-semibold transition-all cursor-pointer active:scale-95 disabled:opacity-50 shrink-0"
+                              className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-lg text-xs font-semibold transition-all cursor-pointer active:scale-95 disabled:opacity-50 shrink-0 font-sans"
                               title="Restaurar proyecto"
                             >
                               <RotateCcw size={12} className={restoringId === proj.id ? 'animate-spin' : ''} />
@@ -648,7 +647,7 @@ export const ProjectsPage: React.FC = () => {
 
                           <button
                             onClick={() => setHistoryModalProject(proj)}
-                            className="p-1 text-slate-400 hover:text-purple-400 hover:bg-slate-800 rounded transition-colors cursor-pointer shrink-0"
+                            className="p-1.5 text-slate-400 hover:text-indigo-300 hover:bg-[#1f2430] rounded-lg transition-colors cursor-pointer shrink-0"
                             title="Consultar historial y trazabilidad"
                           >
                             <History size={13} />
@@ -657,7 +656,7 @@ export const ProjectsPage: React.FC = () => {
                           {(proj.ownerId ? proj.ownerId === user?.userId : !isColaborador) && (
                             <button
                               onClick={() => setPurgeModalProject(proj)}
-                              className="p-1 text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 rounded transition-colors cursor-pointer shrink-0"
+                              className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer shrink-0"
                               title="Eliminar definitivamente"
                             >
                               <Trash2 size={13} />
@@ -670,20 +669,20 @@ export const ProjectsPage: React.FC = () => {
 
                   <h3 
                     onClick={() => activeTab === 'active' && handleOpenProject(proj.id, proj.name)}
-                    className={`text-xs font-semibold text-slate-100 line-clamp-1 mb-1 ${activeTab === 'active' ? 'cursor-pointer hover:text-blue-400 transition-colors' : ''}`}
+                    className={`text-sm font-bold text-slate-100 line-clamp-1 mb-1 font-sans ${activeTab === 'active' ? 'cursor-pointer hover:text-indigo-400 transition-colors' : ''}`}
                   >
                     {proj.name}
                   </h3>
                   
-                  <p className="text-[11px] text-slate-400 line-clamp-2 min-h-[30px] mb-2.5 leading-relaxed">
+                  <p className="text-xs text-slate-400 line-clamp-2 min-h-[32px] mb-3 leading-relaxed font-sans">
                     {proj.description || 'Sin descripción detallada para este modelo.'}
                   </p>
 
                   {/* Tags */}
                   {Array.isArray(proj.tags) && proj.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mb-2.5">
+                    <div className="flex flex-wrap gap-1 mb-3">
                       {proj.tags.map(t => (
-                        <span key={t} className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-950 text-slate-400 border border-slate-800">
+                        <span key={t} className="px-2 py-0.5 rounded text-[10px] font-mono bg-[#0f1115] text-slate-400 border border-[#242934]">
                           #{t}
                         </span>
                       ))}
@@ -692,14 +691,14 @@ export const ProjectsPage: React.FC = () => {
                 </div>
 
                 {/* Footer Metadata */}
-                <div className="pt-2.5 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-400">
+                <div className="pt-3 border-t border-[#242934]/70 flex items-center justify-between text-[11px] text-slate-400 font-sans">
                   <div className="flex items-center gap-3">
                     <span className="flex items-center gap-1 font-mono">
-                      <Layers size={12} className="text-blue-400" />
+                      <Layers size={13} className="text-indigo-400" />
                       {proj.nodeCount ?? 0} clases
                     </span>
                     <span className="flex items-center gap-1 font-mono">
-                      <FileCode2 size={12} className="text-indigo-400" />
+                      <FileCode2 size={13} className="text-indigo-400" />
                       {proj.relationshipCount ?? 0} rels
                     </span>
                   </div>
@@ -707,10 +706,10 @@ export const ProjectsPage: React.FC = () => {
                   {activeTab === 'active' && (
                     <button
                       onClick={() => handleOpenProject(proj.id, proj.name)}
-                      className="text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors cursor-pointer flex items-center gap-0.5"
+                      className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition-colors cursor-pointer flex items-center gap-0.5"
                     >
                       <span>Abrir</span>
-                      <ChevronRight size={12} />
+                      <ChevronRight size={13} />
                     </button>
                   )}
                 </div>
@@ -753,24 +752,26 @@ export const ProjectsPage: React.FC = () => {
 
         {/* MODAL 2: Editar Metadatos */}
         {editModalProject && createPortal(
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xs p-4">
-            <div className="bg-slate-900 border border-slate-800 rounded-lg w-full max-w-md p-5 shadow-xl animate-fade-in">
-              <div className="flex justify-between items-center pb-3 border-b border-slate-800 mb-4">
-                <div className="flex items-center gap-2">
-                  <Edit3 size={16} className="text-emerald-400" />
-                  <h2 className="text-sm font-bold text-slate-100">Editar Metadatos del Proyecto</h2>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4 animate-fade-in">
+            <div className="bg-[#14171d] border border-[#242934] rounded-2xl w-full max-w-md p-6 shadow-2xl">
+              <div className="flex justify-between items-center pb-4 border-b border-[#242934] mb-5">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                    <Edit3 size={16} />
+                  </div>
+                  <h2 className="text-base font-bold text-white font-display">Editar Metadatos del Proyecto</h2>
                 </div>
                 <button 
                   onClick={() => setEditModalProject(null)}
-                  className="p-1 text-slate-400 hover:text-slate-200 rounded cursor-pointer"
+                  className="p-1 text-slate-400 hover:text-white rounded-lg transition-colors cursor-pointer"
                 >
-                  <X size={15} />
+                  <X size={16} />
                 </button>
               </div>
 
-              <form onSubmit={handleEditProject} className="flex flex-col gap-3.5">
+              <form onSubmit={handleEditProject} className="flex flex-col gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5 font-sans">
                     Nombre del Proyecto *
                   </label>
                   <input
@@ -778,37 +779,37 @@ export const ProjectsPage: React.FC = () => {
                     required
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 text-slate-100 focus:border-blue-500 rounded-md px-3 py-1.5 text-xs focus:outline-none"
+                    className="w-full bg-[#0f1115] border border-[#242934] text-white focus:border-indigo-500 rounded-xl px-3.5 py-2 text-xs focus:outline-none transition-colors font-sans"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5 font-sans">
                     Descripción
                   </label>
                   <textarea
-                    rows={2}
+                    rows={3}
                     value={editDesc}
                     onChange={(e) => setEditDesc(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 text-slate-100 focus:border-blue-500 rounded-md px-3 py-1.5 text-xs focus:outline-none resize-none"
+                    className="w-full bg-[#0f1115] border border-[#242934] text-white focus:border-indigo-500 rounded-xl px-3.5 py-2 text-xs focus:outline-none resize-none transition-colors font-sans"
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-3.5">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                    <label className="block text-xs font-semibold text-slate-300 mb-1.5 font-sans">
                       Versión Semántica
                     </label>
                     <input
                       type="text"
                       value={editVersion}
                       onChange={(e) => setEditVersion(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-800 text-slate-100 focus:border-blue-500 rounded-md px-3 py-1.5 text-xs focus:outline-none font-mono"
+                      className="w-full bg-[#0f1115] border border-[#242934] text-white focus:border-indigo-500 rounded-xl px-3.5 py-2 text-xs focus:outline-none font-mono"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                    <label className="block text-xs font-semibold text-slate-300 mb-1.5 font-sans">
                       Añadir Etiqueta
                     </label>
                     <input
@@ -817,40 +818,40 @@ export const ProjectsPage: React.FC = () => {
                       value={editTagInput}
                       onChange={(e) => setEditTagInput(e.target.value)}
                       onKeyDown={handleAddEditTag}
-                      className="w-full bg-slate-950 border border-slate-800 text-slate-100 focus:border-blue-500 rounded-md px-3 py-1.5 text-xs focus:outline-none font-mono"
+                      className="w-full bg-[#0f1115] border border-[#242934] text-white focus:border-indigo-500 rounded-xl px-3.5 py-2 text-xs focus:outline-none font-mono"
                     />
                   </div>
                 </div>
 
                 {editTags.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 p-2 bg-slate-950/60 border border-slate-800/80 rounded-md">
+                  <div className="flex flex-wrap gap-1.5 p-2.5 bg-[#0f1115] border border-[#242934] rounded-xl">
                     {editTags.map(t => (
-                      <span key={t} className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-950/60 border border-emerald-800/60 text-emerald-300">
+                      <span key={t} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-mono bg-emerald-500/10 border border-emerald-500/20 text-emerald-300">
                         #{t}
                         <button
                           type="button"
                           onClick={() => setEditTags(editTags.filter(x => x !== t))}
                           className="hover:text-rose-400 cursor-pointer"
                         >
-                          <X size={10} />
+                          <X size={11} />
                         </button>
                       </span>
                     ))}
                   </div>
                 )}
 
-                <div className="flex justify-end gap-2 pt-3 border-t border-slate-800 mt-2">
+                <div className="flex justify-end gap-2.5 pt-4 border-t border-[#242934] mt-2">
                   <button
                     type="button"
                     onClick={() => setEditModalProject(null)}
-                    className="px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-slate-200 cursor-pointer"
+                    className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white cursor-pointer font-sans"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
                     disabled={submittingAction}
-                    className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-md text-xs font-semibold shadow-xs disabled:opacity-50 cursor-pointer"
+                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold shadow-md disabled:opacity-50 cursor-pointer active:scale-98 font-sans"
                   >
                     {submittingAction ? <RefreshCw size={13} className="animate-spin" /> : <Check size={13} />}
                     <span>Guardar Cambios</span>
@@ -864,28 +865,30 @@ export const ProjectsPage: React.FC = () => {
 
         {/* MODAL 3: Clonación Profunda */}
         {cloneModalProject && createPortal(
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xs p-4">
-            <div className="bg-slate-900 border border-slate-800 rounded-lg w-full max-w-md p-5 shadow-xl animate-fade-in">
-              <div className="flex justify-between items-center pb-3 border-b border-slate-800 mb-4">
-                <div className="flex items-center gap-2">
-                  <Copy size={16} className="text-blue-400" />
-                  <h2 className="text-sm font-bold text-slate-100">Clonar Proyecto</h2>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4 animate-fade-in">
+            <div className="bg-[#14171d] border border-[#242934] rounded-2xl w-full max-w-md p-6 shadow-2xl">
+              <div className="flex justify-between items-center pb-4 border-b border-[#242934] mb-5">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                    <Copy size={16} />
+                  </div>
+                  <h2 className="text-base font-bold text-white font-display">Clonar Proyecto</h2>
                 </div>
                 <button 
                   onClick={() => setCloneModalProject(null)}
-                  className="p-1 text-slate-400 hover:text-slate-200 rounded cursor-pointer"
+                  className="p-1 text-slate-400 hover:text-white rounded-lg transition-colors cursor-pointer"
                 >
-                  <X size={15} />
+                  <X size={16} />
                 </button>
               </div>
 
-              <form onSubmit={handleCloneProject} className="flex flex-col gap-3.5">
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  Se realizará una bifurcación profunda del modelo <span className="text-slate-200 font-semibold">{cloneModalProject.name}</span>, duplicando atómicamente todas sus clases, atributos y relaciones relinkeadas con nuevos identificadores.
+              <form onSubmit={handleCloneProject} className="flex flex-col gap-4">
+                <p className="text-xs text-slate-400 leading-relaxed font-sans">
+                  Se realizará una bifurcación profunda del modelo <span className="text-white font-semibold">{cloneModalProject.name}</span>, duplicando atómicamente todas sus clases, atributos y relaciones relinkeadas con nuevos identificadores.
                 </p>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5 font-sans">
                     Nombre del Nuevo Proyecto *
                   </label>
                   <input
@@ -893,22 +896,22 @@ export const ProjectsPage: React.FC = () => {
                     required
                     value={cloneName}
                     onChange={(e) => setCloneName(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 text-slate-100 focus:border-blue-500 rounded-md px-3 py-1.5 text-xs focus:outline-none"
+                    className="w-full bg-[#0f1115] border border-[#242934] text-white focus:border-indigo-500 rounded-xl px-3.5 py-2 text-xs focus:outline-none transition-colors font-sans"
                   />
                 </div>
 
-                <div className="flex justify-end gap-2 pt-3 border-t border-slate-800 mt-2">
+                <div className="flex justify-end gap-2.5 pt-4 border-t border-[#242934] mt-2">
                   <button
                     type="button"
                     onClick={() => setCloneModalProject(null)}
-                    className="px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-slate-200 cursor-pointer"
+                    className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white cursor-pointer font-sans"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
                     disabled={submittingAction}
-                    className="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-md text-xs font-semibold shadow-xs disabled:opacity-50 cursor-pointer"
+                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold shadow-md disabled:opacity-50 cursor-pointer active:scale-98 font-sans"
                   >
                     {submittingAction ? <RefreshCw size={13} className="animate-spin" /> : <Check size={13} />}
                     <span>Confirmar y Abrir Copia</span>
@@ -922,27 +925,27 @@ export const ProjectsPage: React.FC = () => {
 
         {/* MODAL 4: Eliminar Proyecto (Mover a la Papelera) */}
         {deleteModalProject && createPortal(
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xs p-4">
-            <div className="bg-slate-900 border border-slate-800 rounded-lg w-full max-w-md p-5 shadow-xl animate-fade-in">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-9 h-9 rounded-md bg-rose-600/20 border border-rose-500/40 flex items-center justify-center text-rose-400 shrink-0">
-                  <AlertTriangle size={18} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4 animate-fade-in">
+            <div className="bg-[#14171d] border border-[#242934] rounded-2xl w-full max-w-md p-6 shadow-2xl">
+              <div className="flex items-center gap-3.5 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 shrink-0">
+                  <AlertTriangle size={20} />
                 </div>
                 <div>
-                  <h2 className="text-sm font-bold text-slate-100">Mover a la Papelera</h2>
-                  <p className="text-xs text-slate-400">Eliminación lógica y segura</p>
+                  <h2 className="text-base font-bold text-white font-display">Mover a la Papelera</h2>
+                  <p className="text-xs text-slate-400 font-sans">Eliminación lógica reversible</p>
                 </div>
               </div>
 
-              <p className="text-xs text-slate-300 leading-relaxed mb-4">
+              <p className="text-xs text-slate-300 leading-relaxed mb-5 font-sans">
                 ¿Estás seguro de que deseas enviar el proyecto <span className="font-semibold text-white">"{deleteModalProject.name}"</span> a la papelera? Podrás restaurarlo en cualquier momento desde la pestaña "Papelera de Reciclaje".
               </p>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
+              <div className="flex justify-end gap-2.5 pt-4 border-t border-[#242934]">
                 <button
                   type="button"
                   onClick={() => setDeleteModalProject(null)}
-                  className="px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-slate-200 cursor-pointer"
+                  className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white cursor-pointer font-sans"
                 >
                   Cancelar
                 </button>
@@ -950,7 +953,7 @@ export const ProjectsPage: React.FC = () => {
                   type="button"
                   onClick={handleDeleteProject}
                   disabled={submittingAction}
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-md text-xs font-semibold shadow-xs disabled:opacity-50 cursor-pointer"
+                  className="flex items-center gap-2 px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-semibold shadow-md disabled:opacity-50 cursor-pointer active:scale-98 font-sans"
                 >
                   {submittingAction ? <RefreshCw size={13} className="animate-spin" /> : <Trash2 size={13} />}
                   <span>Mover a Papelera</span>
@@ -963,28 +966,28 @@ export const ProjectsPage: React.FC = () => {
 
         {/* MODAL 5: Purga Definitiva */}
         {purgeModalProject && createPortal(
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-xs p-4">
-            <div className="bg-slate-900 border border-rose-800/80 rounded-lg w-full max-w-md p-5 shadow-xl animate-fade-in">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-9 h-9 rounded-md bg-rose-950 border border-rose-800 flex items-center justify-center text-rose-400 shrink-0">
-                  <Trash2 size={18} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-xs p-4 animate-fade-in">
+            <div className="bg-[#14171d] border border-rose-800/60 rounded-2xl w-full max-w-md p-6 shadow-2xl">
+              <div className="flex items-center gap-3.5 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 shrink-0">
+                  <Trash2 size={20} />
                 </div>
                 <div>
-                  <h2 className="text-sm font-bold text-rose-200">Eliminación Física Definitiva</h2>
-                  <p className="text-xs text-rose-400 font-medium">Esta acción es irreversible</p>
+                  <h2 className="text-base font-bold text-rose-200 font-display">Eliminación Física Definitiva</h2>
+                  <p className="text-xs text-rose-400/90 font-medium font-sans">Esta acción es irreversible</p>
                 </div>
               </div>
 
-              <p className="text-xs text-slate-300 leading-relaxed mb-4">
+              <p className="text-xs text-slate-300 leading-relaxed mb-5 font-sans">
                 Estás a punto de <span className="text-rose-400 font-bold">purgar definitivamente</span> el proyecto <span className="font-semibold text-white">"{purgeModalProject.name}"</span>.
                 Se eliminarán de forma física e irrecuperable en PostgreSQL todas sus clases, relaciones y registros de historial.
               </p>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
+              <div className="flex justify-end gap-2.5 pt-4 border-t border-[#242934]">
                 <button
                   type="button"
                   onClick={() => setPurgeModalProject(null)}
-                  className="px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-slate-200 cursor-pointer"
+                  className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white cursor-pointer font-sans"
                 >
                   Cancelar
                 </button>
@@ -992,7 +995,7 @@ export const ProjectsPage: React.FC = () => {
                   type="button"
                   onClick={handlePurgeProject}
                   disabled={submittingAction}
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-md text-xs font-semibold shadow-xs disabled:opacity-50 cursor-pointer"
+                  className="flex items-center gap-2 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold shadow-md disabled:opacity-50 cursor-pointer active:scale-98 font-sans"
                 >
                   {submittingAction ? <RefreshCw size={13} className="animate-spin" /> : <Trash2 size={13} />}
                   <span>Sí, Eliminar Definitivamente</span>

@@ -195,7 +195,7 @@ export const OnboardingSpotlight: React.FC = () => {
 
   // Render step icon
   const renderIcon = () => {
-    const iconClass = "text-blue-400 shrink-0";
+    const iconClass = "text-indigo-400 shrink-0";
     const size = 22;
     switch (currentStep.icon) {
       case 'Layers': return <Layers size={size} className={iconClass} />;
@@ -271,14 +271,14 @@ export const OnboardingSpotlight: React.FC = () => {
             y="0"
             width="100%"
             height="100%"
-            fill="rgba(2, 6, 23, 0.85)"
+            fill="rgba(15, 17, 21, 0.85)"
             mask="url(#spotlight-hole-mask)"
           />
         </svg>
       ) : (
         /* Full dark backdrop when center step (no blur so canvas is focused but not distorted) */
         <div 
-          className="fixed inset-0 bg-slate-950/85 transition-opacity duration-300 z-40 cursor-default"
+          className="fixed inset-0 bg-[#0f1115]/85 transition-opacity duration-300 z-40 cursor-default"
           onClick={handleSkip}
         />
       )}
@@ -286,7 +286,7 @@ export const OnboardingSpotlight: React.FC = () => {
       {/* Spotlight cutout highlight border if target exists */}
       {targetRect && currentStep.placement !== 'center' && (
         <div
-          className="fixed rounded-xl border-2 border-blue-500 ring-4 ring-blue-500/25 shadow-[0_0_35px_rgba(59,130,246,0.45)] pointer-events-none transition-all duration-300 ease-out z-50 animate-pulse"
+          className="fixed rounded-xl border-2 border-indigo-500 ring-4 ring-indigo-500/25 shadow-[0_0_35px_rgba(92,104,226,0.45)] pointer-events-none transition-all duration-300 ease-out z-50 animate-pulse"
           style={{
             top: `${Math.max(0, targetRect.top - 6)}px`,
             left: `${Math.max(0, targetRect.left - 6)}px`,
@@ -299,24 +299,24 @@ export const OnboardingSpotlight: React.FC = () => {
       {/* Floating Tour Dialog Card */}
       <div 
         style={getCardPositionStyle()}
-        className="z-50 w-[92vw] max-w-md bg-slate-900/95 border border-slate-800/90 rounded-2xl shadow-2xl p-5 md:p-6 flex flex-col gap-4 transition-all duration-300 ease-out backdrop-blur-md"
+        className="z-50 w-[92vw] max-w-md bg-[#14171d]/95 border border-[#242934] rounded-2xl shadow-2xl p-5 md:p-6 flex flex-col gap-4 transition-all duration-300 ease-out backdrop-blur-md"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Card Header: Step pill + Timer badge + Close button */}
-        <div className="flex items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
+        <div className="flex items-center justify-between gap-2 border-b border-[#242934] pb-3">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-blue-950/70 border border-blue-800/50 text-blue-300">
+            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-indigo-950/70 border border-indigo-800/50 text-indigo-300">
               {currentStep.badge}
             </span>
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono text-slate-400 bg-slate-800/60 border border-slate-700/50">
-              <Clock size={11} className="text-blue-400" />
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono text-slate-400 bg-[#181c24] border border-[#242934]">
+              <Clock size={11} className="text-indigo-400" />
               &lt; 2 min
             </span>
           </div>
 
           <button
             onClick={handleSkip}
-            className="p-1 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors cursor-pointer"
+            className="p-1 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-[#181c24] transition-colors cursor-pointer"
             title="Cerrar tutorial (Esc)"
           >
             <X size={16} />
@@ -324,26 +324,26 @@ export const OnboardingSpotlight: React.FC = () => {
         </div>
 
         {/* Progress bar */}
-        <div className="w-full bg-slate-800/80 rounded-full h-1.5 overflow-hidden">
+        <div className="w-full bg-[#181c24] rounded-full h-1.5 overflow-hidden border border-[#242934]">
           <div 
-            className="bg-gradient-to-r from-blue-500 to-indigo-500 h-1.5 rounded-full transition-all duration-300"
+            className="bg-indigo-600 h-1.5 rounded-full transition-all duration-300"
             style={{ width: `${((onboardingStep + 1) / STEPS.length) * 100}%` }}
           />
         </div>
 
         {/* Step Content */}
         <div className="flex items-start gap-3.5 pt-1">
-          <div className="p-2.5 bg-blue-500/10 border border-blue-500/20 rounded-xl shrink-0">
+          <div className="p-2.5 bg-indigo-500/10 border border-indigo-500/20 rounded-xl shrink-0">
             {renderIcon()}
           </div>
           <div className="flex flex-col gap-1 min-w-0">
-            <h3 className="text-base font-bold text-slate-100 leading-tight">
+            <h3 className="text-base font-display font-bold text-slate-100 leading-tight">
               {currentStep.title}
             </h3>
-            <p className="text-xs font-medium text-blue-400/90">
+            <p className="text-xs font-sans font-semibold text-indigo-400">
               {currentStep.subtitle}
             </p>
-            <p className="text-xs text-slate-300 leading-relaxed pt-1">
+            <p className="text-xs font-sans text-slate-300 leading-relaxed pt-1">
               {currentStep.description}
             </p>
           </div>
@@ -351,17 +351,17 @@ export const OnboardingSpotlight: React.FC = () => {
 
         {/* Action Hint */}
         {currentStep.actionHint && (
-          <div className="p-2 rounded-lg bg-slate-950/60 border border-slate-800/60 text-[11px] text-slate-400 flex items-center gap-1.5">
-            <Sparkles size={12} className="text-blue-400 shrink-0" />
+          <div className="p-2 rounded-xl bg-[#0f1115] border border-[#242934] text-[11px] text-slate-400 flex items-center gap-1.5 font-sans">
+            <Sparkles size={12} className="text-indigo-400 shrink-0" />
             <span className="truncate">{currentStep.actionHint}</span>
           </div>
         )}
 
         {/* Navigation Controls */}
-        <div className="flex items-center justify-between gap-3 pt-2 border-t border-slate-800/80">
+        <div className="flex items-center justify-between gap-3 pt-2 border-t border-[#242934]">
           <button
             onClick={handleSkip}
-            className="text-xs text-slate-400 hover:text-slate-200 hover:underline transition-colors cursor-pointer px-1 py-1"
+            className="text-xs font-sans text-slate-400 hover:text-slate-200 hover:underline transition-colors cursor-pointer px-1 py-1"
           >
             Saltar Tutorial
           </button>
@@ -370,7 +370,7 @@ export const OnboardingSpotlight: React.FC = () => {
             {onboardingStep > 0 && (
               <button
                 onClick={prevOnboardingStep}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-750 border border-slate-700 transition-all cursor-pointer active:scale-95"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-sans font-semibold text-slate-300 hover:text-white bg-[#181c24] hover:bg-[#242934] border border-[#242934] transition-all cursor-pointer active:scale-95"
               >
                 <ChevronLeft size={14} />
                 Anterior
@@ -380,7 +380,7 @@ export const OnboardingSpotlight: React.FC = () => {
             {!isLastStep ? (
               <button
                 onClick={nextOnboardingStep}
-                className="flex items-center gap-1 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 transition-all cursor-pointer shadow-sm shadow-blue-500/20 active:scale-95"
+                className="flex items-center gap-1 px-3.5 py-1.5 rounded-lg text-xs font-sans font-semibold text-white bg-indigo-600 hover:bg-indigo-500 transition-all cursor-pointer shadow-sm shadow-indigo-500/20 active:scale-95"
               >
                 Siguiente
                 <ChevronRight size={14} />
@@ -388,7 +388,7 @@ export const OnboardingSpotlight: React.FC = () => {
             ) : (
               <button
                 onClick={handleFinish}
-                className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 transition-all cursor-pointer shadow-md shadow-blue-500/25 active:scale-95"
+                className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-sans font-semibold text-white bg-indigo-600 hover:bg-indigo-500 transition-all cursor-pointer shadow-md shadow-indigo-500/25 active:scale-95"
               >
                 <CheckCircle2 size={14} />
                 ¡Comenzar a Modelar!
