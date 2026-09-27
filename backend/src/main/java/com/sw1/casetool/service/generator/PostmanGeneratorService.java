@@ -8,9 +8,11 @@ import com.sw1.casetool.dto.generator.GeneratePostmanRequest;
 import com.sw1.casetool.dto.generator.PostmanResponse;
 import com.sw1.casetool.model.ClassNode;
 import com.sw1.casetool.model.DiagramProject;
+import com.sw1.casetool.model.Relationship;
 import com.sw1.casetool.model.UserProfile;
 import com.sw1.casetool.repository.ClassNodeRepository;
 import com.sw1.casetool.repository.DiagramProjectRepository;
+import com.sw1.casetool.repository.RelationshipRepository;
 import com.sw1.casetool.repository.UserProfileRepository;
 import com.sw1.casetool.service.AuditLogService;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,7 @@ public class PostmanGeneratorService {
 
     private final DiagramProjectRepository projectRepository;
     private final ClassNodeRepository classNodeRepository;
+    private final RelationshipRepository relationshipRepository;
     private final UserProfileRepository userProfileRepository;
     private final AuditLogService auditLogService;
     private final ObjectMapper objectMapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
@@ -72,13 +75,24 @@ public class PostmanGeneratorService {
         varBaseUrl.put("value", baseUrl);
         varBaseUrl.put("type", "string");
 
-        for (ClassNode node : classes) {
+        List<Relationship> relationships = (relationshipRepository != null)
+                ? relationshipRepository.findByProjectId(projectId)
+                : Collections.emptyList();
+
+        List<ClassNode> sortedClasses = sortClassesTopologically(classes, relationships);
+
+        for (ClassNode node : sortedClasses) {
             String cName = sanitizeIdentifier(node.getName());
             String s = toKebabCase(pluralize(cName));
             ObjectNode varId = variables.addObject();
             varId.put("key", "last_created_" + s + "_id");
             varId.put("value", "1");
             varId.put("type", "string");
+
+            ObjectNode varDelId = variables.addObject();
+            varDelId.put("key", "delete_target_" + s + "_id");
+            varDelId.put("value", "1");
+            varDelId.put("type", "string");
         }
 
         // 3. Item array (Folders per Entity)
@@ -86,7 +100,7 @@ public class PostmanGeneratorService {
         int totalRequests = 0;
         int totalTests = 0;
 
-        for (ClassNode node : classes) {
+        for (ClassNode node : sortedClasses) {
             String className = sanitizeIdentifier(node.getName());
             String slug = toKebabCase(pluralize(className));
 
@@ -117,7 +131,7 @@ public class PostmanGeneratorService {
             if (finalReq.isIncludeTests()) totalTests += 2;
 
             // 5. DELETE by ID (Elimina el registro por ID)
-            folderItems.add(buildDeleteRequest(className, slug, finalReq.isIncludeTests()));
+            folderItems.add(buildDeleteRequest(node, className, slug, finalReq.isIncludeTests()));
             totalRequests++;
             if (finalReq.isIncludeTests()) totalTests += 2;
         }
@@ -178,8 +192,8 @@ public class PostmanGeneratorService {
                     "    pm.expect(jsonData.success).to.be.true;",
                     "    pm.expect(jsonData.data).to.be.an(\"array\");",
                     "});",
-                    "pm.test(\"Response time is acceptable (< 1000ms)\", function () {",
-                    "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                    "pm.test(\"Response time is acceptable (< 3000ms)\", function () {",
+                    "    pm.expect(pm.response.responseTime).to.be.below(3000);",
                     "});"
             ));
         }
@@ -342,11 +356,30 @@ public class PostmanGeneratorService {
         return item;
     }
 
-    private ObjectNode buildDeleteRequest(String className, String slug, boolean includeTests) {
+    private ObjectNode buildDeleteRequest(ClassNode node, String className, String slug, boolean includeTests) {
         ObjectNode item = objectMapper.createObjectNode();
         item.put("name", "Eliminar " + className + " por ID (DELETE by ID)");
 
         if (includeTests) {
+            String payloadJson = buildMockPayload(node, false);
+            addPreRequestEvent(item, Arrays.asList(
+                    "// Crear registro temporal de prueba para eliminar sin alterar el registro persistente",
+                    "pm.sendRequest({",
+                    "    url: pm.variables.get(\"baseUrl\") + \"/api/" + slug + "\",",
+                    "    method: \"POST\",",
+                    "    header: { \"Content-Type\": \"application/json\", \"Accept\": \"application/json\" },",
+                    "    body: { mode: \"raw\", raw: " + objectMapper.valueToTree(payloadJson).toString() + " }",
+                    "}, function (err, res) {",
+                    "    if (!err && (res.code === 200 || res.code === 201)) {",
+                    "        var json = res.json();",
+                    "        var tempId = (json.data && json.data.id) ? json.data.id : json.id;",
+                    "        pm.variables.set(\"delete_target_" + slug + "_id\", tempId);",
+                    "    } else {",
+                    "        pm.variables.set(\"delete_target_" + slug + "_id\", pm.variables.get(\"last_created_" + slug + "_id\"));",
+                    "    }",
+                    "});"
+            ));
+
             addTestsEvent(item, Arrays.asList(
                     "pm.test(\"Status code is 200 or 204 Deleted\", function () {",
                     "    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
@@ -367,19 +400,33 @@ public class PostmanGeneratorService {
         acceptH.put("value", "application/json");
 
         ObjectNode url = request.putObject("url");
-        url.put("raw", "{{baseUrl}}/api/" + slug + "/{{last_created_" + slug + "_id}}");
+        url.put("raw", "{{baseUrl}}/api/" + slug + "/{{delete_target_" + slug + "_id}}");
         ArrayNode host = url.putArray("host");
         host.add("{{baseUrl}}");
         ArrayNode path = url.putArray("path");
         path.add("api");
         path.add(slug);
-        path.add("{{last_created_" + slug + "_id}}");
+        path.add("{{delete_target_" + slug + "_id}}");
 
         return item;
     }
 
+    private void addPreRequestEvent(ObjectNode item, List<String> scriptLines) {
+        ArrayNode events = item.has("event") ? (ArrayNode) item.get("event") : item.putArray("event");
+        ObjectNode testEvent = events.addObject();
+        testEvent.put("listen", "prerequest");
+
+        ObjectNode scriptObj = testEvent.putObject("script");
+        scriptObj.put("type", "text/javascript");
+
+        ArrayNode exec = scriptObj.putArray("exec");
+        for (String line : scriptLines) {
+            exec.add(line);
+        }
+    }
+
     private void addTestsEvent(ObjectNode item, List<String> scriptLines) {
-        ArrayNode events = item.putArray("event");
+        ArrayNode events = item.has("event") ? (ArrayNode) item.get("event") : item.putArray("event");
         ObjectNode testEvent = events.addObject();
         testEvent.put("listen", "test");
 
@@ -447,6 +494,14 @@ public class PostmanGeneratorService {
                 || name.contains("precio") || name.contains("monto") || name.contains("total") || name.contains("saldo")
                 || name.contains("nota") || name.contains("calificacion") || name.contains("promedio")) {
             return isUpdate ? 249.99 : 149.50;
+        }
+
+        // Foreign key ID pattern: venta_id, producto_id, cliente_id, etc. Target ID 1 so foreign keys are satisfied
+        if (name.endsWith("_id") || (name.endsWith("id") && !name.equals("id") && (name.contains("venta") || name.contains("producto") || name.contains("cliente") || name.contains("user") || name.contains("vendedor") || name.contains("docente") || name.contains("estudiante") || name.contains("materia") || name.contains("padre") || name.contains("categoria") || name.contains("sucursal") || name.contains("rol") || name.contains("pedido")))) {
+            if (type.contains("uuid")) {
+                return UUID.randomUUID().toString();
+            }
+            return 1;
         }
 
         if (type.contains("int") || type.contains("long") || type.contains("short")
@@ -588,5 +643,111 @@ public class PostmanGeneratorService {
             return singular + "es";
         }
         return singular + "s";
+    }
+
+    public static String toSnakeCase(String str) {
+        if (str == null || str.isBlank()) return "campo";
+        return str.replaceAll("([a-z])([A-Z]+)", "$1_$2")
+                .replaceAll("[^a-zA-Z0-9_]", "_")
+                .replaceAll("_+", "_")
+                .toLowerCase(Locale.ROOT);
+    }
+
+    private static boolean isMany(String card) {
+        return card != null && (card.contains("*") || card.contains("n") || card.contains("N") || card.equals("1..*") || card.equals("0..*"));
+    }
+
+    private List<ClassNode> sortClassesTopologically(List<ClassNode> classes, List<Relationship> relationships) {
+        if (classes.size() <= 1) return classes;
+
+        Map<UUID, ClassNode> nodeMap = new LinkedHashMap<>();
+        for (ClassNode c : classes) {
+            nodeMap.put(c.getId(), c);
+        }
+
+        Map<UUID, Set<UUID>> dependents = new LinkedHashMap<>();
+        Map<UUID, Integer> inDegree = new LinkedHashMap<>();
+        for (UUID id : nodeMap.keySet()) {
+            dependents.put(id, new LinkedHashSet<>());
+            inDegree.put(id, 0);
+        }
+
+        if (relationships != null) {
+            for (Relationship rel : relationships) {
+                if (rel.getSourceClass() == null || rel.getTargetClass() == null) continue;
+                UUID srcId = rel.getSourceClass().getId();
+                UUID tgtId = rel.getTargetClass().getId();
+                if (!nodeMap.containsKey(srcId) || !nodeMap.containsKey(tgtId) || srcId.equals(tgtId)) continue;
+
+                String srcCard = rel.getSourceCardinality() != null ? rel.getSourceCardinality().trim() : "1";
+                String tgtCard = rel.getTargetCardinality() != null ? rel.getTargetCardinality().trim() : "1";
+
+                if (isMany(tgtCard) && !isMany(srcCard)) {
+                    // src (1) -> tgt (*) : tgt depends on src
+                    if (dependents.get(srcId).add(tgtId)) {
+                        inDegree.put(tgtId, inDegree.get(tgtId) + 1);
+                    }
+                } else if (isMany(srcCard) && !isMany(tgtCard)) {
+                    // tgt (1) -> src (*) : src depends on tgt
+                    if (dependents.get(tgtId).add(srcId)) {
+                        inDegree.put(srcId, inDegree.get(srcId) + 1);
+                    }
+                }
+            }
+        }
+
+        Map<String, UUID> nameToId = new HashMap<>();
+        for (ClassNode c : classes) {
+            nameToId.put(c.getName().toLowerCase(Locale.ROOT), c.getId());
+            nameToId.put(toSnakeCase(c.getName()).toLowerCase(Locale.ROOT), c.getId());
+        }
+
+        for (ClassNode c : classes) {
+            if (c.getAttributes() == null) continue;
+            for (Map<String, Object> attr : c.getAttributes()) {
+                String rawName = (String) attr.getOrDefault("name", "");
+                String lower = rawName.toLowerCase(Locale.ROOT);
+                if (lower.endsWith("_id")) {
+                    String targetName = lower.substring(0, lower.length() - 3);
+                    UUID parentId = nameToId.get(targetName);
+                    if (parentId != null && !parentId.equals(c.getId())) {
+                        if (dependents.get(parentId).add(c.getId())) {
+                            inDegree.put(c.getId(), inDegree.get(c.getId()) + 1);
+                        }
+                    }
+                }
+            }
+        }
+
+        Queue<UUID> queue = new LinkedList<>();
+        for (Map.Entry<UUID, Integer> entry : inDegree.entrySet()) {
+            if (entry.getValue() == 0) {
+                queue.add(entry.getKey());
+            }
+        }
+
+        List<ClassNode> sorted = new ArrayList<>();
+        while (!queue.isEmpty()) {
+            UUID current = queue.poll();
+            sorted.add(nodeMap.get(current));
+
+            for (UUID depId : dependents.get(current)) {
+                int newDeg = inDegree.get(depId) - 1;
+                inDegree.put(depId, newDeg);
+                if (newDeg == 0) {
+                    queue.add(depId);
+                }
+            }
+        }
+
+        if (sorted.size() < classes.size()) {
+            for (ClassNode c : classes) {
+                if (!sorted.contains(c)) {
+                    sorted.add(c);
+                }
+            }
+        }
+
+        return sorted;
     }
 }

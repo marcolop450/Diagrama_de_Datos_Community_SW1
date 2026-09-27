@@ -79,7 +79,7 @@ public class TemplateDomainGeneratorsTest {
         );
 
         postmanGeneratorService = new PostmanGeneratorService(
-                projectRepository, classNodeRepository, userProfileRepository, auditLogService
+                projectRepository, classNodeRepository, relationshipRepository, userProfileRepository, auditLogService
         );
 
         normalizationValidationService = new NormalizationValidationService(

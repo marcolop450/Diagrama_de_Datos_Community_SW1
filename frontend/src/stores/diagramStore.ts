@@ -1097,19 +1097,24 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       const res = await api.getFullDiagram(projectId);
       if (res && res.data) {
         const payload = res.data;
-        const mappedNodes: Node<ClassNodeData>[] = (payload.classNodes || []).map((cn: any) => ({
-          id: cn.id,
-          type: 'classNode',
-          position: { x: cn.positionX || 100, y: cn.positionY || 100 },
-          data: {
+        const mappedNodes: Node<ClassNodeData>[] = (payload.classNodes || []).map((cn: any) => {
+          const isAssoc = cn.stereotype?.toLowerCase() === 'association' ||
+                          cn.stereotype?.toLowerCase() === 'associationclass' ||
+                          (!cn.stereotype && ((cn.attributes?.filter((a: any) => a.isForeignKey || (a.name?.endsWith('_id') && a.name !== 'id')).length || 0) >= 2));
+          return {
             id: cn.id,
-            name: cn.name,
-            stereotype: cn.stereotype,
-            isAbstract: cn.abstractClass || cn.isAbstract || false,
-            attributes: cn.attributes || [],
-            methods: cn.methods || []
-          }
-        }));
+            type: 'classNode',
+            position: { x: cn.positionX || 100, y: cn.positionY || 100 },
+            data: {
+              id: cn.id,
+              name: cn.name,
+              stereotype: isAssoc ? 'association' : (cn.stereotype || undefined),
+              isAbstract: cn.abstractClass || cn.isAbstract || false,
+              attributes: cn.attributes || [],
+              methods: cn.methods || []
+            }
+          };
+        });
 
         const mappedEdges: Edge<RelationshipData>[] = (payload.relationships || []).map((rel: any) => {
           const sHandle = rel.sourceHandle || null;
@@ -1187,18 +1192,24 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
 
     set({ isSaving: true });
     try {
-      const payloadNodes = nodes.map((n) => ({
-        id: n.id,
-        name: n.data.name || 'Clase',
-        stereotype: n.data.stereotype || undefined,
-        isAbstract: !!(n.data.isAbstract || n.data.stereotype?.toLowerCase() === 'abstract'),
-        positionX: Math.round(n.position.x),
-        positionY: Math.round(n.position.y),
-        width: n.measured?.width || 240,
-        height: n.measured?.height || 180,
-        attributes: n.data.attributes || [],
-        methods: n.data.methods || []
-      }));
+      const payloadNodes = nodes.map((n) => {
+        const isAssoc = n.data.stereotype?.toLowerCase() === 'association' ||
+                        n.data.stereotype?.toLowerCase() === 'associationclass' ||
+                        n.data.stereotype?.toLowerCase() === 'asociacion' ||
+                        (!n.data.stereotype && ((n.data.attributes?.filter(a => a.isForeignKey || (a.name.endsWith('_id') && a.name !== 'id')).length || 0) >= 2));
+        return {
+          id: n.id,
+          name: n.data.name || 'Clase',
+          stereotype: isAssoc ? 'association' : (n.data.stereotype || undefined),
+          isAbstract: !!(n.data.isAbstract || n.data.stereotype?.toLowerCase() === 'abstract'),
+          positionX: Math.round(n.position.x),
+          positionY: Math.round(n.position.y),
+          width: n.measured?.width || 240,
+          height: n.measured?.height || 180,
+          attributes: n.data.attributes || [],
+          methods: n.data.methods || []
+        };
+      });
 
       const payloadEdges = edges.map((e) => ({
         id: e.id,
@@ -1224,19 +1235,25 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       if (res?.success && res.data) {
         const payload = res.data;
         const currentEdges = get().edges;
-        const mappedNodes: Node<ClassNodeData>[] = (payload.classNodes || []).map((cn: any) => ({
-          id: cn.id,
-          type: 'classNode',
-          position: { x: cn.positionX || 100, y: cn.positionY || 100 },
-          data: {
+        const mappedNodes: Node<ClassNodeData>[] = (payload.classNodes || []).map((cn: any) => {
+          const isAssoc = cn.stereotype?.toLowerCase() === 'association' ||
+                          cn.stereotype?.toLowerCase() === 'associationclass' ||
+                          cn.stereotype?.toLowerCase() === 'asociacion' ||
+                          (!cn.stereotype && ((cn.attributes?.filter((a: any) => a.isForeignKey || (a.name?.endsWith('_id') && a.name !== 'id')).length || 0) >= 2));
+          return {
             id: cn.id,
-            name: cn.name,
-            stereotype: cn.stereotype,
-            isAbstract: cn.abstractClass || cn.isAbstract || false,
-            attributes: cn.attributes || [],
-            methods: cn.methods || []
-          }
-        }));
+            type: 'classNode',
+            position: { x: cn.positionX || 100, y: cn.positionY || 100 },
+            data: {
+              id: cn.id,
+              name: cn.name,
+              stereotype: isAssoc ? 'association' : (cn.stereotype || undefined),
+              isAbstract: cn.abstractClass || cn.isAbstract || false,
+              attributes: cn.attributes || [],
+              methods: cn.methods || []
+            }
+          };
+        });
 
         const mappedEdges: Edge<RelationshipData>[] = (payload.relationships || []).map((rel: any) => {
           const srcId = rel.sourceClass?.id || rel.sourceClassId;

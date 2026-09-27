@@ -6,8 +6,10 @@ import com.sw1.casetool.dto.generator.GeneratePostmanRequest;
 import com.sw1.casetool.dto.generator.PostmanResponse;
 import com.sw1.casetool.model.ClassNode;
 import com.sw1.casetool.model.DiagramProject;
+import com.sw1.casetool.model.Relationship;
 import com.sw1.casetool.repository.ClassNodeRepository;
 import com.sw1.casetool.repository.DiagramProjectRepository;
+import com.sw1.casetool.repository.RelationshipRepository;
 import com.sw1.casetool.repository.UserProfileRepository;
 import com.sw1.casetool.service.generator.PostmanGeneratorService;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,6 +35,9 @@ class PostmanGeneratorServiceTest {
 
     @Mock
     private ClassNodeRepository classNodeRepository;
+
+    @Mock
+    private RelationshipRepository relationshipRepository;
 
     @Mock
     private UserProfileRepository userProfileRepository;
@@ -294,5 +299,144 @@ class PostmanGeneratorServiceTest {
                 "especialidad no debe confundirse con CI");
         assertTrue(docenteBody.get("especialidad").asText().contains("Ingeniería"),
                 "especialidad debe ser un texto de especialidad académica");
+    }
+
+    @Test
+    @DisplayName("Debe ordenar carpetas topológicamente y generar payloads válidos para clase de asociación Detalle")
+    void testGeneratePostmanCollection_WithTopologicalOrderAndAssociationClass() throws Exception {
+        ClassNode cliente = ClassNode.builder()
+                .id(UUID.randomUUID())
+                .project(sampleProject)
+                .name("Cliente")
+                .attributes(List.of(
+                        Map.of("name", "id", "type", "Long", "isPrimaryKey", true),
+                        Map.of("name", "nombre", "type", "String")
+                ))
+                .build();
+
+        ClassNode vendedor = ClassNode.builder()
+                .id(UUID.randomUUID())
+                .project(sampleProject)
+                .name("Vendedor")
+                .attributes(List.of(
+                        Map.of("name", "id", "type", "Long", "isPrimaryKey", true),
+                        Map.of("name", "nombre", "type", "String")
+                ))
+                .build();
+
+        ClassNode venta = ClassNode.builder()
+                .id(UUID.randomUUID())
+                .project(sampleProject)
+                .name("Venta")
+                .attributes(List.of(
+                        Map.of("name", "id", "type", "Long", "isPrimaryKey", true),
+                        Map.of("name", "fecha", "type", "LocalDate")
+                ))
+                .build();
+
+        ClassNode producto = ClassNode.builder()
+                .id(UUID.randomUUID())
+                .project(sampleProject)
+                .name("Producto")
+                .attributes(List.of(
+                        Map.of("name", "id", "type", "Long", "isPrimaryKey", true),
+                        Map.of("name", "nombre", "type", "String"),
+                        Map.of("name", "precio", "type", "Double")
+                ))
+                .build();
+
+        ClassNode detalle = ClassNode.builder()
+                .id(UUID.randomUUID())
+                .project(sampleProject)
+                .name("Detalle")
+                .stereotype("association")
+                .attributes(List.of(
+                        Map.of("name", "id", "type", "Long", "isPrimaryKey", true),
+                        Map.of("name", "venta_id", "type", "Long", "isForeignKey", true),
+                        Map.of("name", "producto_id", "type", "Long", "isForeignKey", true),
+                        Map.of("name", "cantidad", "type", "Integer"),
+                        Map.of("name", "precioUni", "type", "Double")
+                ))
+                .build();
+
+        Relationship relCliente = Relationship.builder()
+                .id(UUID.randomUUID())
+                .sourceClass(cliente)
+                .targetClass(venta)
+                .sourceCardinality("1")
+                .targetCardinality("*")
+                .build();
+
+        Relationship relVendedor = Relationship.builder()
+                .id(UUID.randomUUID())
+                .sourceClass(vendedor)
+                .targetClass(venta)
+                .sourceCardinality("1")
+                .targetCardinality("*")
+                .build();
+
+        Relationship relVenta = Relationship.builder()
+                .id(UUID.randomUUID())
+                .sourceClass(venta)
+                .targetClass(detalle)
+                .sourceCardinality("1")
+                .targetCardinality("*")
+                .build();
+
+        Relationship relProducto = Relationship.builder()
+                .id(UUID.randomUUID())
+                .sourceClass(producto)
+                .targetClass(detalle)
+                .sourceCardinality("1")
+                .targetCardinality("*")
+                .build();
+
+        // Pass classes in arbitrary scrambled order (Detalle first!)
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(sampleProject));
+        when(classNodeRepository.findByProjectId(projectId)).thenReturn(List.of(detalle, venta, producto, vendedor, cliente));
+        when(relationshipRepository.findByProjectId(projectId)).thenReturn(List.of(relCliente, relVendedor, relVenta, relProducto));
+
+        GeneratePostmanRequest request = GeneratePostmanRequest.builder()
+                .includeTests(true)
+                .includeMockData(true)
+                .build();
+
+        PostmanResponse response = postmanGeneratorService.generatePostmanCollection(
+                projectId, request, "test@sw1.com", "127.0.0.1", "TestClient"
+        );
+
+        assertNotNull(response);
+        JsonNode root = mapper.readTree(response.getJson());
+        JsonNode items = root.get("item");
+        assertEquals(5, items.size());
+
+        // Extract folder names in execution order
+        List<String> folderNames = new ArrayList<>();
+        for (JsonNode f : items) {
+            folderNames.add(f.get("name").asText());
+        }
+
+        // Verify topological order: parents come before children!
+        int idxCliente = folderNames.indexOf("Cliente");
+        int idxVendedor = folderNames.indexOf("Vendedor");
+        int idxProducto = folderNames.indexOf("Producto");
+        int idxVenta = folderNames.indexOf("Venta");
+        int idxDetalle = folderNames.indexOf("Detalle");
+
+        assertTrue(idxCliente < idxVenta, "Cliente debe ejecutarse antes que Venta");
+        assertTrue(idxVendedor < idxVenta, "Vendedor debe ejecutarse antes que Venta");
+        assertTrue(idxVenta < idxDetalle, "Venta debe ejecutarse antes que Detalle");
+        assertTrue(idxProducto < idxDetalle, "Producto debe ejecutarse antes que Detalle");
+
+        // Verify Detalle POST body sends valid FK IDs targeting 1
+        JsonNode detalleFolder = items.get(idxDetalle);
+        JsonNode postDetalle = detalleFolder.get("item").get(1);
+        String detalleRaw = postDetalle.get("request").get("body").get("raw").asText();
+        JsonNode detalleBody = mapper.readTree(detalleRaw);
+
+        int ventaFk = detalleBody.has("ventaId") ? detalleBody.get("ventaId").asInt() : detalleBody.get("venta_id").asInt();
+        int productoFk = detalleBody.has("productoId") ? detalleBody.get("productoId").asInt() : detalleBody.get("producto_id").asInt();
+        assertEquals(1, ventaFk, "ventaId debe apuntar al registro ID 1 creado");
+        assertEquals(1, productoFk, "productoId debe apuntar al registro ID 1 creado");
     }
 }

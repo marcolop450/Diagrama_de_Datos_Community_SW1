@@ -183,6 +183,9 @@ public class XmiImportService {
             // 3. Extract Relationships
             extractRelationships(doc, classMap, model);
 
+            // 3.1 Enrich Association / Intermediate Tables
+            enrichAssociationClasses(model);
+
             // 4. Compute Auto-Layout (Topological Layering)
             applyAutoLayout(model);
 
@@ -245,6 +248,16 @@ public class XmiImportService {
                 String stereotype = getAttr(el, "stereotype");
                 if (stereotype == null || stereotype.trim().isEmpty()) {
                     stereotype = detectStereotypeFromComments(el);
+                }
+                if (stereotype == null || stereotype.trim().isEmpty()) {
+                    if (xmiType != null && xmiType.toLowerCase().contains("associationclass")) {
+                        stereotype = "association";
+                    } else if (localName != null && localName.toLowerCase().contains("associationclass")) {
+                        stereotype = "association";
+                    }
+                }
+                if (stereotype != null && (stereotype.equalsIgnoreCase("associationClass") || stereotype.equalsIgnoreCase("asociacion"))) {
+                    stereotype = "association";
                 }
                 rawClass.stereotype = stereotype;
 
@@ -595,6 +608,37 @@ public class XmiImportService {
         }
     }
 
+    private void enrichAssociationClasses(ParsedXmiModel model) {
+        if (model.classes == null || model.relationships == null) return;
+
+        for (RawClass cls : model.classes) {
+            if (cls.stereotype != null && !cls.stereotype.trim().isEmpty()) {
+                continue;
+            }
+
+            // Check if class has 2 or more foreign keys (ending with _id or flagged as FK)
+            long fkCount = cls.attributes.stream().filter(a -> {
+                String name = (String) a.get("name");
+                Boolean isFk = (Boolean) a.get("isForeignKey");
+                return Boolean.TRUE.equals(isFk) || (name != null && (name.endsWith("_id") || name.endsWith("Id")) && !name.equalsIgnoreCase("id"));
+            }).count();
+
+            // Check if class is target of relationships from 2 or more different source classes
+            long incomingSources = model.relationships.stream()
+                    .filter(r -> cls.xmiId.equals(r.targetXmiId) && !cls.xmiId.equals(r.sourceXmiId))
+                    .map(r -> r.sourceXmiId)
+                    .distinct()
+                    .count();
+
+            String lowerName = cls.name.toLowerCase(Locale.ROOT);
+            boolean isKnownAssocName = lowerName.contains("detalle") || lowerName.contains("inscripcion") || lowerName.contains("matricula") || lowerName.contains("asociacion");
+
+            if ((fkCount >= 2 && incomingSources >= 2) || (isKnownAssocName && incomingSources >= 1) || (fkCount >= 2)) {
+                cls.stereotype = "association";
+            }
+        }
+    }
+
     private void persistModel(DiagramProject project, ParsedXmiModel model) {
         Map<String, ClassNode> xmiIdToEntityMap = new HashMap<>();
 
@@ -741,8 +785,27 @@ public class XmiImportService {
         NodeList comments = el.getElementsByTagName("ownedComment");
         for (int i = 0; i < comments.getLength(); i++) {
             String text = comments.item(i).getTextContent();
-            if (text != null && text.contains("stereotype:")) {
+            if (text == null) continue;
+            text = text.trim();
+            if (text.contains("stereotype:")) {
                 return text.replace("stereotype:", "").trim();
+            }
+            if ((text.startsWith("«") && text.endsWith("»")) || (text.startsWith("<<") && text.endsWith(">>"))) {
+                return text.replaceAll("[«»<>]", "").trim();
+            }
+            if (text.contains("«") && text.contains("»")) {
+                int start = text.indexOf('«');
+                int end = text.indexOf('»', start);
+                if (end > start) {
+                    return text.substring(start + 1, end).trim();
+                }
+            }
+            if (text.contains("<<") && text.contains(">>")) {
+                int start = text.indexOf("<<");
+                int end = text.indexOf(">>", start);
+                if (end > start) {
+                    return text.substring(start + 2, end).trim();
+                }
             }
         }
         return null;

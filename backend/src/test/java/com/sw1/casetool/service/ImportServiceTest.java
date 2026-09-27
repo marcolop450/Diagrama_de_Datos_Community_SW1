@@ -331,4 +331,61 @@ class ImportServiceTest {
             assertEquals(1, parsed.classes.size());
         });
     }
+
+    @Test
+    @DisplayName("Debe detectar y preservar estereotipo association en uml:AssociationClass y comentarios UML")
+    void testParseXmi_AssociationClass_PreservesStereotype() {
+        String xmiAssociation = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <xmi:XMI xmi:version="2.1" xmlns:xmi="http://schema.omg.org/spec/XMI/2.1" xmlns:uml="http://schema.omg.org/spec/UML/2.1">
+                  <uml:Model xmi:id="model_assoc" name="Modelo Asociacion">
+                    <packagedElement xmi:type="uml:Class" xmi:id="c_prod" name="Producto">
+                      <ownedAttribute xmi:type="uml:Property" xmi:id="p_id" name="id">
+                        <type xmi:type="uml:PrimitiveType" name="Long"/>
+                      </ownedAttribute>
+                    </packagedElement>
+                    <packagedElement xmi:type="uml:Class" xmi:id="c_orden" name="Orden">
+                      <ownedAttribute xmi:type="uml:Property" xmi:id="o_id" name="id">
+                        <type xmi:type="uml:PrimitiveType" name="Long"/>
+                      </ownedAttribute>
+                    </packagedElement>
+                    <packagedElement xmi:type="uml:AssociationClass" xmi:id="c_det" name="DetalleOrden" stereotype="association">
+                      <ownedComment xmi:type="uml:Comment">
+                        <body>«association» stereotype:association</body>
+                      </ownedComment>
+                      <ownedAttribute xmi:type="uml:Property" xmi:id="d_id" name="id">
+                        <type xmi:type="uml:PrimitiveType" name="Long"/>
+                      </ownedAttribute>
+                      <ownedAttribute xmi:type="uml:Property" xmi:id="d_pid" name="producto_id">
+                        <type xmi:type="uml:PrimitiveType" name="Long"/>
+                      </ownedAttribute>
+                      <ownedAttribute xmi:type="uml:Property" xmi:id="d_oid" name="orden_id">
+                        <type xmi:type="uml:PrimitiveType" name="Long"/>
+                      </ownedAttribute>
+                    </packagedElement>
+                    <packagedElement xmi:type="uml:Association" xmi:id="rel1">
+                      <ownedEnd type="c_orden"/>
+                      <ownedEnd type="c_det"/>
+                    </packagedElement>
+                    <packagedElement xmi:type="uml:Association" xmi:id="rel2">
+                      <ownedEnd type="c_prod"/>
+                      <ownedEnd type="c_det"/>
+                    </packagedElement>
+                  </uml:Model>
+                </xmi:XMI>
+                """;
+
+        InputStream is = new ByteArrayInputStream(xmiAssociation.getBytes(StandardCharsets.UTF_8));
+        ParsedXmiModel parsed = xmiImportService.parseXmi(is);
+
+        assertNotNull(parsed);
+        assertEquals(3, parsed.classes.size());
+
+        Optional<XmiImportService.RawClass> detalleOpt = parsed.classes.stream()
+                .filter(c -> "DetalleOrden".equals(c.name))
+                .findFirst();
+
+        assertTrue(detalleOpt.isPresent(), "DetalleOrden debe existir");
+        assertEquals("association", detalleOpt.get().stereotype, "Debe preservar el estereotipo association");
+    }
 }

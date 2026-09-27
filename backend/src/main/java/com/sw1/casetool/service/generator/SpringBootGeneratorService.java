@@ -84,6 +84,8 @@ public class SpringBootGeneratorService {
         private String inverseJoinColumnName;
         private boolean owner;
         private boolean nullable;
+        @Builder.Default
+        private boolean readOnlyJoinColumn = false;
     }
 
     @Data
@@ -469,18 +471,37 @@ public class SpringBootGeneratorService {
             }
         }
 
-        // Detect repeated column mappings between attributes and relationships to prevent JPA conflicts
+        // Synchronize and detect column mappings between scalar attributes and JPA relationships
         for (TemplateClass tc : classMap.values()) {
-            Set<String> joinCols = tc.getRelationships().stream()
-                    .filter(r -> "MANY_TO_ONE".equals(r.getRelationKind()) || ("ONE_TO_ONE".equals(r.getRelationKind()) && r.isOwner()))
-                    .map(TemplateRelationship::getJoinColumnName)
+            Set<String> attrCols = tc.getAttributes().stream()
+                    .map(TemplateAttribute::getColumnName)
                     .filter(Objects::nonNull)
                     .map(s -> s.toLowerCase(Locale.ROOT))
                     .collect(Collectors.toSet());
 
-            for (TemplateAttribute attr : tc.getAttributes()) {
-                if (attr.getColumnName() != null && joinCols.contains(attr.getColumnName().toLowerCase(Locale.ROOT))) {
-                    attr.setDuplicateJoinColumn(true);
+            for (TemplateRelationship rel : new ArrayList<>(tc.getRelationships())) {
+                if ("MANY_TO_ONE".equals(rel.getRelationKind()) && rel.getJoinColumnName() != null) {
+                    String colLower = rel.getJoinColumnName().toLowerCase(Locale.ROOT);
+                    if (!attrCols.contains(colLower)) {
+                        String fieldName = toCamelCase(rel.getJoinColumnName());
+                        TemplateAttribute fkAttr = TemplateAttribute.builder()
+                                .fieldName(fieldName)
+                                .capitalizedFieldName(capitalize(fieldName))
+                                .columnName(rel.getJoinColumnName())
+                                .type("Long")
+                                .primaryKey(false)
+                                .nullable(rel.isNullable())
+                                .visibility("private")
+                                .build();
+                        tc.getAttributes().add(fkAttr);
+                        attrCols.add(colLower);
+                    }
+                    rel.setReadOnlyJoinColumn(true);
+                } else if ("ONE_TO_ONE".equals(rel.getRelationKind()) && rel.isOwner() && rel.getJoinColumnName() != null) {
+                    String colLower = rel.getJoinColumnName().toLowerCase(Locale.ROOT);
+                    if (attrCols.contains(colLower)) {
+                        rel.setReadOnlyJoinColumn(true);
+                    }
                 }
             }
         }

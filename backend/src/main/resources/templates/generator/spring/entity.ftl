@@ -34,7 +34,7 @@ public <#if isAbstract>abstract </#if>class ${className} {
   <#if attr.type == "byte[]">
     @Lob
   </#if>
-    @Column(name = "${attr.columnName}"<#if !attr.nullable>, nullable = false</#if><#if attr.duplicateJoinColumn>, insertable = false, updatable = false</#if>)
+    @Column(name = "${attr.columnName}"<#if !attr.nullable>, nullable = false</#if>)
     private ${attr.type} ${attr.fieldName};
 
 </#list>
@@ -42,7 +42,7 @@ public <#if isAbstract>abstract </#if>class ${className} {
 <#list relationships as rel>
   <#if rel.relationKind == "MANY_TO_ONE">
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "${rel.joinColumnName}"<#if !rel.nullable>, nullable = false</#if>)
+    @JoinColumn(name = "${rel.joinColumnName}"<#if !rel.nullable>, nullable = false</#if><#if rel.readOnlyJoinColumn>, insertable = false, updatable = false</#if>)
     private ${rel.targetClassName} ${rel.fieldName};
 
   <#elseif rel.relationKind == "ONE_TO_MANY">
@@ -53,7 +53,7 @@ public <#if isAbstract>abstract </#if>class ${className} {
   <#elseif rel.relationKind == "ONE_TO_ONE">
     <#if rel.owner>
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "${rel.joinColumnName}")
+    @JoinColumn(name = "${rel.joinColumnName}"<#if rel.readOnlyJoinColumn>, insertable = false, updatable = false</#if>)
     private ${rel.targetClassName} ${rel.fieldName};
     <#else>
     @OneToOne(mappedBy = "${rel.mappedBy}")

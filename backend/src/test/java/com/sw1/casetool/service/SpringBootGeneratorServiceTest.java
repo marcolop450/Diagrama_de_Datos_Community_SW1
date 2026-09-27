@@ -302,4 +302,152 @@ class SpringBootGeneratorServiceTest {
         assertTrue(preview.getFileTree().contains("src/main/java/com/ejemplo/entity/Cliente.java"));
         assertTrue(preview.getFileTree().contains("mvnw"));
     }
+
+    @Test
+    @DisplayName("Debe generar backend Spring Boot para modelo de ventas con clase de asociación Detalle y claves foráneas")
+    void testGenerateSpringBootZip_WithAssociationClassAndFks_Success() throws Exception {
+        ClassNode cliente = ClassNode.builder()
+                .id(UUID.randomUUID())
+                .project(sampleProject)
+                .name("Cliente")
+                .attributes(List.of(
+                        Map.of("name", "id", "type", "Long", "isPrimaryKey", true),
+                        Map.of("name", "nombre", "type", "String"),
+                        Map.of("name", "email", "type", "String")
+                ))
+                .build();
+
+        ClassNode vendedor = ClassNode.builder()
+                .id(UUID.randomUUID())
+                .project(sampleProject)
+                .name("Vendedor")
+                .attributes(List.of(
+                        Map.of("name", "id", "type", "Long", "isPrimaryKey", true),
+                        Map.of("name", "nombre", "type", "String")
+                ))
+                .build();
+
+        ClassNode venta = ClassNode.builder()
+                .id(UUID.randomUUID())
+                .project(sampleProject)
+                .name("Venta")
+                .attributes(List.of(
+                        Map.of("name", "id", "type", "Long", "isPrimaryKey", true),
+                        Map.of("name", "fecha", "type", "LocalDate")
+                ))
+                .build();
+
+        ClassNode producto = ClassNode.builder()
+                .id(UUID.randomUUID())
+                .project(sampleProject)
+                .name("Producto")
+                .attributes(List.of(
+                        Map.of("name", "id", "type", "Long", "isPrimaryKey", true),
+                        Map.of("name", "nombre", "type", "String"),
+                        Map.of("name", "precio", "type", "Double"),
+                        Map.of("name", "stock", "type", "Integer")
+                ))
+                .build();
+
+        ClassNode detalle = ClassNode.builder()
+                .id(UUID.randomUUID())
+                .project(sampleProject)
+                .name("Detalle")
+                .stereotype("association")
+                .attributes(List.of(
+                        Map.of("name", "id", "type", "Long", "isPrimaryKey", true),
+                        Map.of("name", "venta_id", "type", "Long", "isForeignKey", true),
+                        Map.of("name", "producto_id", "type", "Long", "isForeignKey", true),
+                        Map.of("name", "cantidad", "type", "Integer"),
+                        Map.of("name", "precioUni", "type", "Double")
+                ))
+                .build();
+
+        Relationship relCliente = Relationship.builder()
+                .id(UUID.randomUUID())
+                .sourceClass(cliente)
+                .targetClass(venta)
+                .sourceCardinality("1")
+                .targetCardinality("*")
+                .build();
+
+        Relationship relVendedor = Relationship.builder()
+                .id(UUID.randomUUID())
+                .sourceClass(vendedor)
+                .targetClass(venta)
+                .sourceCardinality("1")
+                .targetCardinality("*")
+                .build();
+
+        Relationship relVenta = Relationship.builder()
+                .id(UUID.randomUUID())
+                .sourceClass(venta)
+                .targetClass(detalle)
+                .sourceCardinality("1")
+                .targetCardinality("*")
+                .build();
+
+        Relationship relProducto = Relationship.builder()
+                .id(UUID.randomUUID())
+                .sourceClass(producto)
+                .targetClass(detalle)
+                .sourceCardinality("1")
+                .targetCardinality("*")
+                .build();
+
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(sampleProject));
+        when(classNodeRepository.findByProjectId(projectId)).thenReturn(List.of(cliente, vendedor, venta, detalle, producto));
+        when(relationshipRepository.findByProjectId(projectId)).thenReturn(List.of(relCliente, relVendedor, relVenta, relProducto));
+
+        GenerateBackendRequest request = GenerateBackendRequest.builder()
+                .packageName("com.sw1.ventas")
+                .artifactId("ventas-service")
+                .includeSwagger(true)
+                .build();
+
+        byte[] zipBytes = generatorService.generateSpringBootZip(projectId, request, "test@sw1.com", "127.0.0.1", "TestClient");
+        assertNotNull(zipBytes);
+        assertTrue(zipBytes.length > 0);
+
+        Map<String, String> files = new HashMap<>();
+        try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(zipBytes), StandardCharsets.UTF_8)) {
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                if (!entry.isDirectory()) {
+                    ByteArrayOutputStream out = new ByteArrayOutputStream();
+                    zis.transferTo(out);
+                    files.put(entry.getName(), out.toString(StandardCharsets.UTF_8));
+                }
+                zis.closeEntry();
+            }
+        }
+
+        // Validate Detalle Entity has writeable scalar columns and read-only JoinColumns
+        String detalleEntity = files.get("ventas-service/src/main/java/com/sw1/ventas/entity/Detalle.java");
+        assertNotNull(detalleEntity, "Detalle.java debe existir");
+        assertTrue(detalleEntity.contains("private Long ventaId;"), "Detalle debe tener campo escalar ventaId");
+        assertTrue(detalleEntity.contains("private Long productoId;"), "Detalle debe tener campo escalar productoId");
+        assertTrue(detalleEntity.contains("@JoinColumn(name = \"venta_id\"") && detalleEntity.contains("insertable = false, updatable = false"),
+                "JoinColumn de venta debe ser insertable=false, updatable=false para evitar conflictos JPA");
+        assertTrue(detalleEntity.contains("@JoinColumn(name = \"producto_id\"") && detalleEntity.contains("insertable = false, updatable = false"),
+                "JoinColumn de producto debe ser insertable=false, updatable=false");
+
+        // Validate Venta has synthesized FK attributes
+        String ventaEntity = files.get("ventas-service/src/main/java/com/sw1/ventas/entity/Venta.java");
+        assertNotNull(ventaEntity, "Venta.java debe existir");
+        assertTrue(ventaEntity.contains("private Long clienteId;"), "Venta debe sincronizar clienteId");
+        assertTrue(ventaEntity.contains("private Long vendedorId;"), "Venta debe sincronizar vendedorId");
+
+        // Validate DTOs
+        String detalleRequest = files.get("ventas-service/src/main/java/com/sw1/ventas/dto/DetalleRequestDto.java");
+        assertNotNull(detalleRequest);
+        assertTrue(detalleRequest.contains("private Long ventaId;"));
+        assertTrue(detalleRequest.contains("private Long productoId;"));
+
+        // Validate Service
+        String detalleService = files.get("ventas-service/src/main/java/com/sw1/ventas/service/impl/DetalleServiceImpl.java");
+        assertNotNull(detalleService);
+        assertTrue(detalleService.contains(".ventaId(request.getVentaId())"));
+        assertTrue(detalleService.contains(".productoId(request.getProductoId())"));
+    }
 }

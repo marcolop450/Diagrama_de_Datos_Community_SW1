@@ -56,19 +56,33 @@ public class XmiExportService {
             for (ClassNode node : classes) {
                 String classId = "class_" + node.getId().toString().replace("-", "_");
                 Element classEl = doc.createElement("packagedElement");
-                classEl.setAttribute("xmi:type", "uml:Class");
+                boolean isAssociation = node.getStereotype() != null &&
+                        (node.getStereotype().equalsIgnoreCase("association") ||
+                         node.getStereotype().equalsIgnoreCase("associationClass") ||
+                         node.getStereotype().equalsIgnoreCase("asociacion"));
+
+                classEl.setAttribute("xmi:type", isAssociation ? "uml:AssociationClass" : "uml:Class");
                 classEl.setAttribute("xmi:id", classId);
                 classEl.setAttribute("name", node.getName());
                 classEl.setAttribute("isAbstract", String.valueOf(node.isAbstractClass()));
 
                 if (node.getStereotype() != null && !node.getStereotype().trim().isEmpty()) {
+                    String stp = node.getStereotype().trim();
                     classEl.setAttribute("visibility", "public");
+                    classEl.setAttribute("stereotype", stp);
                     Element comment = doc.createElement("ownedComment");
                     comment.setAttribute("xmi:id", "comment_" + classId);
                     Element body = doc.createElement("body");
-                    body.setTextContent("«" + node.getStereotype().trim() + "»");
+                    body.setTextContent("«" + stp + "»");
                     comment.appendChild(body);
                     classEl.appendChild(comment);
+
+                    Element comment2 = doc.createElement("ownedComment");
+                    comment2.setAttribute("xmi:id", "comment_stp_" + classId);
+                    Element body2 = doc.createElement("body");
+                    body2.setTextContent("stereotype:" + stp);
+                    comment2.appendChild(body2);
+                    classEl.appendChild(comment2);
                 }
 
                 // Attributes

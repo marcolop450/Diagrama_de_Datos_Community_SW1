@@ -43,6 +43,13 @@ const ClassNodeComponent = ({ id, data, selected }: CustomNodeProps) => {
   const attributes: ClassAttribute[] = data.attributes || [];
   const methods: ClassMethod[] = data.methods || [];
 
+  const isAssociation = data.stereotype?.toLowerCase() === 'association' ||
+                        data.stereotype?.toLowerCase() === 'associationclass' ||
+                        data.stereotype?.toLowerCase() === 'asociacion' ||
+                        (!data.stereotype && (attributes.filter(a => a.isForeignKey || (a.name.endsWith('_id') && a.name !== 'id')).length >= 2));
+
+  const displayStereotype = isAssociation ? 'association' : data.stereotype;
+
   const handleDoubleClick = () => {
     if (viewerMode) {
       toast('Modo Solo Lectura: No es posible editar atributos o métodos');
@@ -66,7 +73,11 @@ const ClassNodeComponent = ({ id, data, selected }: CustomNodeProps) => {
         backgroundColor: theme.nodeBg,
         borderColor: isLockedByOther 
           ? (lock?.cursorColor || '#F59E0B')
-          : selected ? theme.nodeBorderSelected : theme.nodeBorder,
+          : selected 
+            ? theme.nodeBorderSelected 
+            : isAssociation 
+              ? 'rgba(245, 158, 11, 0.5)' 
+              : theme.nodeBorder,
         boxShadow: selected ? theme.nodeShadowSelected : '0 4px 14px rgba(0, 0, 0, 0.25)',
       }}
       onDoubleClick={handleDoubleClick}
@@ -147,12 +158,16 @@ const ClassNodeComponent = ({ id, data, selected }: CustomNodeProps) => {
           borderColor: theme.divider,
         }}
       >
-        {data.stereotype && (
+        {displayStereotype && (
           <div 
-            className="text-[10px] font-mono tracking-normal mb-0.5 select-none text-center font-semibold"
-            style={{ color: theme.nodeStereotypeText }}
+            className={`text-[10px] font-mono tracking-normal mb-1 select-none text-center font-semibold ${
+              isAssociation
+                ? 'px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-400 inline-block shadow-xs'
+                : ''
+            }`}
+            style={!isAssociation ? { color: theme.nodeStereotypeText } : undefined}
           >
-            &laquo;{data.stereotype}&raquo;
+            &laquo;{displayStereotype}&raquo;
           </div>
         )}
 

@@ -331,7 +331,14 @@ const PropertiesPanel: React.FC = () => {
                     Estereotipo UML
                   </label>
                   <select 
-                    value={selectedNode.data.stereotype || ''} 
+                    value={
+                      selectedNode.data.stereotype?.toLowerCase() === 'associationclass' || 
+                      selectedNode.data.stereotype?.toLowerCase() === 'asociacion' ||
+                      selectedNode.data.stereotype?.toLowerCase() === 'association' ||
+                      (!selectedNode.data.stereotype && ((selectedNode.data.attributes?.filter(a => a.isForeignKey || (a.name.endsWith('_id') && a.name !== 'id')).length || 0) >= 2))
+                        ? 'association'
+                        : (selectedNode.data.stereotype || '')
+                    } 
                     disabled={viewerMode}
                     onChange={(e) => handleNodeStereotypeChange(e.target.value)}
                     className={`w-full bg-[#0f1115] border border-[#242934] focus:border-indigo-500 rounded-xl px-3.5 py-2 text-xs font-sans text-slate-200 focus:outline-none transition-colors ${
@@ -339,6 +346,7 @@ const PropertiesPanel: React.FC = () => {
                     }`}
                   >
                     <option value="">(Ninguno)</option>
+                    <option value="association">&laquo;association&raquo; (Clase de Asociación / Intermedia)</option>
                     <option value="entity">&laquo;entity&raquo; (Entidad JPA)</option>
                     <option value="interface">&laquo;interface&raquo; (Interfaz)</option>
                     <option value="service">&laquo;service&raquo; (Servicio Spring)</option>

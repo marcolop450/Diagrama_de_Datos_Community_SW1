@@ -147,6 +147,40 @@ class ExportServiceTest {
     }
 
     @Test
+    @DisplayName("Debe exportar clase de asociación con tipo uml:AssociationClass y estereotipo association")
+    void testExportProjectXmi_WithAssociationClass_ExportsStereotype() {
+        UUID assocId = UUID.randomUUID();
+        ClassNode assocNode = ClassNode.builder()
+                .id(assocId)
+                .name("Detalle")
+                .stereotype("association")
+                .abstractClass(false)
+                .attributes(List.of(
+                        Map.of("name", "id", "type", "Long", "visibility", "-", "isId", true),
+                        Map.of("name", "paciente_id", "type", "Long", "visibility", "-"),
+                        Map.of("name", "historial_id", "type", "UUID", "visibility", "-")
+                ))
+                .methods(Collections.emptyList())
+                .build();
+
+        List<ClassNode> classesWithAssoc = new ArrayList<>(sampleClasses);
+        classesWithAssoc.add(assocNode);
+
+        when(projectRepository.findByIdAndIsDeletedFalse(projectId)).thenReturn(Optional.of(sampleProject));
+        when(classNodeRepository.findByProjectId(projectId)).thenReturn(classesWithAssoc);
+        when(relationshipRepository.findByProjectId(projectId)).thenReturn(sampleRelationships);
+
+        ExportService.ExportResult result = exportService.exportProjectXmi(projectId, "arquitecto@sw1.com", "127.0.0.1", "JUnit-Client");
+
+        assertNotNull(result);
+        String xml = new String(result.content(), StandardCharsets.UTF_8);
+        assertTrue(xml.contains("name=\"Detalle\""));
+        assertTrue(xml.contains("xmi:type=\"uml:AssociationClass\""));
+        assertTrue(xml.contains("stereotype=\"association\""));
+        assertTrue(xml.contains("«association»"));
+    }
+
+    @Test
     @DisplayName("Debe exportar diccionario de datos y matriz de relaciones a Excel (.xlsx) con 3 hojas")
     void testExportProjectExcel_Success() throws Exception {
         when(projectRepository.findByIdAndIsDeletedFalse(projectId)).thenReturn(Optional.of(sampleProject));
