@@ -363,5 +363,179 @@ class VoiceModelingServiceTest {
         assertEquals("Gato", rData.get("sourceClass"));
         assertEquals("Estudiante", rData.get("targetClass"));
     }
+
+    @Test
+    @DisplayName("Local PLN: Relación Muchos a Muchos descompone directamente en tabla intermedia (Opción B)")
+    void testLocalNlp_ManyToMany_DecomposesToIntermediateTable() {
+        String prompt = "conectar Estudiante con Materia de muchos a muchos";
+        VoiceModelingResponse response = localNlpParser.parse(prompt, List.of("Estudiante", "Materia"));
+
+        assertTrue(response.isSuccess());
+        assertEquals("CREATE_CLASS_AND_RELATIONSHIP", response.getIntent());
+        assertNotNull(response.getMutations());
+        assertEquals(3, response.getMutations().size());
+
+        // Mutación 0: Clase Intermedia EstudianteMateria
+        UmlMutationDto mutClass = response.getMutations().get(0);
+        assertEquals("CREATE_CLASS", mutClass.getAction());
+        assertEquals("EstudianteMateria", mutClass.getTargetClassName());
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> attrs = (List<Map<String, Object>>) mutClass.getClassData().get("attributes");
+        assertNotNull(attrs);
+        assertEquals(3, attrs.size());
+        assertEquals("id", attrs.get(0).get("name"));
+        assertTrue(Boolean.TRUE.equals(attrs.get(0).get("isPrimaryKey")));
+        assertEquals("estudiante_id", attrs.get(1).get("name"));
+        assertTrue(Boolean.TRUE.equals(attrs.get(1).get("isForeignKey")));
+        assertEquals("materia_id", attrs.get(2).get("name"));
+        assertTrue(Boolean.TRUE.equals(attrs.get(2).get("isForeignKey")));
+
+        // Mutaciones 1 y 2: Relaciones 1 a *
+        UmlMutationDto rel1 = response.getMutations().get(1);
+        assertEquals("CREATE_RELATIONSHIP", rel1.getAction());
+        assertEquals("Estudiante", rel1.getRelationshipData().get("sourceClass"));
+        assertEquals("EstudianteMateria", rel1.getRelationshipData().get("targetClass"));
+        assertEquals("1", rel1.getRelationshipData().get("sourceCardinality"));
+        assertEquals("*", rel1.getRelationshipData().get("targetCardinality"));
+
+        UmlMutationDto rel2 = response.getMutations().get(2);
+        assertEquals("CREATE_RELATIONSHIP", rel2.getAction());
+        assertEquals("Materia", rel2.getRelationshipData().get("sourceClass"));
+        assertEquals("EstudianteMateria", rel2.getRelationshipData().get("targetClass"));
+        assertEquals("1", rel2.getRelationshipData().get("sourceCardinality"));
+        assertEquals("*", rel2.getRelationshipData().get("targetCardinality"));
+    }
+
+    @Test
+    @DisplayName("Local PLN: Relación Muchos a Muchos con tabla intermedia personalizada")
+    void testLocalNlp_ManyToMany_CustomIntermediateTableName() {
+        String prompt = "relacionar Estudiante con Materia con tabla intermedia Inscripcion con atributos fecha LocalDate";
+        VoiceModelingResponse response = localNlpParser.parse(prompt, List.of("Estudiante", "Materia"));
+
+        assertTrue(response.isSuccess());
+        assertEquals("CREATE_CLASS_AND_RELATIONSHIP", response.getIntent());
+        assertNotNull(response.getMutations());
+        assertEquals(3, response.getMutations().size());
+
+        UmlMutationDto mutClass = response.getMutations().get(0);
+        assertEquals("Inscripcion", mutClass.getTargetClassName());
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> attrs = (List<Map<String, Object>>) mutClass.getClassData().get("attributes");
+        assertTrue(attrs.stream().anyMatch(a -> "fecha".equals(a.get("name")) && "LocalDate".equals(a.get("type"))));
+    }
+
+    @Test
+    @DisplayName("Local PLN: Eliminar relación entre dos clases")
+    void testLocalNlp_DeleteRelationship() {
+        String prompt = "eliminar relacion entre Estudiante y Materia";
+        VoiceModelingResponse response = localNlpParser.parse(prompt, List.of("Estudiante", "Materia"));
+
+        assertTrue(response.isSuccess());
+        assertEquals("DELETE_RELATIONSHIP", response.getIntent());
+        assertEquals(1, response.getMutations().size());
+        UmlMutationDto mut = response.getMutations().get(0);
+        assertEquals("DELETE_RELATIONSHIP", mut.getAction());
+        assertEquals("Estudiante", mut.getRelationshipData().get("sourceClass"));
+        assertEquals("Materia", mut.getRelationshipData().get("targetClass"));
+    }
+
+    @Test
+    @DisplayName("Local PLN: Eliminar atributo de clase")
+    void testLocalNlp_DeleteAttribute() {
+        String prompt = "eliminar atributo telefono de la clase Cliente";
+        VoiceModelingResponse response = localNlpParser.parse(prompt, List.of("Cliente"));
+
+        assertTrue(response.isSuccess());
+        assertEquals("DELETE_ATTRIBUTE", response.getIntent());
+        assertEquals(1, response.getMutations().size());
+        UmlMutationDto mut = response.getMutations().get(0);
+        assertEquals("DELETE_ATTRIBUTE", mut.getAction());
+        assertEquals("Cliente", mut.getTargetClassName());
+        assertEquals("telefono", mut.getDetails());
+    }
+
+    @Test
+    @DisplayName("Local PLN: Eliminar método de clase")
+    void testLocalNlp_DeleteMethod() {
+        String prompt = "eliminar metodo calcularTotal de la clase Factura";
+        VoiceModelingResponse response = localNlpParser.parse(prompt, List.of("Factura"));
+
+        assertTrue(response.isSuccess());
+        assertEquals("DELETE_METHOD", response.getIntent());
+        assertEquals(1, response.getMutations().size());
+        UmlMutationDto mut = response.getMutations().get(0);
+        assertEquals("DELETE_METHOD", mut.getAction());
+        assertEquals("Factura", mut.getTargetClassName());
+        assertEquals("calcularTotal", mut.getDetails());
+    }
+
+    @Test
+    @DisplayName("Local PLN: Renombrar clase")
+    void testLocalNlp_RenameClass() {
+        String prompt = "renombrar clase Factura a Recibo";
+        VoiceModelingResponse response = localNlpParser.parse(prompt, List.of("Factura"));
+
+        assertTrue(response.isSuccess());
+        assertEquals("RENAME_CLASS", response.getIntent());
+        assertEquals(1, response.getMutations().size());
+        UmlMutationDto mut = response.getMutations().get(0);
+        assertEquals("RENAME_CLASS", mut.getAction());
+        assertEquals("Factura", mut.getTargetClassName());
+        assertEquals("Recibo", mut.getDetails());
+    }
+
+    @Test
+    @DisplayName("Local PLN: Modificar tipo de atributo")
+    void testLocalNlp_UpdateAttributeType() {
+        String prompt = "modificar atributo total en Factura a tipo Double";
+        VoiceModelingResponse response = localNlpParser.parse(prompt, List.of("Factura"));
+
+        assertTrue(response.isSuccess());
+        assertEquals("UPDATE_ATTRIBUTE", response.getIntent());
+        assertEquals(1, response.getMutations().size());
+        UmlMutationDto mut = response.getMutations().get(0);
+        assertEquals("UPDATE_ATTRIBUTE", mut.getAction());
+        assertEquals("Factura", mut.getTargetClassName());
+    }
+
+    @Test
+    @DisplayName("VoiceModelingService.postProcessMutations: Decompone relación M:N cruda de LLM en tabla intermedia")
+    void testPostProcessMutations_DecomposesRawManyToManyFromLlm() {
+        Map<String, Object> rData = new HashMap<>();
+        rData.put("sourceClass", "Venta");
+        rData.put("targetClass", "Producto");
+        rData.put("type", "ASSOCIATION");
+        rData.put("sourceCardinality", "*");
+        rData.put("targetCardinality", "*");
+        rData.put("label", "Detalle");
+
+        UmlMutationDto rawRelMut = UmlMutationDto.builder()
+                .action("CREATE_RELATIONSHIP")
+                .relationshipData(rData)
+                .build();
+
+        VoiceModelingResponse resp = new VoiceModelingResponse();
+        resp.setMutations(new ArrayList<>(List.of(rawRelMut)));
+
+        voiceModelingService.postProcessMutations(resp);
+
+        assertNotNull(resp.getMutations());
+        assertEquals(3, resp.getMutations().size());
+
+        UmlMutationDto mutClass = resp.getMutations().get(0);
+        assertEquals("CREATE_CLASS", mutClass.getAction());
+        assertEquals("Detalle", mutClass.getTargetClassName());
+
+        UmlMutationDto rel1 = resp.getMutations().get(1);
+        assertEquals("CREATE_RELATIONSHIP", rel1.getAction());
+        assertEquals("Venta", rel1.getRelationshipData().get("sourceClass"));
+        assertEquals("Detalle", rel1.getRelationshipData().get("targetClass"));
+
+        UmlMutationDto rel2 = resp.getMutations().get(2);
+        assertEquals("CREATE_RELATIONSHIP", rel2.getAction());
+        assertEquals("Producto", rel2.getRelationshipData().get("sourceClass"));
+        assertEquals("Detalle", rel2.getRelationshipData().get("targetClass"));
+    }
 }
 

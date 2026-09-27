@@ -210,6 +210,14 @@ const ClassNodeComponent = ({ id, data, selected }: CustomNodeProps) => {
                   &#123;PK&#125;
                 </span>
               )}
+              {(attr.isForeignKey || (!attr.isId && !attr.isPrimaryKey && (attr.name.toLowerCase().endsWith('_id') || attr.name.endsWith('Id') || attr.name.toLowerCase().startsWith('id_')))) && (
+                <span 
+                  className="ml-1 px-1 py-0.2 text-[9px] font-bold rounded-[3px] border border-cyan-500/40 bg-cyan-500/15 text-cyan-300 shadow-xs"
+                  title="Clave Foránea (FK)"
+                >
+                  &#123;FK&#125;
+                </span>
+              )}
               {attr.isNotNull && !attr.isId && !attr.isPrimaryKey && (
                 <span 
                   className="ml-1 px-1 py-0.2 text-[9px] font-semibold rounded-[3px] border border-indigo-500/40 bg-indigo-500/15 text-indigo-300 shadow-xs"

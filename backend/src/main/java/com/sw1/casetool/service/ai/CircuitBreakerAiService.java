@@ -53,8 +53,8 @@ public class CircuitBreakerAiService {
         this.objectMapper = objectMapper;
 
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setConnectTimeout(Duration.ofMillis(3000));
-        requestFactory.setReadTimeout(Duration.ofMillis(15000));
+        requestFactory.setConnectTimeout(Duration.ofMillis(5000));
+        requestFactory.setReadTimeout(Duration.ofMillis(45000));
 
         this.restClient = RestClient.builder()
                 .requestFactory(requestFactory)
@@ -390,7 +390,7 @@ public class CircuitBreakerAiService {
                 "Clases actualmente existentes en el diagrama: " + existingClasses + "\n\n" +
                 "DEBES RESPONDER EXCLUSIVAMENTE CON UN OBJETO JSON VÁLIDO CON LA SIGUIENTE ESTRUCTURA:\n" +
                 "{\n" +
-                "  \"intent\": \"CREATE_CLASS | ADD_ATTRIBUTES | ADD_METHODS | CREATE_RELATIONSHIP | UPDATE_CLASS | DELETE_ELEMENT | BATCH_DOMAIN\",\n" +
+                "  \"intent\": \"CREATE_CLASS | ADD_ATTRIBUTES | ADD_METHODS | CREATE_RELATIONSHIP | UPDATE_CLASS | DELETE_ELEMENT | DELETE_RELATIONSHIP | DELETE_ATTRIBUTE | DELETE_METHOD | RENAME_CLASS | UPDATE_ATTRIBUTE | BATCH_DOMAIN\",\n" +
                 "  \"message\": \"Descripción amigable de lo que se interpretó\",\n" +
                 "  \"mutations\": [\n" +
                 "    {\n" +
@@ -415,7 +415,18 @@ public class CircuitBreakerAiService {
                 "1. Si el usuario pide crear una clase y no especifica clave primaria, incluye siempre { \"name\": \"id\", \"type\": \"Long\", \"isPrimaryKey\": true } (Defensa 1NF).\n" +
                 "2. Tipos de datos Java estándar: String, Integer, Long, Double, BigDecimal, Boolean, LocalDate, LocalDateTime, UUID, byte[].\n" +
                 "3. Para relaciones (CREATE_RELATIONSHIP), define relationshipData con: sourceClass, targetClass, type (ASSOCIATION, AGGREGATION, COMPOSITION, GENERALIZATION), sourceCardinality, targetCardinality, label (nombre o verbo de la relación centrado sobre la línea, ej: 'uso', 'inscribe', 'pertenece'), sourceRole (opcional, solo si se pide rol explícito en origen, de lo contrario ''), targetRole (opcional, solo si se pide rol explícito en destino, de lo contrario ''). NUNCA coloques el nombre de la relación o verbo en sourceRole o targetRole; colócalo SIEMPRE en label.\n" +
-                "4. No agregues texto fuera del JSON.";
+                "4. Relaciones Muchos a Muchos (M:N) y Tablas Intermedias: Si el usuario solicita crear una relación muchos a muchos (*..*, N:M) o pide una tabla intermedia entre dos entidades (ej: 'conectar Estudiante con Materia de muchos a muchos' o 'conectar Estudiante con Materia con tabla intermedia Inscripcion'):\n" +
+                "   - Si se nombró la tabla intermedia (ej: 'Inscripcion'), usa ese nombre. Si no, genera el nombre concatenando en PascalCase [Origen][Destino] (ej: 'EstudianteMateria').\n" +
+                "   - Genera la mutación CREATE_CLASS para la tabla intermedia con: id Long {PK}, [origen]_id Long {FK}, [destino]_id Long {FK}, stereotype: 'association', y los atributos adicionales solicitados.\n" +
+                "   - Genera dos mutaciones CREATE_RELATIONSHIP de tipo ASSOCIATION: [Origen] (1) -> [Intermedia] (*) y [Destino] (1) -> [Intermedia] (*).\n" +
+                "5. Edición y Eliminación Granular:\n" +
+                "   - Para eliminar una clase: action: 'DELETE_ELEMENT', targetClassName: 'NombreClase'.\n" +
+                "   - Para eliminar una relación: action: 'DELETE_RELATIONSHIP', relationshipData: { sourceClass: 'ClaseA', targetClass: 'ClaseB' }.\n" +
+                "   - Para eliminar un atributo: action: 'DELETE_ATTRIBUTE', targetClassName: 'Clase', details: 'nombreAtributo'.\n" +
+                "   - Para eliminar un método: action: 'DELETE_METHOD', targetClassName: 'Clase', details: 'nombreMetodo'.\n" +
+                "   - Para renombrar una clase: action: 'RENAME_CLASS', targetClassName: 'NombreActual', details: 'NuevoNombre'.\n" +
+                "   - Para modificar tipo o atributo: action: 'UPDATE_ATTRIBUTE', targetClassName: 'Clase', classData: { attributes: [{ name: 'campo', type: 'NuevoTipo' }] }.\n" +
+                "6. No agregues texto fuera del JSON.";
     }
 
     public VoiceModelingResponse processVisionPrompt(byte[] imageBytes, String mimeType, List<String> existingClasses) {
@@ -463,12 +474,13 @@ public class CircuitBreakerAiService {
 
         List<String> modelsToTry = new ArrayList<>();
         modelsToTry.add("gemini-3.6-flash");
-        modelsToTry.add("gemini-3.5-flash");
+        modelsToTry.add("gemini-3.7-flash");
+        modelsToTry.add("gemini-3.8-flash");
+        modelsToTry.add("gemini-3.5-flash-lite");
         if (geminiModel != null && !geminiModel.isBlank()) {
             modelsToTry.add(geminiModel.trim());
         }
         modelsToTry.add("gemini-flash-latest");
-        modelsToTry.add("gemini-2.5-flash-lite");
 
         String base64Image = Base64.getEncoder().encodeToString(imageBytes);
 
@@ -584,7 +596,19 @@ public class CircuitBreakerAiService {
                 "2. Si la clase tiene estereotipo como <<interface>> o <<abstract>> o texto en cursiva, indica stereotype o isAbstract: true.\n" +
                 "3. Atributos: Extrae nombre en camelCase, visibilidad (+, -, #, ~; si no tiene usa -), tipo canónico Java (Long, String, Integer, Double, BigDecimal, Boolean, LocalDate, LocalDateTime; si no especifica usa String). Si identificas un identificador o clave (id, código, subrayado, o {PK}), pon isPrimaryKey: true.\n" +
                 "4. Métodos: Extrae nombre, tipo de retorno y visibilidad (+ por defecto).\n" +
-                "5. Relaciones: Identifica líneas y flechas entre clases. Identifica sourceClass y targetClass (nombres exactos de las clases). Identifica el tipo OMG UML: ASSOCIATION, AGGREGATION, COMPOSITION, INHERITANCE, REALIZATION, DEPENDENCY. Identifica multiplicidades/cardinalidades en sourceCardinality y targetCardinality (ej: '1', '0..1', '1..*', '*'). Si la línea tiene un texto/verbo descriptivo en el centro, colócalo en 'label' (ej: 'realiza', 'contiene', 'atiende').\n\n" +
+                "5. Relaciones: Identifica líneas y flechas entre clases. Identifica sourceClass y targetClass (nombres exactos de las clases). Identifica el tipo OMG UML: ASSOCIATION, AGGREGATION, COMPOSITION, INHERITANCE, REALIZATION, DEPENDENCY. Identifica multiplicidades/cardinalidades en sourceCardinality y targetCardinality (ej: '1', '0..1', '1..*', '*'). Si la línea tiene un texto/verbo descriptivo en el centro, colócalo en 'label' (ej: 'realiza', 'contiene', 'atiende').\n" +
+                "6. Clases de Asociación (Association Class) y Tablas Intermedias: Si en el dibujo o pizarra se observa una línea entre dos clases (ej: Venta y Producto) de la cual cuelga o conecta una línea discontinua o secundaria hacia una caja de clase (ejemplo: 'Detalle' con atributos como Cantidad, PrecioUni):\n" +
+                "   Esta caja representa formalmente una Clase Asociativa / Tabla Intermedia Muchos a Muchos.\n" +
+                "   Debes generar obligatoriamente:\n" +
+                "   a) Mutación CREATE_CLASS para la clase asociativa (ej: 'Detalle') con stereotype: 'association', incluyendo:\n" +
+                "      - id: Long {PK}\n" +
+                "      - venta_id: Long {FK}\n" +
+                "      - producto_id: Long {FK}\n" +
+                "      - los atributos visibles dentro de la caja (ej: cantidad Integer, precioUni Double)\n" +
+                "   b) Dos mutaciones CREATE_RELATIONSHIP de tipo ASSOCIATION:\n" +
+                "      - 'Venta' (1) -> 'Detalle' (*)\n" +
+                "      - 'Producto' (1) -> 'Detalle' (*)\n" +
+                "7. Relaciones directas Muchos a Muchos (*..* o N..M) sin caja intermedia: Si dos clases están unidas directamente con multiplicidad * a * o N a M, descomponla directamente en una tabla intermedia nombrada en PascalCase [Origen][Destino] (ej: EstudianteMateria) con su id Long {PK} y claves foráneas [origen]_id y [destino]_id, más dos relaciones 1 a * hacia la tabla intermedia.\n\n" +
                 "DEBES RESPONDER EXCLUSIVAMENTE CON UN OBJETO JSON VÁLIDO CON LA SIGUIENTE ESTRUCTURA EXACTA:\n" +
                 "{\n" +
                 "  \"intent\": \"DIGITIZE_WHITEBOARD\",\n" +

@@ -203,13 +203,130 @@ public class VoiceModelingService {
                         .relationshipData(rData)
                         .details("Relación UML entre '" + rData.get("sourceClass") + "' y '" + rData.get("targetClass") + "'.")
                         .build();
-                normalizedMutations.add(relMut);
+                addRelationshipOrDecomposeM2M(relMut, normalizedMutations);
+            } else if ("CREATE_RELATIONSHIP".equalsIgnoreCase(mut.getAction()) && mut.getRelationshipData() != null) {
+                addRelationshipOrDecomposeM2M(mut, normalizedMutations);
             } else {
                 normalizedMutations.add(mut);
             }
         }
 
         response.setMutations(normalizedMutations);
+    }
+
+    private void addRelationshipOrDecomposeM2M(UmlMutationDto relMut, List<UmlMutationDto> targetList) {
+        Map<String, Object> rData = relMut.getRelationshipData();
+        if (rData == null) {
+            targetList.add(relMut);
+            return;
+        }
+
+        String src = (String) rData.get("sourceClass");
+        String tgt = (String) rData.get("targetClass");
+        String srcCard = (String) rData.get("sourceCardinality");
+        String tgtCard = (String) rData.get("targetCardinality");
+
+        if (isManyToMany(srcCard, tgtCard)) {
+            String label = (String) rData.get("label");
+            String intermediateName;
+            if (label != null && !label.isBlank() && !isCommonRelationshipVerb(label)) {
+                intermediateName = sanitizeClassName(label);
+            } else {
+                intermediateName = sanitizeClassName(src) + sanitizeClassName(tgt);
+            }
+
+            boolean classAlreadyCreated = targetList.stream().anyMatch(m ->
+                    "CREATE_CLASS".equalsIgnoreCase(m.getAction()) &&
+                    intermediateName.equalsIgnoreCase(m.getTargetClassName())
+            );
+
+            if (!classAlreadyCreated) {
+                List<Map<String, Object>> intermediateAttrs = new ArrayList<>();
+
+                Map<String, Object> pk = new LinkedHashMap<>();
+                pk.put("id", UUID.randomUUID().toString());
+                pk.put("name", "id");
+                pk.put("type", "Long");
+                pk.put("visibility", "+");
+                pk.put("isPrimaryKey", true);
+                pk.put("isNotNull", true);
+                intermediateAttrs.add(pk);
+
+                Map<String, Object> fk1 = new LinkedHashMap<>();
+                fk1.put("id", UUID.randomUUID().toString());
+                fk1.put("name", (src != null ? src.toLowerCase() : "origen") + "_id");
+                fk1.put("type", "Long");
+                fk1.put("visibility", "+");
+                fk1.put("isForeignKey", true);
+                fk1.put("isNotNull", true);
+                intermediateAttrs.add(fk1);
+
+                Map<String, Object> fk2 = new LinkedHashMap<>();
+                fk2.put("id", UUID.randomUUID().toString());
+                fk2.put("name", (tgt != null ? tgt.toLowerCase() : "destino") + "_id");
+                fk2.put("type", "Long");
+                fk2.put("visibility", "+");
+                fk2.put("isForeignKey", true);
+                fk2.put("isNotNull", true);
+                intermediateAttrs.add(fk2);
+
+                Map<String, Object> cData = new LinkedHashMap<>();
+                cData.put("name", intermediateName);
+                cData.put("isAbstract", false);
+                cData.put("stereotype", "association");
+                cData.put("attributes", intermediateAttrs);
+                cData.put("methods", Collections.emptyList());
+
+                UmlMutationDto classMut = UmlMutationDto.builder()
+                        .action("CREATE_CLASS")
+                        .targetClassName(intermediateName)
+                        .classData(cData)
+                        .details("Clase asociativa intermedia '" + intermediateName + "' generada automáticamente para relación M:N.")
+                        .build();
+                targetList.add(classMut);
+            }
+
+            Map<String, Object> rel1 = new LinkedHashMap<>();
+            rel1.put("sourceClass", src);
+            rel1.put("targetClass", intermediateName);
+            rel1.put("type", "ASSOCIATION");
+            rel1.put("sourceCardinality", "1");
+            rel1.put("targetCardinality", "*");
+            rel1.put("sourceRole", "");
+            rel1.put("targetRole", "");
+
+            targetList.add(UmlMutationDto.builder()
+                    .action("CREATE_RELATIONSHIP")
+                    .relationshipData(rel1)
+                    .details("Enlace 1..* desde '" + src + "' hacia tabla intermedia '" + intermediateName + "'.")
+                    .build());
+
+            Map<String, Object> rel2 = new LinkedHashMap<>();
+            rel2.put("sourceClass", tgt);
+            rel2.put("targetClass", intermediateName);
+            rel2.put("type", "ASSOCIATION");
+            rel2.put("sourceCardinality", "1");
+            rel2.put("targetCardinality", "*");
+            rel2.put("sourceRole", "");
+            rel2.put("targetRole", "");
+
+            targetList.add(UmlMutationDto.builder()
+                    .action("CREATE_RELATIONSHIP")
+                    .relationshipData(rel2)
+                    .details("Enlace 1..* desde '" + tgt + "' hacia tabla intermedia '" + intermediateName + "'.")
+                    .build());
+        } else {
+            targetList.add(relMut);
+        }
+    }
+
+    private boolean isManyToMany(String srcCard, String tgtCard) {
+        if (srcCard == null || tgtCard == null) return false;
+        String s = srcCard.trim().toLowerCase();
+        String t = tgtCard.trim().toLowerCase();
+        boolean sMany = s.equals("*") || s.equals("n") || s.equals("m") || s.contains("..*") || s.contains("..n") || s.contains("..m");
+        boolean tMany = t.equals("*") || t.equals("n") || t.equals("m") || t.contains("..*") || t.contains("..n") || t.contains("..m");
+        return sMany && tMany;
     }
 
     private String normalizeCardinality(String card, String defaultCard) {

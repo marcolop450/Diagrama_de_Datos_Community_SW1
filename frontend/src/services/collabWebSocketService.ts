@@ -35,12 +35,23 @@ class CollabWebSocketService {
   private subscription: any = null;
 
   private getWsUrl(): string {
-    const rawApi = import.meta.env?.VITE_API_URL || 'http://localhost:8080';
-    let wsUrl = rawApi.replace(/^http/, 'ws');
-    if (!wsUrl.endsWith('/ws-case')) {
-      wsUrl = wsUrl.replace(/\/api\/?$/, '') + '/ws-case';
+    const rawApi = import.meta.env?.VITE_API_URL;
+    if (rawApi) {
+      let wsUrl = rawApi.replace(/^http/, 'ws');
+      if (!wsUrl.endsWith('/ws-case')) {
+        wsUrl = wsUrl.replace(/\/api\/?$/, '') + '/ws-case';
+      }
+      return wsUrl;
     }
-    return wsUrl;
+    if (typeof window !== 'undefined' && window.location) {
+      const isLocalDev = window.location.port === '5173';
+      if (isLocalDev) {
+        return 'ws://localhost:8080/ws-case';
+      }
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      return `${protocol}//${window.location.host}/ws-case`;
+    }
+    return 'ws://localhost:8080/ws-case';
   }
 
   public connect(

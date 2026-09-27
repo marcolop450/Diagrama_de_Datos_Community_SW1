@@ -6,6 +6,7 @@ export interface ClassAttribute {
   isStatic: boolean;
   isId?: boolean;
   isPrimaryKey?: boolean;
+  isForeignKey?: boolean;
   isNotNull?: boolean;
   isNullable?: boolean;
   multiplicity?: string;
@@ -76,3 +77,12 @@ export interface DiagramProject {
   createdAt?: string;
   updatedAt?: string;
 }
+
+export const isManyToManyCardinality = (sourceCard?: string, targetCard?: string): boolean => {
+  const s = (sourceCard || '').trim().toLowerCase();
+  const t = (targetCard || '').trim().toLowerCase();
+  if (!s || !t) return false;
+  const isManySrc = s.includes('*') || s.includes('n') || s.includes('m');
+  const isManyTgt = t.includes('*') || t.includes('n') || t.includes('m');
+  return isManySrc && isManyTgt;
+};

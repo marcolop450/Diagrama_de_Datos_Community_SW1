@@ -1,7 +1,7 @@
 import { apiClient } from './api';
 
 export interface UmlMutationDto {
-  action: 'CREATE_CLASS' | 'ADD_ATTRIBUTES' | 'ADD_METHODS' | 'CREATE_RELATIONSHIP' | 'UPDATE_CLASS' | 'DELETE_ELEMENT' | 'BATCH_DOMAIN';
+  action: 'CREATE_CLASS' | 'ADD_ATTRIBUTES' | 'ADD_METHODS' | 'CREATE_RELATIONSHIP' | 'UPDATE_CLASS' | 'DELETE_ELEMENT' | 'DELETE_RELATIONSHIP' | 'DELETE_ATTRIBUTE' | 'DELETE_METHOD' | 'RENAME_CLASS' | 'UPDATE_ATTRIBUTE' | 'BATCH_DOMAIN';
   targetClassName?: string;
   classData?: {
     name: string;

@@ -46,7 +46,27 @@ public class LocalNlpParser {
         VoiceModelingResponse compoundResp = tryParseCompoundCreateAndConnect(lower, text, currentClasses);
         if (compoundResp != null) return compoundResp;
 
-        // 2. Modificar / Agregar atributos a tabla existente ("modificar la tabla estudiante agregando los campos telefono String...")
+        // 2. Renombrar clase ("renombrar clase Factura a Recibo", "cambiar nombre de tabla X por Y")
+        VoiceModelingResponse renameResp = tryParseRenameClass(lower, text, currentClasses);
+        if (renameResp != null) return renameResp;
+
+        // 3. Eliminar relación ("eliminar relacion entre X e Y", "borrar relacion X con Y")
+        VoiceModelingResponse delRelResp = tryParseDeleteRelationship(lower, text, currentClasses);
+        if (delRelResp != null) return delRelResp;
+
+        // 4. Eliminar atributo ("eliminar atributo telefono de la clase Cliente")
+        VoiceModelingResponse delAttrResp = tryParseDeleteAttribute(lower, text, currentClasses);
+        if (delAttrResp != null) return delAttrResp;
+
+        // 5. Eliminar método ("eliminar metodo calcularTotal de Factura")
+        VoiceModelingResponse delMethodResp = tryParseDeleteMethod(lower, text, currentClasses);
+        if (delMethodResp != null) return delMethodResp;
+
+        // 6. Modificar tipo de atributo ("modificar atributo total en Factura a tipo Double")
+        VoiceModelingResponse updAttrResp = tryParseUpdateAttribute(lower, text, currentClasses);
+        if (updAttrResp != null) return updAttrResp;
+
+        // 7. Modificar / Agregar atributos a tabla existente ("modificar la tabla estudiante agregando los campos telefono String...")
         VoiceModelingResponse modifyResp = tryParseModifyOrAddAttributes(lower, text, currentClasses);
         if (modifyResp != null) return modifyResp;
 
@@ -282,6 +302,12 @@ public class LocalNlpParser {
 
         // Si la instrucción es hacerla abstracta o interfaz, dejar a tryParseUpdateClass
         if (rawAttributes.contains("abstract") || rawAttributes.contains("interfaz") || rawAttributes.contains("interface")) {
+            return null;
+        }
+
+        // Si el identificador capturado es una palabra reservada o estructural, no es una clase
+        if (Set.of("atributo", "campo", "metodo", "método", "relacion", "relación", "nombre", "tabla", "clase")
+                .contains(rawTargetClass.toLowerCase(Locale.ROOT))) {
             return null;
         }
 
@@ -630,6 +656,114 @@ public class LocalNlpParser {
             tgtCard = "*";
         }
 
+        // Si la relación es Muchos a Muchos (*..* / N:M), descomponer directamente en tabla intermedia (Opción B acordada)
+        if ((srcCard.equals("*") && tgtCard.equals("*")) || lower.contains("intermedia") || lower.contains("muchos a muchos")) {
+            Pattern pInter = Pattern.compile("(?:con\\s+)?(?:tabla|clase|entidad)\\s+intermedia\\s+(?:llamad[ao]|de\\s+nombre)?\\s*([a-zA-Z0-9_]+)", Pattern.CASE_INSENSITIVE);
+            Matcher mInter = pInter.matcher(lower);
+            String intermediateName;
+            if (mInter.find()) {
+                intermediateName = capitalize(cleanIdentifier(mInter.group(1).trim()));
+            } else {
+                intermediateName = srcClass + tgtClass;
+            }
+
+            List<Map<String, Object>> extraAttrs = new ArrayList<>();
+            Pattern pAttr = Pattern.compile("(?:con\\s+atributos?|con\\s+campos?)\\s+(.*)", Pattern.CASE_INSENSITIVE);
+            Matcher mAttr = pAttr.matcher(lower);
+            if (mAttr.find()) {
+                String[] tokens = mAttr.group(1).trim().split("(?:,\\s*|\\s+y\\s+)");
+                for (String tok : tokens) {
+                    Map<String, Object> attr = parseAttributeToken(tok.trim());
+                    if (attr != null && !Boolean.TRUE.equals(attr.get("isPrimaryKey"))) {
+                        extraAttrs.add(attr);
+                    }
+                }
+            }
+
+            List<Map<String, Object>> intermediateAttrs = new ArrayList<>();
+            Map<String, Object> pk = new LinkedHashMap<>();
+            pk.put("id", UUID.randomUUID().toString());
+            pk.put("name", "id");
+            pk.put("type", "Long");
+            pk.put("visibility", "+");
+            pk.put("isPrimaryKey", true);
+            pk.put("isNotNull", true);
+            intermediateAttrs.add(pk);
+
+            Map<String, Object> fk1 = new LinkedHashMap<>();
+            fk1.put("id", UUID.randomUUID().toString());
+            fk1.put("name", srcClass.toLowerCase() + "_id");
+            fk1.put("type", "Long");
+            fk1.put("visibility", "+");
+            fk1.put("isForeignKey", true);
+            fk1.put("isNotNull", true);
+            intermediateAttrs.add(fk1);
+
+            Map<String, Object> fk2 = new LinkedHashMap<>();
+            fk2.put("id", UUID.randomUUID().toString());
+            fk2.put("name", tgtClass.toLowerCase() + "_id");
+            fk2.put("type", "Long");
+            fk2.put("visibility", "+");
+            fk2.put("isForeignKey", true);
+            fk2.put("isNotNull", true);
+            intermediateAttrs.add(fk2);
+
+            intermediateAttrs.addAll(extraAttrs);
+
+            Map<String, Object> classData = new LinkedHashMap<>();
+            classData.put("name", intermediateName);
+            classData.put("isAbstract", false);
+            classData.put("stereotype", "association");
+            classData.put("attributes", intermediateAttrs);
+            classData.put("methods", Collections.emptyList());
+
+            UmlMutationDto mutClass = UmlMutationDto.builder()
+                    .action("CREATE_CLASS")
+                    .targetClassName(intermediateName)
+                    .classData(classData)
+                    .details("Creación de la tabla intermedia asociativa '" + intermediateName + "'.")
+                    .build();
+
+            Map<String, Object> rel1 = new LinkedHashMap<>();
+            rel1.put("sourceClass", srcClass);
+            rel1.put("targetClass", intermediateName);
+            rel1.put("type", "ASSOCIATION");
+            rel1.put("sourceCardinality", "1");
+            rel1.put("targetCardinality", "*");
+            rel1.put("sourceRole", "");
+            rel1.put("targetRole", "");
+
+            UmlMutationDto mutRel1 = UmlMutationDto.builder()
+                    .action("CREATE_RELATIONSHIP")
+                    .relationshipData(rel1)
+                    .details("Enlace 1..* desde '" + srcClass + "' hacia '" + intermediateName + "'.")
+                    .build();
+
+            Map<String, Object> rel2 = new LinkedHashMap<>();
+            rel2.put("sourceClass", tgtClass);
+            rel2.put("targetClass", intermediateName);
+            rel2.put("type", "ASSOCIATION");
+            rel2.put("sourceCardinality", "1");
+            rel2.put("targetCardinality", "*");
+            rel2.put("sourceRole", "");
+            rel2.put("targetRole", "");
+
+            UmlMutationDto mutRel2 = UmlMutationDto.builder()
+                    .action("CREATE_RELATIONSHIP")
+                    .relationshipData(rel2)
+                    .details("Enlace 1..* desde '" + tgtClass + "' hacia '" + intermediateName + "'.")
+                    .build();
+
+            return VoiceModelingResponse.builder()
+                    .success(true)
+                    .intent("CREATE_CLASS_AND_RELATIONSHIP")
+                    .providerUsed("local-heuristic-nlp")
+                    .latencyMs(5)
+                    .message("Relación muchos a muchos descompuesta en tabla intermedia '" + intermediateName + "' con enlaces 1..*.")
+                    .mutations(List.of(mutClass, mutRel1, mutRel2))
+                    .build();
+        }
+
         Map<String, Object> relData = new LinkedHashMap<>();
         relData.put("sourceClass", srcClass);
         relData.put("targetClass", tgtClass);
@@ -651,6 +785,208 @@ public class LocalNlpParser {
                 .providerUsed("local-heuristic-nlp")
                 .latencyMs(5)
                 .message("Relación conectada: " + srcClass + " (" + srcCard + ") ── " + tgtClass + " (" + tgtCard + ").")
+                .mutations(Collections.singletonList(mutation))
+                .build();
+    }
+
+    private VoiceModelingResponse tryParseDeleteRelationship(String lower, String text, List<String> currentClasses) {
+        Pattern p = Pattern.compile(
+                "(?:eliminar|borrar|quitar|remover)\\s+(?:la\\s+)?(?:relacion|relación|asociacion|asociación|conexion|conexión|enlace)\\s+(?:entre\\s+)?(?:la\\s+)?(?:clase|tabla|entidad)?\\s*([a-zA-Z0-9_áéíóúÁÉÍÓÚñÑ]+)\\s+(?:con|y|a)\\s+(?:la\\s+)?(?:clase|tabla|entidad)?\\s*([a-zA-Z0-9_áéíóúÁÉÍÓÚñÑ]+)",
+                Pattern.CASE_INSENSITIVE
+        );
+        Matcher m = p.matcher(text);
+        if (!m.find()) {
+            return null;
+        }
+
+        String srcClass = capitalize(cleanIdentifier(m.group(1).trim()));
+        String tgtClass = capitalize(cleanIdentifier(m.group(2).trim()));
+
+        if (currentClasses != null) {
+            for (String c : currentClasses) {
+                if (c.equalsIgnoreCase(srcClass)) srcClass = c;
+                if (c.equalsIgnoreCase(tgtClass)) tgtClass = c;
+            }
+        }
+
+        Map<String, Object> rData = new LinkedHashMap<>();
+        rData.put("sourceClass", srcClass);
+        rData.put("targetClass", tgtClass);
+
+        UmlMutationDto mutation = UmlMutationDto.builder()
+                .action("DELETE_RELATIONSHIP")
+                .relationshipData(rData)
+                .details("Eliminación de la relación entre '" + srcClass + "' y '" + tgtClass + "'.")
+                .build();
+
+        return VoiceModelingResponse.builder()
+                .success(true)
+                .intent("DELETE_RELATIONSHIP")
+                .providerUsed("local-heuristic-nlp")
+                .latencyMs(3)
+                .message("Relación entre '" + srcClass + "' y '" + tgtClass + "' eliminada.")
+                .mutations(Collections.singletonList(mutation))
+                .build();
+    }
+
+    private VoiceModelingResponse tryParseDeleteAttribute(String lower, String text, List<String> currentClasses) {
+        Pattern p = Pattern.compile(
+                "(?:eliminar|borrar|quitar|remover)\\s+(?:el\\s+)?(?:atributo|campo)\\s+([a-zA-Z0-9_]+)\\s+(?:de|en)\\s+(?:la\\s+)?(?:clase|tabla|entidad)?\\s*([a-zA-Z0-9_]+)",
+                Pattern.CASE_INSENSITIVE
+        );
+        Matcher m = p.matcher(text);
+        if (!m.find()) {
+            return null;
+        }
+
+        String attrName = toCamelCase(m.group(1).trim());
+        String targetClass = capitalize(cleanIdentifier(m.group(2).trim()));
+
+        if (currentClasses != null) {
+            for (String c : currentClasses) {
+                if (c.equalsIgnoreCase(targetClass)) {
+                    targetClass = c;
+                    break;
+                }
+            }
+        }
+
+        UmlMutationDto mutation = UmlMutationDto.builder()
+                .action("DELETE_ATTRIBUTE")
+                .targetClassName(targetClass)
+                .details(attrName)
+                .build();
+
+        return VoiceModelingResponse.builder()
+                .success(true)
+                .intent("DELETE_ATTRIBUTE")
+                .providerUsed("local-heuristic-nlp")
+                .latencyMs(3)
+                .message("Atributo '" + attrName + "' eliminado de la clase '" + targetClass + "'.")
+                .mutations(Collections.singletonList(mutation))
+                .build();
+    }
+
+    private VoiceModelingResponse tryParseDeleteMethod(String lower, String text, List<String> currentClasses) {
+        Pattern p = Pattern.compile(
+                "(?:eliminar|borrar|quitar|remover)\\s+(?:el\\s+)?(?:metodo|método|funcion|función|operacion|operación)\\s+([a-zA-Z0-9_]+)\\s+(?:de|en)\\s+(?:la\\s+)?(?:clase|tabla|entidad)?\\s*([a-zA-Z0-9_]+)",
+                Pattern.CASE_INSENSITIVE
+        );
+        Matcher m = p.matcher(text);
+        if (!m.find()) {
+            return null;
+        }
+
+        String methodName = toCamelCase(m.group(1).trim());
+        String targetClass = capitalize(cleanIdentifier(m.group(2).trim()));
+
+        if (currentClasses != null) {
+            for (String c : currentClasses) {
+                if (c.equalsIgnoreCase(targetClass)) {
+                    targetClass = c;
+                    break;
+                }
+            }
+        }
+
+        UmlMutationDto mutation = UmlMutationDto.builder()
+                .action("DELETE_METHOD")
+                .targetClassName(targetClass)
+                .details(methodName)
+                .build();
+
+        return VoiceModelingResponse.builder()
+                .success(true)
+                .intent("DELETE_METHOD")
+                .providerUsed("local-heuristic-nlp")
+                .latencyMs(3)
+                .message("Método '" + methodName + "' eliminado de la clase '" + targetClass + "'.")
+                .mutations(Collections.singletonList(mutation))
+                .build();
+    }
+
+    private VoiceModelingResponse tryParseRenameClass(String lower, String text, List<String> currentClasses) {
+        Pattern p = Pattern.compile(
+                "(?:renombrar|cambiar\\s+(?:el\\s+)?nombre\\s+(?:de|a))\\s+(?:la\\s+)?(?:clase|tabla|entidad)?\\s*([a-zA-Z0-9_]+)\\s+(?:a|por|hacia)\\s+(?:la\\s+)?(?:clase|tabla|entidad)?\\s*([a-zA-Z0-9_]+)",
+                Pattern.CASE_INSENSITIVE
+        );
+        Matcher m = p.matcher(text);
+        if (!m.find()) {
+            return null;
+        }
+
+        String oldName = capitalize(cleanIdentifier(m.group(1).trim()));
+        String newName = capitalize(cleanIdentifier(m.group(2).trim()));
+
+        if (currentClasses != null) {
+            for (String c : currentClasses) {
+                if (c.equalsIgnoreCase(oldName)) {
+                    oldName = c;
+                    break;
+                }
+            }
+        }
+
+        UmlMutationDto mutation = UmlMutationDto.builder()
+                .action("RENAME_CLASS")
+                .targetClassName(oldName)
+                .details(newName)
+                .build();
+
+        return VoiceModelingResponse.builder()
+                .success(true)
+                .intent("RENAME_CLASS")
+                .providerUsed("local-heuristic-nlp")
+                .latencyMs(3)
+                .message("Clase '" + oldName + "' renombrada a '" + newName + "'.")
+                .mutations(Collections.singletonList(mutation))
+                .build();
+    }
+
+    private VoiceModelingResponse tryParseUpdateAttribute(String lower, String text, List<String> currentClasses) {
+        Pattern p = Pattern.compile(
+                "(?:modificar|cambiar|actualizar)\\s+(?:el\\s+)?(?:atributo|campo)\\s+([a-zA-Z0-9_]+)\\s+(?:de|en)\\s+(?:la\\s+)?(?:clase|tabla|entidad)?\\s*([a-zA-Z0-9_]+)\\s+(?:a|por|al?\\s+tipo)\\s+([a-zA-Z0-9_\\[\\]]+)",
+                Pattern.CASE_INSENSITIVE
+        );
+        Matcher m = p.matcher(text);
+        if (!m.find()) {
+            return null;
+        }
+
+        String attrName = toCamelCase(m.group(1).trim());
+        String targetClass = capitalize(cleanIdentifier(m.group(2).trim()));
+        String newType = mapType(m.group(3).trim());
+
+        if (currentClasses != null) {
+            for (String c : currentClasses) {
+                if (c.equalsIgnoreCase(targetClass)) {
+                    targetClass = c;
+                    break;
+                }
+            }
+        }
+
+        Map<String, Object> attrData = new LinkedHashMap<>();
+        attrData.put("name", attrName);
+        attrData.put("type", newType);
+
+        Map<String, Object> cData = new LinkedHashMap<>();
+        cData.put("name", targetClass);
+        cData.put("attributes", Collections.singletonList(attrData));
+
+        UmlMutationDto mutation = UmlMutationDto.builder()
+                .action("UPDATE_ATTRIBUTE")
+                .targetClassName(targetClass)
+                .classData(cData)
+                .details("Actualización de atributo '" + attrName + "' a tipo " + newType + " en clase '" + targetClass + "'.")
+                .build();
+
+        return VoiceModelingResponse.builder()
+                .success(true)
+                .intent("UPDATE_ATTRIBUTE")
+                .providerUsed("local-heuristic-nlp")
+                .latencyMs(3)
+                .message("Atributo '" + attrName + "' actualizado a tipo '" + newType + "' en '" + targetClass + "'.")
                 .mutations(Collections.singletonList(mutation))
                 .build();
     }

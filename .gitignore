@@ -53,3 +53,6 @@ ESTRUCTURA_PROYECTO.md
 
 # Deployment & Docker (Internal Orchestration)
 docker-compose.yml
+deploy-aws.sh
+render_test.py
+test_out.png

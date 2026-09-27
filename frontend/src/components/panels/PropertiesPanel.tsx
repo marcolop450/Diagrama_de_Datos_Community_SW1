@@ -13,9 +13,10 @@ import {
   AlertCircle,
   ArrowLeftRight,
   Info,
-  Eye
+  Eye,
+  Table2
 } from 'lucide-react';
-import { ClassAttribute, ClassMethod } from '../../types/diagram';
+import { ClassAttribute, ClassMethod, isManyToManyCardinality } from '../../types/diagram';
 import { useCollabStore } from '../../stores/collabStore';
 import toast from 'react-hot-toast';
 
@@ -28,6 +29,7 @@ const PropertiesPanel: React.FC = () => {
   const viewerMode = isLive && isViewer();
 
   const { 
+    nodes,
     selectedNode, 
     selectedEdge, 
     updateClassNode, 
@@ -39,6 +41,7 @@ const PropertiesPanel: React.FC = () => {
     isClassNameTaken,
     updateRelationship, 
     deleteRelationship, 
+    decomposeManyToMany,
     flipRelationship,
     setSelectedNode,
     setSelectedEdge
@@ -47,6 +50,7 @@ const PropertiesPanel: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'general' | 'attributes' | 'methods'>('general');
   const [customSourceCard, setCustomSourceCard] = useState(false);
   const [customTargetCard, setCustomTargetCard] = useState(false);
+  const [customIntermediateName, setCustomIntermediateName] = useState('');
 
   if (!selectedNode && !selectedEdge) return null;
 
@@ -1317,6 +1321,70 @@ const PropertiesPanel: React.FC = () => {
                   </div>
                 </>
               )}
+
+              {/* Relación Muchos a Muchos (M:N) Detectada -> Conversión a Tabla Intermedia */}
+              {(() => {
+                const isM2M = isManyToManyCardinality(selectedEdge.data?.sourceCardinality, selectedEdge.data?.targetCardinality);
+                if (!isM2M) return null;
+
+                const sourceNode = nodes.find((n) => n.id === selectedEdge.source);
+                const targetNode = nodes.find((n) => n.id === selectedEdge.target);
+                const defaultIntermediateName = `${sourceNode?.data.name || 'EntidadA'}${targetNode?.data.name || 'EntidadB'}`;
+
+                return (
+                  <div className="p-4 bg-gradient-to-br from-amber-500/15 via-indigo-500/10 to-transparent border border-amber-500/40 rounded-xl space-y-3 shadow-lg">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
+                        <Table2 size={15} />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-amber-300 font-display flex items-center gap-1.5">
+                          <span>Relación Muchos a Muchos (M:N)</span>
+                          <span className="px-1.5 py-0.5 bg-amber-500/30 text-amber-200 text-[10px] rounded-full font-mono">UML 2.5</span>
+                        </h4>
+                        <p className="text-[10px] text-slate-400">Materialización de Clase Asociativa / Intermedia</p>
+                      </div>
+                    </div>
+
+                    <p className="text-[11px] text-slate-300 leading-relaxed">
+                      Esta multiplicidad (<span className="font-mono text-amber-300 font-semibold">{selectedEdge.data?.sourceCardinality} .. {selectedEdge.data?.targetCardinality}</span>) requiere una tabla intermedia con claves foráneas (<code className="text-cyan-300 text-[10px]">&#123;FK&#125;</code>) hacia ambas entidades para normalización relacional (1NF-3NF).
+                    </p>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-200 uppercase tracking-wider mb-1.5">
+                        Nombre de la Tabla Intermedia
+                      </label>
+                      <input
+                        type="text"
+                        disabled={viewerMode}
+                        value={customIntermediateName}
+                        onChange={(e) => setCustomIntermediateName(e.target.value)}
+                        placeholder={defaultIntermediateName}
+                        className="w-full bg-[#0f1115] border border-amber-500/40 focus:border-amber-400 rounded-xl px-3 py-2 text-xs font-mono text-amber-200 placeholder:text-slate-500 focus:outline-none transition-colors"
+                      />
+                      <p className="text-[10px] text-slate-400 mt-1">
+                        Sugerido: <span className="font-mono text-amber-300">{defaultIntermediateName}</span> (o personaliza ej. <span className="italic text-slate-300">Inscripcion, Detalle, Matricula</span>).
+                      </p>
+                    </div>
+
+                    {!viewerMode && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const finalName = customIntermediateName.trim() || defaultIntermediateName;
+                          decomposeManyToMany(selectedEdge.id, finalName);
+                          setCustomIntermediateName('');
+                          toast.success(`Tabla intermedia '${finalName}' materializada`);
+                        }}
+                        className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-semibold rounded-xl text-xs shadow-md transition-all active:scale-98 cursor-pointer"
+                      >
+                        <Table2 size={14} />
+                        <span>Materializar Tabla Intermedia</span>
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Delete Edge Button */}
               {!viewerMode && (

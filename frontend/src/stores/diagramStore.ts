@@ -9,7 +9,7 @@ import {
   OnConnect,
   Connection
 } from '@xyflow/react';
-import { DiagramProject, ClassNodeData, RelationshipData } from '../types/diagram';
+import { DiagramProject, ClassNodeData, RelationshipData, ClassAttribute, isManyToManyCardinality } from '../types/diagram';
 import { api } from '../services/api';
 import { UmlMutationDto } from '../services/aiVoiceService';
 import toast from 'react-hot-toast';
@@ -152,7 +152,7 @@ interface DiagramState {
   flipRelationship: (id: string) => void;
   reconnectRelationship: (oldEdge: Edge<RelationshipData>, newConnection: Connection) => boolean;
   addPrimaryKeyToClass: (classId: string) => void;
-  decomposeManyToMany: (edgeId: string) => void;
+  decomposeManyToMany: (edgeId: string, customName?: string, additionalAttributes?: ClassAttribute[]) => void;
   
   copiedClassNode: ClassNodeData | null;
   copyClassNode: (classId?: string) => void;
@@ -865,7 +865,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
     toast.success('Clave primaria (+ id : Long {PK}) asignada exitosamente');
   },
 
-  decomposeManyToMany: (edgeId: string) => {
+  decomposeManyToMany: (edgeId: string, customName?: string, additionalAttributes?: ClassAttribute[]) => {
     const edge = get().edges.find((e) => e.id === edgeId);
     if (!edge) return;
 
@@ -877,12 +877,72 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
 
     const srcName = sourceNode.data.name || 'EntidadA';
     const tgtName = targetNode.data.name || 'EntidadB';
-    const intermediateName = `${srcName}${tgtName}`;
+    const intermediateName = (customName && customName.trim().length > 0)
+      ? customName.trim()
+      : `${srcName}${tgtName}`;
 
-    // Intermediate Class ID & Coordinates
+    // Intermediate Class ID & Coordinates (Calculado debajo del baricentro para evitar solapamientos)
     const intermediateId = `c-${Date.now()}`;
     const midX = Math.round((sourceNode.position.x + targetNode.position.x) / 2);
-    const midY = Math.round((sourceNode.position.y + targetNode.position.y) / 2) + 60;
+    let midY = Math.round((sourceNode.position.y + targetNode.position.y) / 2) + 90;
+
+    // Evitar colisión si ya existe un nodo en esa coordenada
+    while (get().nodes.some((n) => Math.abs(n.position.x - midX) < 130 && Math.abs(n.position.y - midY) < 110)) {
+      midY += 90;
+    }
+
+    const baseAttributes: ClassAttribute[] = [
+      {
+        id: crypto.randomUUID(),
+        name: 'id',
+        type: 'Long',
+        visibility: 'public',
+        isStatic: false,
+        isId: true,
+        isPrimaryKey: true,
+        isNotNull: true,
+        isNullable: false,
+      },
+      {
+        id: crypto.randomUUID(),
+        name: `${srcName.toLowerCase()}_id`,
+        type: 'Long',
+        visibility: 'public',
+        isStatic: false,
+        isId: false,
+        isPrimaryKey: false,
+        isForeignKey: true,
+        isNotNull: true,
+        isNullable: false,
+      },
+      {
+        id: crypto.randomUUID(),
+        name: `${tgtName.toLowerCase()}_id`,
+        type: 'Long',
+        visibility: 'public',
+        isStatic: false,
+        isId: false,
+        isPrimaryKey: false,
+        isForeignKey: true,
+        isNotNull: true,
+        isNullable: false,
+      },
+    ];
+
+    if (additionalAttributes && additionalAttributes.length > 0) {
+      additionalAttributes.forEach((attr) => {
+        if (!baseAttributes.some((a) => a.name.toLowerCase() === attr.name.toLowerCase())) {
+          baseAttributes.push({
+            ...attr,
+            id: attr.id || crypto.randomUUID(),
+            visibility: attr.visibility || 'public',
+            isStatic: false,
+            isId: false,
+            isPrimaryKey: false,
+          });
+        }
+      });
+    }
 
     const intermediateNode: Node<ClassNodeData> = {
       id: intermediateId,
@@ -893,41 +953,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
         name: intermediateName,
         stereotype: 'association',
         isAbstract: false,
-        attributes: [
-          {
-            id: crypto.randomUUID(),
-            name: 'id',
-            type: 'Long',
-            visibility: 'public',
-            isStatic: false,
-            isId: true,
-            isPrimaryKey: true,
-            isNotNull: true,
-            isNullable: false,
-          },
-          {
-            id: crypto.randomUUID(),
-            name: `${srcName.toLowerCase()}_id`,
-            type: 'Long',
-            visibility: 'public',
-            isStatic: false,
-            isId: false,
-            isPrimaryKey: false,
-            isNotNull: true,
-            isNullable: false,
-          },
-          {
-            id: crypto.randomUUID(),
-            name: `${tgtName.toLowerCase()}_id`,
-            type: 'Long',
-            visibility: 'public',
-            isStatic: false,
-            isId: false,
-            isPrimaryKey: false,
-            isNotNull: true,
-            isNullable: false,
-          },
-        ],
+        attributes: baseAttributes,
         methods: [],
       },
     };
@@ -1571,29 +1597,145 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
             tRole = '';
           }
 
-          const edgeId = `e-${srcNode.id}-${tgtNode.id}-${Date.now()}`;
-          const newEdge: Edge<RelationshipData> = {
-            id: edgeId,
-            source: srcNode.id,
-            target: tgtNode.id,
-            sourceHandle: 'right',
-            targetHandle: 'left',
-            type: 'umlEdge',
-            data: {
-              id: edgeId,
-              type: (relType as any) || 'association',
-              label: relLabel,
-              sourceCardinality: normalizeUmlCardinality(rData.sourceCardinality, isInheritance),
-              targetCardinality: isInheritance ? '' : normalizeUmlCardinality(rData.targetCardinality || '*', false),
-              sourceRole: sRole,
-              targetRole: tRole,
-              routing: 'smoothstep',
-              isDirected: true
-            }
-          };
+          const isM2MRel = isManyToManyCardinality(rData.sourceCardinality, rData.targetCardinality);
+          if (isM2MRel) {
+            // Materialize intermediate table automatically per Option B
+            const intermediateName = (relLabel && !commonVerbs.includes(relLabel.toLowerCase()))
+              ? relLabel.trim()
+              : `${srcNode.data.name}${tgtNode.data.name}`;
 
-          currentEdges.push(newEdge);
-          appliedCount++;
+            let intermediateNode = currentNodes.find((n) => matchesClassName(n.data?.name, intermediateName));
+            if (!intermediateNode) {
+              const intermediateId = `c-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+              const midX = Math.round((srcNode.position.x + tgtNode.position.x) / 2);
+              let midY = Math.round((srcNode.position.y + tgtNode.position.y) / 2) + 90;
+              while (currentNodes.some((n) => Math.abs(n.position.x - midX) < 130 && Math.abs(n.position.y - midY) < 110)) {
+                midY += 90;
+              }
+
+              intermediateNode = {
+                id: intermediateId,
+                type: 'classNode',
+                position: { x: midX, y: midY },
+                data: {
+                  id: intermediateId,
+                  name: intermediateName,
+                  stereotype: 'association',
+                  isAbstract: false,
+                  attributes: [
+                    {
+                      id: `a-${Date.now()}-0`,
+                      name: 'id',
+                      type: 'Long',
+                      visibility: 'public',
+                      isStatic: false,
+                      isId: true,
+                      isPrimaryKey: true,
+                      isNotNull: true,
+                      isNullable: false,
+                    },
+                    {
+                      id: `a-${Date.now()}-1`,
+                      name: `${srcNode.data.name.toLowerCase()}_id`,
+                      type: 'Long',
+                      visibility: 'public',
+                      isStatic: false,
+                      isId: false,
+                      isPrimaryKey: false,
+                      isForeignKey: true,
+                      isNotNull: true,
+                      isNullable: false,
+                    },
+                    {
+                      id: `a-${Date.now()}-2`,
+                      name: `${tgtNode.data.name.toLowerCase()}_id`,
+                      type: 'Long',
+                      visibility: 'public',
+                      isStatic: false,
+                      isId: false,
+                      isPrimaryKey: false,
+                      isForeignKey: true,
+                      isNotNull: true,
+                      isNullable: false,
+                    },
+                  ],
+                  methods: []
+                }
+              };
+              currentNodes.push(intermediateNode);
+              appliedCount++;
+            }
+
+            const interNode: Node<ClassNodeData> = intermediateNode!;
+            const e1Id = `e-${srcNode.id}-${interNode.id}-${Date.now()}-1`;
+            const edge1: Edge<RelationshipData> = {
+              id: e1Id,
+              source: srcNode.id,
+              target: interNode.id,
+              sourceHandle: 'bottom',
+              targetHandle: 'top',
+              type: 'umlEdge',
+              data: {
+                id: e1Id,
+                type: 'association',
+                sourceCardinality: '1',
+                targetCardinality: '*',
+                label: '',
+                sourceHandle: 'bottom',
+                targetHandle: 'top',
+                routing: 'smoothstep',
+                isDirected: true
+              }
+            };
+
+            const e2Id = `e-${tgtNode.id}-${interNode.id}-${Date.now()}-2`;
+            const edge2: Edge<RelationshipData> = {
+              id: e2Id,
+              source: tgtNode.id,
+              target: interNode.id,
+              sourceHandle: 'bottom',
+              targetHandle: 'top',
+              type: 'umlEdge',
+              data: {
+                id: e2Id,
+                type: 'association',
+                sourceCardinality: '1',
+                targetCardinality: '*',
+                label: '',
+                sourceHandle: 'bottom',
+                targetHandle: 'top',
+                routing: 'smoothstep',
+                isDirected: true
+              }
+            };
+
+            currentEdges.push(edge1, edge2);
+            appliedCount += 2;
+          } else {
+            const edgeId = `e-${srcNode.id}-${tgtNode.id}-${Date.now()}`;
+            const newEdge: Edge<RelationshipData> = {
+              id: edgeId,
+              source: srcNode.id,
+              target: tgtNode.id,
+              sourceHandle: 'right',
+              targetHandle: 'left',
+              type: 'umlEdge',
+              data: {
+                id: edgeId,
+                type: (relType as any) || 'association',
+                label: relLabel,
+                sourceCardinality: normalizeUmlCardinality(rData.sourceCardinality, isInheritance),
+                targetCardinality: isInheritance ? '' : normalizeUmlCardinality(rData.targetCardinality || '*', false),
+                sourceRole: sRole,
+                targetRole: tRole,
+                routing: 'smoothstep',
+                isDirected: true
+              }
+            };
+
+            currentEdges.push(newEdge);
+            appliedCount++;
+          }
         }
       } else if (mut.action === 'UPDATE_CLASS' && mut.targetClassName && mut.classData) {
         currentNodes = currentNodes.map((n) => {
@@ -1633,6 +1775,83 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
           currentEdges = currentEdges.filter((e) => e.source !== targetNode.id && e.target !== targetNode.id);
           appliedCount++;
         }
+      } else if (mut.action === 'DELETE_RELATIONSHIP' && mut.relationshipData) {
+        const srcNode = currentNodes.find((n) => matchesClassName(n.data?.name, mut.relationshipData!.sourceClass));
+        const tgtNode = currentNodes.find((n) => matchesClassName(n.data?.name, mut.relationshipData!.targetClass));
+        if (srcNode && tgtNode) {
+          const prevEdgeCount = currentEdges.length;
+          currentEdges = currentEdges.filter(
+            (e) => !((e.source === srcNode.id && e.target === tgtNode.id) || (e.source === tgtNode.id && e.target === srcNode.id))
+          );
+          if (currentEdges.length < prevEdgeCount) appliedCount++;
+        }
+      } else if (mut.action === 'DELETE_ATTRIBUTE' && mut.targetClassName && mut.details) {
+        const attrNameToDelete = mut.details.trim().toLowerCase();
+        currentNodes = currentNodes.map((n) => {
+          if (matchesClassName(n.data?.name, mut.targetClassName)) {
+            const remaining = (n.data.attributes || []).filter(
+              (a) => a.name.toLowerCase() !== attrNameToDelete
+            );
+            if (remaining.length !== (n.data.attributes || []).length) appliedCount++;
+            return {
+              ...n,
+              data: { ...n.data, attributes: remaining }
+            };
+          }
+          return n;
+        });
+      } else if (mut.action === 'DELETE_METHOD' && mut.targetClassName && mut.details) {
+        const methodNameToDelete = mut.details.trim().toLowerCase();
+        currentNodes = currentNodes.map((n) => {
+          if (matchesClassName(n.data?.name, mut.targetClassName)) {
+            const remaining = (n.data.methods || []).filter(
+              (m) => m.name.toLowerCase() !== methodNameToDelete
+            );
+            if (remaining.length !== (n.data.methods || []).length) appliedCount++;
+            return {
+              ...n,
+              data: { ...n.data, methods: remaining }
+            };
+          }
+          return n;
+        });
+      } else if (mut.action === 'RENAME_CLASS' && mut.targetClassName && mut.details) {
+        const newName = mut.details.trim();
+        currentNodes = currentNodes.map((n) => {
+          if (matchesClassName(n.data?.name, mut.targetClassName)) {
+            appliedCount++;
+            return {
+              ...n,
+              data: { ...n.data, name: newName }
+            };
+          }
+          return n;
+        });
+      } else if (mut.action === 'UPDATE_ATTRIBUTE' && mut.targetClassName && mut.classData?.attributes) {
+        const targetAttrs = mut.classData.attributes;
+        currentNodes = currentNodes.map((n) => {
+          if (matchesClassName(n.data?.name, mut.targetClassName)) {
+            let changed = false;
+            const updatedAttrs = (n.data.attributes || []).map((attr) => {
+              const match = targetAttrs.find((ta: any) => ta.name?.toLowerCase() === attr.name.toLowerCase());
+              if (match) {
+                changed = true;
+                return {
+                  ...attr,
+                  type: match.type || attr.type,
+                  visibility: (match.visibility as any) || attr.visibility
+                };
+              }
+              return attr;
+            });
+            if (changed) appliedCount++;
+            return {
+              ...n,
+              data: { ...n.data, attributes: updatedAttrs }
+            };
+          }
+          return n;
+        });
       }
     }
 

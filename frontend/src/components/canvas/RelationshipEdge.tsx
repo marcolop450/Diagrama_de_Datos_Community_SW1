@@ -9,7 +9,8 @@ import {
   Edge, 
   Position
 } from '@xyflow/react';
-import { RelationshipData, EdgeRoutingType } from '../../types/diagram';
+import { Table2 } from 'lucide-react';
+import { RelationshipData, EdgeRoutingType, isManyToManyCardinality } from '../../types/diagram';
 import { useAuthStore } from '../../stores/authStore';
 import { useDiagramStore } from '../../stores/diagramStore';
 import { getCanvasTheme } from '../../constants/canvasThemes';
@@ -44,10 +45,11 @@ export default function RelationshipEdge({
   data,
 }: CustomEdgeProps) {
   const { user } = useAuthStore();
-  const { updateRelationship } = useDiagramStore();
+  const { updateRelationship, decomposeManyToMany } = useDiagramStore();
   const theme = getCanvasTheme(user?.preferences?.canvasTheme);
 
   const relData = data as RelationshipData | undefined;
+  const isM2M = isManyToManyCardinality(relData?.sourceCardinality, relData?.targetCardinality);
   const routing: EdgeRoutingType = relData?.routing || 'smoothstep';
 
   // Detectar relaciones paralelas entre el mismo par de clases para trazar líneas distintas
@@ -230,6 +232,26 @@ export default function RelationshipEdge({
           </div>
         )}
 
+        {/* UML 2.5 Many-to-Many (M:N) Visual Indicator Badge */}
+        {isM2M && (
+          <div
+            style={{
+              position: 'absolute',
+              transform: `translate(-50%, -50%) translate(${labelX}px,${relData?.label ? labelY + 16 : labelY}px)`,
+              pointerEvents: 'all',
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              decomposeManyToMany(id);
+            }}
+            title="Relación Muchos a Muchos (M:N). Clic para materializar tabla intermedia."
+            className="nodrag nopan flex items-center gap-1 px-1.5 py-0.5 bg-amber-500/90 hover:bg-amber-400 text-black text-[10px] font-mono font-bold rounded-full select-none cursor-pointer transition-all shadow-md active:scale-95 ring-1 ring-amber-300"
+          >
+            <Table2 size={10} className="shrink-0" />
+            <span>M:N</span>
+          </div>
+        )}
+
         {/* Minimalist Floating Quick Routing Toolbar (Discreet CASE Tool Style) */}
         {selected && (
           <div
@@ -240,6 +262,22 @@ export default function RelationshipEdge({
             }}
             className="nodrag nopan flex items-center gap-0.5 p-1 bg-[#14171d]/95 border border-[#242934] rounded-xl shadow-2xl z-30 backdrop-blur-md ring-1 ring-white/5"
           >
+            {/* Quick Action: Decompose Many-to-Many into Intermediate Table */}
+            {isM2M && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  decomposeManyToMany(id);
+                }}
+                title="Materializar Tabla Intermedia Asociativa (M:N)"
+                className="flex items-center gap-1 px-2 py-1 mr-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[10px] font-semibold transition-all cursor-pointer shadow-xs active:scale-95"
+              >
+                <Table2 size={11} className="text-amber-400" />
+                <span>Tabla Intermedia</span>
+              </button>
+            )}
+
             {/* SmoothStep (Ortogonal Suave) */}
             <button
               type="button"
