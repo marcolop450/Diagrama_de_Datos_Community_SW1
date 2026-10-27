@@ -233,7 +233,7 @@ export const WhiteboardVisionModal: React.FC<WhiteboardVisionModalProps> = ({
       () => (
         <div className="flex flex-col gap-0.5 select-none">
           <span className="font-semibold text-xs text-emerald-400">
-            ✓ Diagrama de pizarra inyectado en el lienzo
+            Diagrama de pizarra inyectado en el lienzo
           </span>
           <span className="text-[10px] text-slate-300">
             {resultSummary.classesCount} clases y {resultSummary.relationshipsCount} relaciones • Presiona <b>Ctrl+Z</b> para revertir

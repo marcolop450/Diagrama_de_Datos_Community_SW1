@@ -43,9 +43,12 @@ scratch/
 
 # Agents and Skills Configuration
 .agents/
+.gemini/
+.impeccable/
 AGENTS.md
 SKILLS_REGISTRY_BACKUP.md
 skills-lock.json
+PRODUCT.md
 
 # Internal Project Documentation & Architecture Guides
 DOCUMENTACION_PROYECTO.md

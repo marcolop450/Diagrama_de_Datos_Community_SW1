@@ -6,7 +6,7 @@
   --font-mono: 'JetBrains Mono', monospace;
 }
 
-:root, [data-palette="obsidian-graphite"], [data-palette="warm-titanium"] {
+:root, [data-palette="obsidian-graphite"] {
   --bg-base: #0f1115;
   --bg-surface: #14171d;
   --bg-card: #181c24;
@@ -23,8 +23,29 @@
   --accent-amber: #d97706;
   --accent-amber-glow: rgba(217, 119, 6, 0.25);
   --text-main: #f1f5f9;
-  --text-muted: #8492a6;
-  --text-dim: #556377;
+  --text-muted: #94a3b8;
+  --text-dim: #78889e;
+}
+
+[data-palette="warm-titanium"] {
+  --bg-base: #18181b;
+  --bg-surface: #202024;
+  --bg-card: #27272a;
+  --bg-card-hover: #323236;
+  --border-subtle: #3f3f46;
+  --border-highlight: #52525b;
+  --border-top-bevel: rgba(255, 255, 255, 0.08);
+  --accent-primary: #f59e0b;
+  --accent-hover: #fbbf24;
+  --accent-active: #d97706;
+  --accent-glow: rgba(245, 158, 11, 0.25);
+  --accent-subtle: rgba(245, 158, 11, 0.1);
+  --accent-text: #fef3c7;
+  --accent-amber: #f59e0b;
+  --accent-amber-glow: rgba(245, 158, 11, 0.3);
+  --text-main: #fafafa;
+  --text-muted: #a1a1aa;
+  --text-dim: #71717a;
 }
 
 body {
@@ -265,5 +286,22 @@ input:-webkit-autofill:active {
 .animate-ripple {
   animation: ripple-expand 0.65s cubic-bezier(0, 0, 0.2, 1) forwards;
 }
+
+/* 9. Accessibility: Prefers Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .animate-aurora-1,
+  .animate-aurora-2,
+  .animate-pulse,
+  .animate-bounce,
+  .animate-spin,
+  .animate-glow-border,
+  .animate-ripple {
+    animation: none !important;
+  }
+  * {
+    scroll-behavior: auto !important;
+  }
+}
+
 
 

@@ -32,7 +32,7 @@ const getEndpointLabelPosition = (x: number, y: number, position: Position) => {
 
 type CustomEdgeProps = EdgeProps<Edge<RelationshipData>>;
 
-export default function RelationshipEdge({
+const RelationshipEdge = React.memo(function RelationshipEdge({
   id,
   sourceX,
   sourceY,
@@ -44,9 +44,10 @@ export default function RelationshipEdge({
   selected,
   data,
 }: CustomEdgeProps) {
-  const { user } = useAuthStore();
-  const { updateRelationship, decomposeManyToMany } = useDiagramStore();
-  const theme = getCanvasTheme(user?.preferences?.canvasTheme);
+  const canvasTheme = useAuthStore((s) => s.user?.preferences?.canvasTheme);
+  const updateRelationship = useDiagramStore((s) => s.updateRelationship);
+  const decomposeManyToMany = useDiagramStore((s) => s.decomposeManyToMany);
+  const theme = getCanvasTheme(canvasTheme);
 
   const relData = data as RelationshipData | undefined;
   const isM2M = isManyToManyCardinality(relData?.sourceCardinality, relData?.targetCardinality);
@@ -388,4 +389,6 @@ export default function RelationshipEdge({
       </EdgeLabelRenderer>
     </>
   );
-}
+});
+
+export default RelationshipEdge;

@@ -121,13 +121,13 @@ export const VoiceModelingModal: React.FC<VoiceModelingModalProps> = ({ isOpen, 
         toast.success(
           () => (
             <div className="flex flex-col gap-0.5 select-none">
-              <span className="font-semibold text-xs text-emerald-400">✓ {res.message}</span>
+              <span className="font-semibold text-xs text-emerald-400">{res.message}</span>
               <span className="text-[10px] text-slate-300">
                 Cambios aplicados en vivo • Presiona <b>Ctrl+Z</b> para revertir
               </span>
             </div>
           ),
-          { duration: 4500, icon: '✨' }
+          { duration: 4500 }
         );
 
         setInputText('');

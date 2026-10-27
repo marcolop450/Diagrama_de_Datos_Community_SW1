@@ -92,7 +92,11 @@ export const SettingsPage: React.FC = () => {
         }
         setDefaultZoom(user.preferences.defaultZoom ?? 1.0);
         if (user.preferences.canvasTheme) {
-          setCanvasTheme(user.preferences.canvasTheme as CanvasThemeId);
+          const themeId = user.preferences.canvasTheme as CanvasThemeId;
+          setCanvasTheme(themeId);
+          const targetPalette = themeId === 'warm-titanium' ? 'warm-titanium' : 'obsidian-graphite';
+          document.documentElement.setAttribute('data-palette', targetPalette);
+          localStorage.setItem('case_app_palette', targetPalette);
         }
       }
     }
@@ -141,8 +145,9 @@ export const SettingsPage: React.FC = () => {
   const handleSavePreferences = async () => {
     setLoading(true);
     try {
+      const targetPalette = canvasTheme === 'warm-titanium' ? 'warm-titanium' : 'obsidian-graphite';
       const payload: any = {
-        appPalette: 'obsidian-graphite',
+        appPalette: targetPalette,
       };
 
       if (!isSuperAdmin) {
@@ -425,6 +430,9 @@ export const SettingsPage: React.FC = () => {
                           key={theme.id}
                           onClick={() => {
                             setCanvasTheme(theme.id);
+                            const targetPalette = theme.id === 'warm-titanium' ? 'warm-titanium' : 'obsidian-graphite';
+                            document.documentElement.setAttribute('data-palette', targetPalette);
+                            localStorage.setItem('case_app_palette', targetPalette);
                             updateUserProfile({
                               preferences: {
                                 ...(user?.preferences || {
@@ -435,6 +443,7 @@ export const SettingsPage: React.FC = () => {
                                   defaultZoom: defaultZoom,
                                 }),
                                 canvasTheme: theme.id,
+                                appPalette: targetPalette,
                               },
                             });
                           }}

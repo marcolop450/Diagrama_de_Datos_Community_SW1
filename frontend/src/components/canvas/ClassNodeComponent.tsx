@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { AlertTriangle, Lock } from 'lucide-react';
+import { AlertTriangle, Lock, Edit3 } from 'lucide-react';
 import { Handle, Position, NodeProps, Node } from '@xyflow/react';
 import { ClassNodeData, ClassAttribute, ClassMethod } from '../../types/diagram';
 import { useUiStore } from '../../stores/uiStore';
@@ -27,14 +27,18 @@ const getVisibilitySymbol = (visibility: string) => {
 type CustomNodeProps = NodeProps<Node<ClassNodeData>>;
 
 const ClassNodeComponent = ({ id, data, selected }: CustomNodeProps) => {
-  const { setSelectedNode, isClassNameTaken } = useDiagramStore();
-  const { setPropertiesPanelOpen } = useUiStore();
-  const { user } = useAuthStore();
-  const { locks, myParticipant, broadcastLock, isLive, isViewer } = useCollabStore();
+  const setSelectedNode = useDiagramStore((s) => s.setSelectedNode);
+  const isClassNameTaken = useDiagramStore((s) => s.isClassNameTaken);
+  const setPropertiesPanelOpen = useUiStore((s) => s.setPropertiesPanelOpen);
+  const canvasTheme = useAuthStore((s) => s.user?.preferences?.canvasTheme);
+  const lock = useCollabStore((s) => s.locks[data.id]);
+  const myParticipant = useCollabStore((s) => s.myParticipant);
+  const broadcastLock = useCollabStore((s) => s.broadcastLock);
+  const isLive = useCollabStore((s) => s.isLive);
+  const isViewer = useCollabStore((s) => s.isViewer);
   const viewerMode = isLive && isViewer();
-  const theme = getCanvasTheme(user?.preferences?.canvasTheme);
+  const theme = getCanvasTheme(canvasTheme);
 
-  const lock = locks[data.id];
   const isLockedByOther = !!(lock && myParticipant && lock.lockedBy !== myParticipant.userId);
 
   const nodeId = id || (data as any)?.id;
@@ -175,9 +179,16 @@ const ClassNodeComponent = ({ id, data, selected }: CustomNodeProps) => {
           <h3 
             className={`font-display font-semibold text-[13px] tracking-tight truncate text-center ${isAbstract ? 'italic' : ''}`}
             style={{ color: theme.nodeText }}
+            title="Doble clic para inspeccionar o editar propiedades"
           >
             {data.name || 'ClaseSinNombre'}
           </h3>
+          <span title="Doble clic para editar propiedades" className="inline-flex items-center">
+            <Edit3 
+              size={11} 
+              className="opacity-0 group-hover:opacity-60 transition-opacity shrink-0 text-slate-400" 
+            />
+          </span>
           {isDuplicateName && (
             <span 
               className="inline-flex items-center text-amber-400 shrink-0" 

@@ -25,8 +25,8 @@ function App() {
   }, [initialize]);
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-palette', 'obsidian-graphite');
-    localStorage.setItem('case_app_palette', 'obsidian-graphite');
+    const savedPalette = localStorage.getItem('case_app_palette') || 'obsidian-graphite';
+    document.documentElement.setAttribute('data-palette', savedPalette);
   }, []);
 
   return (

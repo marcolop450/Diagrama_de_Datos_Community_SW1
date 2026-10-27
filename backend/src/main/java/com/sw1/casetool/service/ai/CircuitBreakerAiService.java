@@ -143,10 +143,10 @@ public class CircuitBreakerAiService {
         if (geminiModel != null && !geminiModel.isBlank()) {
             modelsToTry.add(geminiModel.trim());
         }
+        modelsToTry.add("gemini-flash-lite-latest");
         modelsToTry.add("gemini-flash-latest");
-        modelsToTry.add("gemini-2.5-flash-lite");
-        modelsToTry.add("gemini-3.6-flash");
-        modelsToTry.add("gemini-3.5-flash");
+        modelsToTry.add("gemini-3.5-flash-lite");
+        modelsToTry.add("gemini-3.8-flash");
 
         Map<String, Object> requestBody = new LinkedHashMap<>();
         Map<String, Object> contents = new LinkedHashMap<>();
@@ -473,10 +473,10 @@ public class CircuitBreakerAiService {
         String systemInstruction = buildVisionSystemPrompt(existingClasses);
 
         List<String> modelsToTry = new ArrayList<>();
-        modelsToTry.add("gemini-3.6-flash");
-        modelsToTry.add("gemini-3.7-flash");
-        modelsToTry.add("gemini-3.8-flash");
+        modelsToTry.add("gemini-flash-lite-latest");
         modelsToTry.add("gemini-3.5-flash-lite");
+        modelsToTry.add("gemini-3.8-flash");
+        modelsToTry.add("gemini-flash-latest");
         if (geminiModel != null && !geminiModel.isBlank()) {
             modelsToTry.add(geminiModel.trim());
         }

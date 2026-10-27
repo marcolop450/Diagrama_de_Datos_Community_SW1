@@ -12,6 +12,8 @@ export const CursorSpotlight: React.FC = () => {
   const isPointerActive = useRef(false);
   const animFrameId = useRef<number | null>(null);
   const isTitaniumRef = useRef(true);
+  const lastActiveTime = useRef(Date.now());
+  const isLoopRunning = useRef(false);
 
   // Short, sleek, nimble trail (10 points max)
   const NUM_POINTS = 10;
@@ -41,6 +43,14 @@ export const CursorSpotlight: React.FC = () => {
     resize();
     window.addEventListener('resize', resize);
 
+    const wakeLoop = () => {
+      lastActiveTime.current = Date.now();
+      if (!isLoopRunning.current) {
+        isLoopRunning.current = true;
+        animFrameId.current = requestAnimationFrame(render);
+      }
+    };
+
     const handleMouseMove = (e: MouseEvent) => {
       targetPos.current = { x: e.clientX, y: e.clientY };
       if (!isPointerActive.current) {
@@ -50,6 +60,7 @@ export const CursorSpotlight: React.FC = () => {
           p.y = e.clientY;
         });
       }
+      wakeLoop();
     };
 
     const handleMouseLeave = () => {
@@ -66,6 +77,7 @@ export const CursorSpotlight: React.FC = () => {
           p.y = touch.clientY;
         });
       }
+      wakeLoop();
     };
 
     const handleTouchMove = (e: TouchEvent) => {
@@ -74,6 +86,7 @@ export const CursorSpotlight: React.FC = () => {
         targetPos.current = { x: touch.clientX, y: touch.clientY };
         isPointerActive.current = true;
       }
+      wakeLoop();
     };
 
     const handleTouchEnd = () => {
@@ -183,9 +196,23 @@ export const CursorSpotlight: React.FC = () => {
         }
       }
 
+      // Suspender el ciclo de animación tras 1.5s de inactividad del cursor
+      const isIdle = Date.now() - lastActiveTime.current > 1500;
+      const pts = points.current;
+      const tailDist = Math.hypot(
+        pts[0].x - pts[NUM_POINTS - 1].x,
+        pts[0].y - pts[NUM_POINTS - 1].y
+      );
+
+      if (isIdle && (!isPointerActive.current || tailDist < 1)) {
+        isLoopRunning.current = false;
+        return;
+      }
+
       animFrameId.current = requestAnimationFrame(render);
     };
 
+    isLoopRunning.current = true;
     animFrameId.current = requestAnimationFrame(render);
 
     window.addEventListener('mousemove', handleMouseMove, { passive: true });
