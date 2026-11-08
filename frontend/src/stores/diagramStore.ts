@@ -21,18 +21,21 @@ export interface DiagramSnapshot {
 }
 
 const emitCollab = (
-  type: 'NODE_CREATE' | 'NODE_UPDATE' | 'NODE_DELETE' | 'EDGE_CREATE' | 'EDGE_UPDATE' | 'EDGE_DELETE' | 'SYNC_STATE',
+  type: 'NODE_MOVE' | 'NODE_CREATE' | 'NODE_UPDATE' | 'NODE_DELETE' | 'EDGE_CREATE' | 'EDGE_UPDATE' | 'EDGE_DELETE' | 'SYNC_STATE',
   payload: any
 ) => {
   try {
     const collabStore = (useCollabStore as any)?.getState?.();
     if (!collabStore?.isLive) return;
     switch (type) {
+      case 'NODE_MOVE':
+        collabStore.broadcastNodeMove?.(payload.nodeId, payload.position, payload.className);
+        break;
       case 'NODE_CREATE':
         collabStore.broadcastNodeCreate?.(payload);
         break;
       case 'NODE_UPDATE':
-        collabStore.broadcastNodeUpdate?.(payload.id, payload.data);
+        collabStore.broadcastNodeUpdate?.(payload.id, payload.data, payload.className);
         break;
       case 'NODE_DELETE':
         collabStore.broadcastNodeDelete?.(payload);
@@ -166,6 +169,8 @@ interface DiagramState {
   loadDiagram: (projectId?: string) => Promise<void>;
   saveDiagram: () => Promise<void>;
   isSaving: boolean;
+  isDirty: boolean;
+  setIsDirty: (isDirty: boolean) => void;
   resetDiagram: () => void;
   setNodes: (nodes: Node<ClassNodeData>[] | ((prev: Node<ClassNodeData>[]) => Node<ClassNodeData>[])) => void;
   setEdges: (edges: Edge<RelationshipData>[] | ((prev: Edge<RelationshipData>[]) => Edge<RelationshipData>[])) => void;
@@ -179,22 +184,26 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
   selectedEdge: null,
   project: null,
   isSaving: false,
+  isDirty: false,
+  setIsDirty: (isDirty) => set({ isDirty }),
   copiedClassNode: null,
 
   setNodes: (nodesOrFn) => {
     set((state) => ({
       nodes: typeof nodesOrFn === 'function' ? nodesOrFn(state.nodes) : nodesOrFn,
+      isDirty: true,
     }));
   },
 
   setEdges: (edgesOrFn) => {
     set((state) => ({
       edges: typeof edgesOrFn === 'function' ? edgesOrFn(state.edges) : edgesOrFn,
+      isDirty: true,
     }));
   },
 
   setCurrentProject: (project) => {
-    set({ project });
+    set({ project, isDirty: false });
   },
 
   historyPast: [],
@@ -228,6 +237,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       historyFuture: [],
       canUndo: true,
       canRedo: false,
+      isDirty: true,
     });
   },
 
@@ -298,8 +308,19 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
     if (changes.some((c) => c.type === 'remove')) {
       get().takeSnapshot();
     }
+    const hasMoveOrChange = changes.some((c) => c.type === 'position' && (c as any).dragging !== false || c.type === 'remove' || c.type === 'dimensions');
     set({
       nodes: applyNodeChanges(changes, get().nodes) as Node<ClassNodeData>[],
+      ...(hasMoveOrChange ? { isDirty: true } : {})
+    });
+
+    // Retransmitir movimientos de clases en tiempo real (< 50ms) a colaboradores y móvil
+    changes.forEach((c) => {
+      if (c.type === 'position' && c.position) {
+        const targetNode = get().nodes.find((n) => n.id === c.id);
+        const className = targetNode?.data?.name;
+        emitCollab('NODE_MOVE', { nodeId: c.id, position: c.position, className });
+      }
     });
   },
 
@@ -307,8 +328,10 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
     if (changes.some((c) => c.type === 'remove')) {
       get().takeSnapshot();
     }
+    const hasEdgeChange = changes.some((c) => c.type === 'remove' || (c as any).type === 'add');
     set({
       edges: applyEdgeChanges(changes, get().edges) as Edge<RelationshipData>[],
+      ...(hasEdgeChange ? { isDirty: true } : {})
     });
   },
 
@@ -513,7 +536,9 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
         selectedNode: updatedSelectedNode
       };
     });
-    emitCollab('NODE_UPDATE', { id, data });
+    const targetNode = get().nodes.find(n => n.id === id);
+    const className = (data as any)?.name || targetNode?.data?.name;
+    emitCollab('NODE_UPDATE', { id, data, className });
   },
   
   deleteClassNode: (id) => {
@@ -1162,7 +1187,8 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
           historyPast: [],
           historyFuture: [],
           canUndo: false,
-          canRedo: false
+          canRedo: false,
+          isDirty: false
         });
       }
     } catch (err) {
@@ -1300,7 +1326,8 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
         set((state) => ({
           project: payload.project ? { ...state.project, ...payload.project } : state.project,
           nodes: mappedNodes.length > 0 ? mappedNodes : state.nodes,
-          edges: mappedEdges.length > 0 ? mappedEdges : state.edges
+          edges: mappedEdges.length > 0 ? mappedEdges : state.edges,
+          isDirty: false
         }));
         emitCollab('SYNC_STATE', { nodes: get().nodes, edges: get().edges });
       }
@@ -1378,7 +1405,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
           appliedCount += (newAttrs.length + newMethods.length > 0 ? (newAttrs.length + newMethods.length) : 1);
         } else {
           // Clase nueva: instanciar nodo en el lienzo con distribución espacial inteligente
-          const newId = `c-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+          const newId = (cData as any).id || `c-${requestedName.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
           const count = currentNodes.length;
           const col = count % 3;
           const row = Math.floor(count / 3);
@@ -1394,7 +1421,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
               : 100 + row * 270;
 
           const formattedAttributes = (cData.attributes || []).map((attr: any, idx: number) => ({
-            id: attr.id || `a-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 5)}`,
+            id: attr.id || `a-${requestedName.toLowerCase()}-${(attr.name || idx).toString().toLowerCase().replace(/[^a-z0-9]/g, '')}`,
             name: attr.name,
             type: attr.type || 'String',
             visibility: attr.visibility || '-',
@@ -1406,7 +1433,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
           }));
 
           const formattedMethods = (cData.methods || []).map((m: any, idx: number) => ({
-            id: m.id || `m-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 5)}`,
+            id: m.id || `m-${requestedName.toLowerCase()}-${(m.name || idx).toString().toLowerCase().replace(/[^a-z0-9]/g, '')}`,
             name: m.name,
             returnType: m.returnType || 'void',
             visibility: m.visibility || '+',
@@ -1485,7 +1512,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
               tRole = '';
             }
 
-            const edgeId = `e-${srcNode.id}-${tgtNode.id}-${Date.now()}`;
+            const edgeId = (rData as any).id || `e-${srcNode.id}-${tgtNode.id}`;
             const newEdge: Edge<RelationshipData> = {
               id: edgeId,
               source: srcNode.id,
@@ -1513,27 +1540,55 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       } else if (mut.action === 'ADD_ATTRIBUTES' && mut.targetClassName && mut.classData?.attributes) {
         currentNodes = currentNodes.map((n) => {
           if (matchesClassName(n.data?.name, mut.targetClassName)) {
-            const existingAttrNames = new Set((n.data.attributes || []).map((a) => a.name.toLowerCase()));
-            const newAttrs = (mut.classData!.attributes || [])
-              .filter((a: any) => !existingAttrNames.has((a.name || '').toLowerCase()))
-              .map((attr: any, idx: number) => ({
-                id: attr.id || `a-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 5)}`,
-                name: attr.name,
-                type: attr.type || 'String',
-                visibility: attr.visibility || '-',
-                isStatic: false,
-                isId: !!attr.isPrimaryKey || !!attr.isId,
-                isPrimaryKey: !!attr.isPrimaryKey || !!attr.isId,
-                isNotNull: attr.isNotNull !== false,
-                isNullable: !attr.isPrimaryKey && !attr.isNotNull
-              }));
+            const incomingAttrs = mut.classData!.attributes || [];
 
-            appliedCount += newAttrs.length;
+            // 1. Actualizar atributos existentes si ya coinciden por nombre (ej. marcar como PK {PK}, actualizar tipo)
+            const updatedExistingAttrs = (n.data.attributes || []).map((existingAttr) => {
+              const incoming = incomingAttrs.find(
+                (a: any) => (a.name || '').toLowerCase() === existingAttr.name.toLowerCase()
+              );
+              if (incoming) {
+                const isPk = incoming.isPrimaryKey !== undefined ? !!incoming.isPrimaryKey : (incoming.isId !== undefined ? !!incoming.isId : existingAttr.isPrimaryKey);
+                return {
+                  ...existingAttr,
+                  isId: isPk,
+                  isPrimaryKey: isPk,
+                  isNotNull: incoming.isNotNull !== undefined ? incoming.isNotNull !== false : (isPk ? true : existingAttr.isNotNull),
+                  isNullable: isPk ? false : existingAttr.isNullable,
+                  type: incoming.type || existingAttr.type,
+                  visibility: (incoming.visibility as any) || existingAttr.visibility || 'private'
+                };
+              }
+              return existingAttr;
+            });
+
+            // 2. Agregar atributos verdaderamente nuevos
+            const existingAttrNames = new Set((n.data.attributes || []).map((a) => a.name.toLowerCase()));
+            const brandNewAttrs = incomingAttrs
+              .filter((a: any) => !existingAttrNames.has((a.name || '').toLowerCase()))
+              .map((attr: any, idx: number) => {
+                const isPk = !!attr.isPrimaryKey || !!attr.isId;
+                return {
+                  id: attr.id || `a-${n.data.name.toLowerCase()}-${(attr.name || idx).toString().toLowerCase().replace(/[^a-z0-9]/g, '')}`,
+                  name: attr.name,
+                  type: attr.type || 'String',
+                  visibility: ((attr.visibility === 'public' || attr.visibility === 'protected' || attr.visibility === 'package') ? attr.visibility : 'private') as 'public' | 'private' | 'protected' | 'package',
+                  isStatic: false,
+                  isId: isPk,
+                  isPrimaryKey: isPk,
+                  isNotNull: attr.isNotNull !== false,
+                  isNullable: !isPk && !attr.isNotNull
+                };
+              });
+
+            const finalAttrs = [...updatedExistingAttrs, ...brandNewAttrs];
+            appliedCount += (brandNewAttrs.length > 0 ? brandNewAttrs.length : 1);
+
             return {
               ...n,
               data: {
                 ...n.data,
-                attributes: [...(n.data.attributes || []), ...newAttrs]
+                attributes: finalAttrs
               }
             };
           }
@@ -1623,7 +1678,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
 
             let intermediateNode = currentNodes.find((n) => matchesClassName(n.data?.name, intermediateName));
             if (!intermediateNode) {
-              const intermediateId = `c-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+              const intermediateId = `c-${intermediateName.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
               const midX = Math.round((srcNode.position.x + tgtNode.position.x) / 2);
               let midY = Math.round((srcNode.position.y + tgtNode.position.y) / 2) + 90;
               while (currentNodes.some((n) => Math.abs(n.position.x - midX) < 130 && Math.abs(n.position.y - midY) < 110)) {
@@ -1641,7 +1696,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
                   isAbstract: false,
                   attributes: [
                     {
-                      id: `a-${Date.now()}-0`,
+                      id: `a-${intermediateName.toLowerCase()}-id`,
                       name: 'id',
                       type: 'Long',
                       visibility: 'public',
@@ -1652,7 +1707,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
                       isNullable: false,
                     },
                     {
-                      id: `a-${Date.now()}-1`,
+                      id: `a-${intermediateName.toLowerCase()}-${srcNode.data.name.toLowerCase()}_id`,
                       name: `${srcNode.data.name.toLowerCase()}_id`,
                       type: 'Long',
                       visibility: 'public',
@@ -1664,7 +1719,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
                       isNullable: false,
                     },
                     {
-                      id: `a-${Date.now()}-2`,
+                      id: `a-${intermediateName.toLowerCase()}-${tgtNode.data.name.toLowerCase()}_id`,
                       name: `${tgtNode.data.name.toLowerCase()}_id`,
                       type: 'Long',
                       visibility: 'public',
@@ -1684,7 +1739,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
             }
 
             const interNode: Node<ClassNodeData> = intermediateNode!;
-            const e1Id = `e-${srcNode.id}-${interNode.id}-${Date.now()}-1`;
+            const e1Id = `e-${srcNode.id}-${interNode.id}`;
             const edge1: Edge<RelationshipData> = {
               id: e1Id,
               source: srcNode.id,
@@ -1705,7 +1760,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
               }
             };
 
-            const e2Id = `e-${tgtNode.id}-${interNode.id}-${Date.now()}-2`;
+            const e2Id = `e-${tgtNode.id}-${interNode.id}`;
             const edge2: Edge<RelationshipData> = {
               id: e2Id,
               source: tgtNode.id,
@@ -1729,7 +1784,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
             currentEdges.push(edge1, edge2);
             appliedCount += 2;
           } else {
-            const edgeId = `e-${srcNode.id}-${tgtNode.id}-${Date.now()}`;
+            const edgeId = (rData as any).id || `e-${srcNode.id}-${tgtNode.id}`;
             const newEdge: Edge<RelationshipData> = {
               id: edgeId,
               source: srcNode.id,

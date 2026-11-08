@@ -53,6 +53,9 @@ class CollaborationServiceTest {
     @Mock
     private com.sw1.casetool.security.JwtTokenProvider jwtTokenProvider;
 
+    @Mock
+    private com.sw1.casetool.service.notification.PushNotificationService pushNotificationService;
+
     @InjectMocks
     private CollaborationService collaborationService;
 

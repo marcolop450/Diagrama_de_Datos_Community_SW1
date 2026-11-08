@@ -11,6 +11,12 @@ spring:
     properties:
       hibernate:
         format_sql: true
+  mongodb:
+    uri: ${MONGODB_URI:mongodb+srv://marcolop450_db_user:maU9CIG550K8GyFb@sw1.gly1lge.mongodb.net/casetool_sessions?retryWrites=true&w=majority&appName=SW1}
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb+srv://marcolop450_db_user:maU9CIG550K8GyFb@sw1.gly1lge.mongodb.net/casetool_sessions?retryWrites=true&w=majority&appName=SW1}
+      auto-index-creation: false
   h2:
     console:
       enabled: true

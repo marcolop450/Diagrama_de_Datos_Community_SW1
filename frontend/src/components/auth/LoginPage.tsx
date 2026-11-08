@@ -128,7 +128,7 @@ export const LoginPage: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-2 font-sans font-semibold py-3 rounded-xl transition-all shadow-lg shadow-indigo-600/25 disabled:opacity-50 flex items-center justify-center gap-2 text-sm active:scale-[0.98] cursor-pointer bg-gradient-to-r from-indigo-600 via-indigo-500 to-indigo-600 hover:brightness-110 text-white border border-indigo-400/30"
+            className="w-full mt-2 font-sans font-semibold py-3 rounded-xl transition-all shadow-md shadow-indigo-600/25 disabled:opacity-50 flex items-center justify-center gap-2 text-sm active:scale-[0.98] cursor-pointer bg-indigo-600 hover:bg-indigo-500 text-white border border-indigo-500/40"
           >
             {loading ? (
               <div className="flex items-center gap-2">

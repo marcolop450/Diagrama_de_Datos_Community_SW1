@@ -23,7 +23,12 @@ public class SyncDiagramRequest {
         private String id;
         private String name;
         private String stereotype;
-        private boolean isAbstract;
+        @Builder.Default
+        private Boolean isAbstract = false;
+
+        public boolean isAbstract() {
+            return Boolean.TRUE.equals(isAbstract);
+        }
         private double positionX;
         private double positionY;
         private double width;

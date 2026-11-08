@@ -9,7 +9,19 @@ import java.io.File;
 /**
  * Clase principal de la aplicación CASE Tool.
  */
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
+
 @SpringBootApplication
+@EnableJpaRepositories(
+        basePackages = "com.sw1.casetool.repository",
+        excludeFilters = @ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*\\.nosql\\..*")
+)
+@EnableMongoRepositories(
+        basePackages = "com.sw1.casetool.repository.nosql"
+)
 public class CaseToolApplication {
     public static void main(String[] args) {
         // Cargar variables de entorno desde .env (en backend/ o en la raíz del proyecto)

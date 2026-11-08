@@ -113,7 +113,13 @@ export default function DiagramCanvas() {
 
   const handleNodeDrag = useCallback((_e: any, node: Node) => {
     if (isLive) {
-      broadcastNodeMove(node.id, node.position);
+      broadcastNodeMove(node.id, node.position, (node.data as any)?.name);
+    }
+  }, [isLive, broadcastNodeMove]);
+
+  const handleNodeDragStop = useCallback((_e: any, node: Node) => {
+    if (isLive) {
+      broadcastNodeMove(node.id, node.position, (node.data as any)?.name);
     }
   }, [isLive, broadcastNodeMove]);
 
@@ -452,6 +458,7 @@ export default function DiagramCanvas() {
           animated: false,
         }}
         onNodeDrag={handleNodeDrag}
+        onNodeDragStop={handleNodeDragStop}
         onMouseMove={handleMouseMove}
       >
         {/* Sincronización de Cursores Remotos (CU18 - WSS) */}
@@ -498,8 +505,9 @@ export default function DiagramCanvas() {
                 <span>Haz clic en el lienzo para colocar la {activeTool === 'add-interface' ? 'Interfaz' : activeTool === 'add-abstract' ? 'Clase Abstracta' : 'Clase'}</span>
                 <button 
                   onClick={() => setActiveTool('pointer')}
-                  className="p-1 hover:bg-white/10 rounded-lg ml-1 cursor-pointer"
+                  className="min-w-[28px] min-h-[28px] flex items-center justify-center p-1.5 hover:bg-white/10 rounded-lg ml-1 transition-colors cursor-pointer"
                   title="Cancelar • Esc"
+                  aria-label="Cancelar colocación"
                 >
                   <X size={13} />
                 </button>
@@ -510,8 +518,9 @@ export default function DiagramCanvas() {
                 <span>Modo Selección por Área: Arrastra con el mouse en el lienzo para seleccionar múltiples elementos</span>
                 <button 
                   onClick={() => setActiveTool('pointer')}
-                  className="p-1 hover:bg-white/10 rounded-lg ml-1 cursor-pointer"
+                  className="min-w-[28px] min-h-[28px] flex items-center justify-center p-1.5 hover:bg-white/10 rounded-lg ml-1 transition-colors cursor-pointer"
                   title="Volver a Puntero • Esc"
+                  aria-label="Volver a puntero"
                 >
                   <X size={13} />
                 </button>
@@ -524,8 +533,9 @@ export default function DiagramCanvas() {
                 <button
                   type="button"
                   onClick={() => setShowBanner(false)}
-                  className="p-0.5 hover:bg-[#1f2430] text-slate-400 hover:text-white rounded transition-colors cursor-pointer ml-1"
+                  className="min-w-[28px] min-h-[28px] flex items-center justify-center p-1.5 hover:bg-[#1f2430] text-slate-400 hover:text-white rounded-lg transition-colors cursor-pointer ml-1"
                   title="Cerrar mensaje"
+                  aria-label="Cerrar mensaje"
                 >
                   <X size={13} />
                 </button>

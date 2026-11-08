@@ -32,7 +32,8 @@ public class CollabMessageDto {
         KICK,
         CHAT,
         ROLE_CHANGED,
-        STANDBY_STATE
+        STANDBY_STATE,
+        AI_CONFIG_CHANGED
     }
 
     private Type type;

@@ -20,7 +20,9 @@ export interface CollabMessage<T = any> {
     | 'KICK'
     | 'CHAT'
     | 'ROLE_CHANGED'
-    | 'STANDBY_STATE';
+    | 'STANDBY_STATE'
+    | 'SESSION_SUSPENDED'
+    | 'AI_CONFIG_CHANGED';
   senderId?: string;
   senderName?: string;
   senderColor?: string;

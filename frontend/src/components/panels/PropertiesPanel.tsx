@@ -44,10 +44,12 @@ const PropertiesPanel: React.FC = () => {
     decomposeManyToMany,
     flipRelationship,
     setSelectedNode,
-    setSelectedEdge
+    setSelectedEdge,
+    undo
   } = useDiagramStore();
 
   const [activeTab, setActiveTab] = useState<'general' | 'attributes' | 'methods'>('general');
+  const [confirmDeleteNodeId, setConfirmDeleteNodeId] = useState<string | null>(null);
   const [customSourceCard, setCustomSourceCard] = useState(false);
   const [customTargetCard, setCustomTargetCard] = useState(false);
   const [customIntermediateName, setCustomIntermediateName] = useState('');
@@ -236,9 +238,15 @@ const PropertiesPanel: React.FC = () => {
   };
 
   return (
-    <aside className="w-96 bg-[#14171d]/95 backdrop-blur-xl text-slate-200 border-l border-[#242934] flex flex-col h-full shadow-2xl z-20 select-none animate-fade-in font-sans">
+    <aside 
+      className="w-full sm:w-96 max-w-full backdrop-blur-xl text-slate-200 border-l flex flex-col h-full shadow-2xl z-20 select-none animate-fade-in font-sans"
+      style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
+    >
       {/* Header */}
-      <div className="px-5 py-4 border-b border-[#242934] flex justify-between items-center bg-[#11141a]">
+      <div 
+        className="px-5 py-4 border-b flex justify-between items-center"
+        style={{ backgroundColor: 'var(--bg-base)', borderColor: 'var(--border-subtle)' }}
+      >
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
             <Sliders size={14} />
@@ -249,8 +257,9 @@ const PropertiesPanel: React.FC = () => {
         </div>
         <button 
           onClick={() => { setSelectedNode(null); setSelectedEdge(null); }}
-          className="p-1.5 hover:bg-[#1a1f2b] text-slate-400 hover:text-white rounded-lg transition-colors cursor-pointer"
+          className="min-w-[28px] min-h-[28px] flex items-center justify-center p-1.5 hover:bg-white/10 text-slate-400 hover:text-white rounded-lg transition-colors cursor-pointer"
           title="Cerrar panel"
+          aria-label="Cerrar panel de propiedades"
         >
           <X size={15} />
         </button>
@@ -269,8 +278,17 @@ const PropertiesPanel: React.FC = () => {
         {selectedNode && (
           <>
             {/* Tabs for Class */}
-            <div className="flex bg-[#0f1115] p-1 rounded-xl border border-[#242934] text-xs font-medium">
+            <div 
+              role="tablist"
+              aria-label="Pestañas de propiedades de la clase"
+              className="flex p-1 rounded-xl border text-xs font-medium"
+              style={{ backgroundColor: 'var(--bg-base)', borderColor: 'var(--border-subtle)' }}
+            >
               <button
+                role="tab"
+                id="tab-general"
+                aria-selected={activeTab === 'general'}
+                aria-controls="panel-general"
                 onClick={() => setActiveTab('general')}
                 className={`flex-1 py-1.5 rounded-lg transition-all cursor-pointer ${
                   activeTab === 'general' ? 'bg-indigo-600 text-white font-semibold shadow-sm' : 'text-slate-400 hover:text-slate-200'
@@ -279,6 +297,10 @@ const PropertiesPanel: React.FC = () => {
                 General
               </button>
               <button
+                role="tab"
+                id="tab-attributes"
+                aria-selected={activeTab === 'attributes'}
+                aria-controls="panel-attributes"
                 onClick={() => setActiveTab('attributes')}
                 className={`flex-1 py-1.5 rounded-lg transition-all cursor-pointer ${
                   activeTab === 'attributes' ? 'bg-indigo-600 text-white font-semibold shadow-sm' : 'text-slate-400 hover:text-slate-200'
@@ -287,6 +309,10 @@ const PropertiesPanel: React.FC = () => {
                 Atributos ({selectedNode.data.attributes?.length || 0})
               </button>
               <button
+                role="tab"
+                id="tab-methods"
+                aria-selected={activeTab === 'methods'}
+                aria-controls="panel-methods"
                 onClick={() => setActiveTab('methods')}
                 className={`flex-1 py-1.5 rounded-lg transition-all cursor-pointer ${
                   activeTab === 'methods' ? 'bg-indigo-600 text-white font-semibold shadow-sm' : 'text-slate-400 hover:text-slate-200'
@@ -848,13 +874,42 @@ const PropertiesPanel: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    deleteClassNode(selectedNode.id);
-                    toast.success('Clase eliminada del modelo');
+                    if (confirmDeleteNodeId === selectedNode.id) {
+                      deleteClassNode(selectedNode.id);
+                      setConfirmDeleteNodeId(null);
+                      toast(
+                        (t) => (
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs font-medium">Clase eliminada del modelo</span>
+                            <button
+                              onClick={() => {
+                                undo();
+                                toast.dismiss(t.id);
+                                toast.success('Clase restaurada');
+                              }}
+                              className="px-2 py-0.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold rounded shadow-sm transition-colors cursor-pointer"
+                            >
+                              Deshacer
+                            </button>
+                          </div>
+                        ),
+                        { duration: 5000, icon: '🗑️' }
+                      );
+                    } else {
+                      setConfirmDeleteNodeId(selectedNode.id);
+                      setTimeout(() => setConfirmDeleteNodeId(null), 4000);
+                    }
                   }}
-                  className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-rose-950/20 hover:bg-rose-950/40 text-rose-300 hover:text-rose-200 border border-rose-800/40 hover:border-rose-700/60 rounded-xl text-xs font-semibold transition-all active:scale-98 cursor-pointer"
+                  className={`w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all active:scale-98 cursor-pointer ${
+                    confirmDeleteNodeId === selectedNode.id
+                      ? 'bg-rose-600 hover:bg-rose-500 text-white border border-rose-400 shadow-md animate-pulse'
+                      : 'bg-rose-950/20 hover:bg-rose-950/40 text-rose-300 hover:text-rose-200 border border-rose-800/40 hover:border-rose-700/60'
+                  }`}
                 >
-                  <Trash2 size={14} className="text-rose-400" />
-                  <span>Eliminar Clase del Modelo</span>
+                  <Trash2 size={14} className={confirmDeleteNodeId === selectedNode.id ? 'text-white' : 'text-rose-400'} />
+                  <span>
+                    {confirmDeleteNodeId === selectedNode.id ? '¿Confirmar eliminación? (clic de nuevo)' : 'Eliminar Clase del Modelo'}
+                  </span>
                 </button>
               </div>
             )}

@@ -27,7 +27,7 @@ interface GenerateBackendModalProps {
 }
 
 export const GenerateBackendModal: React.FC<GenerateBackendModalProps> = ({ isOpen, onClose }) => {
-  const { project, nodes } = useDiagramStore();
+  const { project, nodes, saveDiagram } = useDiagramStore();
 
   const [packageName, setPackageName] = useState('com.sw1.generated');
   const [groupId, setGroupId] = useState('com.sw1');
@@ -56,6 +56,12 @@ export const GenerateBackendModal: React.FC<GenerateBackendModalProps> = ({ isOp
     const fetchPreview = async () => {
       setIsLoadingPreview(true);
       try {
+        try {
+          await saveDiagram();
+        } catch (syncErr) {
+          console.warn('Auto-sync prior to backend preview:', syncErr);
+        }
+
         const config: GenerateBackendConfig = {
           packageName,
           groupId,
@@ -92,6 +98,12 @@ export const GenerateBackendModal: React.FC<GenerateBackendModalProps> = ({ isOp
 
     setIsGenerating(true);
     try {
+      try {
+        await saveDiagram();
+      } catch (syncErr) {
+        console.warn('Auto-sync prior to backend zip download:', syncErr);
+      }
+
       const config: GenerateBackendConfig = {
         packageName: packageName.trim(),
         groupId: groupId.trim(),

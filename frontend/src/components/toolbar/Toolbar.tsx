@@ -18,7 +18,8 @@ import {
   Trash2,
   ShieldCheck,
   Send,
-  Users
+  Users,
+  Cpu
 } from 'lucide-react';
 import { useUiStore } from '../../stores/uiStore';
 import { useDiagramStore } from '../../stores/diagramStore';
@@ -33,6 +34,8 @@ import { PostmanModal } from '../modals/PostmanModal';
 import { VoiceModelingModal } from '../voice/VoiceModelingModal';
 import { WhiteboardVisionModal } from '../vision/WhiteboardVisionModal';
 import { LiveCollabModal } from '../collab/LiveCollabModal';
+import { AiConfigModal } from '../modals/AiConfigModal';
+import { useProjectAiStore } from '../../stores/projectAiStore';
 import { analyzeDiagramNormalization } from '../../services/normalizationEngine';
 import toast from 'react-hot-toast';
 
@@ -62,11 +65,34 @@ export const Toolbar: React.FC = () => {
   const [isPostmanOpen, setIsPostmanOpen] = useState(false);
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const [isVisionModalOpen, setIsVisionModalOpen] = useState(false);
+  const { activeEngineLabel, activeProvider, isAiModalOpen, openAiModal, closeAiModal } = useProjectAiStore();
   const [hoverTooltip, setHoverTooltip] = useState<{ text: string; top: number; left: number } | null>(null);
 
   const normReport = useMemo(() => {
     return analyzeDiagramNormalization(nodes, edges);
   }, [nodes, edges]);
+
+  React.useEffect(() => {
+    const handleOpenBackend = () => setIsGenerateBackendOpen(true);
+    const handleOpenSql = () => setIsSqlDdlOpen(true);
+    const handleOpenPostman = () => setIsPostmanOpen(true);
+    const handleOpenHistory = () => setIsHistoryOpen(true);
+    const handleOpenNorm = () => setIsNormalizationOpen(true);
+
+    window.addEventListener('case_open_backend_modal', handleOpenBackend);
+    window.addEventListener('case_open_sql_modal', handleOpenSql);
+    window.addEventListener('case_open_postman_modal', handleOpenPostman);
+    window.addEventListener('case_open_history_modal', handleOpenHistory);
+    window.addEventListener('case_open_norm_modal', handleOpenNorm);
+
+    return () => {
+      window.removeEventListener('case_open_backend_modal', handleOpenBackend);
+      window.removeEventListener('case_open_sql_modal', handleOpenSql);
+      window.removeEventListener('case_open_postman_modal', handleOpenPostman);
+      window.removeEventListener('case_open_history_modal', handleOpenHistory);
+      window.removeEventListener('case_open_norm_modal', handleOpenNorm);
+    };
+  }, []);
 
   const showTip = (text: string) => (e: React.MouseEvent) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -160,9 +186,11 @@ export const Toolbar: React.FC = () => {
             className={`p-2 rounded-lg transition-all cursor-pointer ${
               activeTool === 'pointer'
                 ? 'bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-400/50'
-                : 'text-slate-400 hover:text-white hover:bg-[#1a1f2b]'
+                : 'text-slate-400 hover:text-white hover:bg-white/5'
             }`}
             title="Puntero de Navegación"
+            aria-label="Puntero de Navegación"
+            aria-pressed={activeTool === 'pointer'}
           >
             <MousePointer2 size={16} />
           </button>
@@ -182,9 +210,11 @@ export const Toolbar: React.FC = () => {
             className={`p-2 rounded-lg transition-all cursor-pointer ${
               activeTool === 'select-area'
                 ? 'bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-400/50'
-                : 'text-slate-400 hover:text-indigo-400 hover:bg-[#1a1f2b]'
+                : 'text-slate-400 hover:text-indigo-400 hover:bg-white/5'
             }`}
             title="Seleccionar con Mouse en Área"
+            aria-label="Seleccionar con Mouse en Área"
+            aria-pressed={activeTool === 'select-area'}
           >
             <BoxSelect size={16} />
           </button>
@@ -199,10 +229,11 @@ export const Toolbar: React.FC = () => {
             disabled={!canUndo || viewerMode}
             className={`p-2 rounded-lg transition-all cursor-pointer ${
               canUndo && !viewerMode
-                ? 'text-slate-300 hover:text-white hover:bg-[#1a1f2b] active:scale-95'
+                ? 'text-slate-300 hover:text-white hover:bg-white/5 active:scale-95'
                 : 'text-slate-600 cursor-not-allowed opacity-35'
             }`}
             title="Deshacer"
+            aria-label="Deshacer última acción"
           >
             <Undo2 size={15} />
           </button>
@@ -214,10 +245,11 @@ export const Toolbar: React.FC = () => {
             disabled={!canRedo || viewerMode}
             className={`p-2 rounded-lg transition-all cursor-pointer ${
               canRedo && !viewerMode
-                ? 'text-slate-300 hover:text-white hover:bg-[#1a1f2b] active:scale-95'
+                ? 'text-slate-300 hover:text-white hover:bg-white/5 active:scale-95'
                 : 'text-slate-600 cursor-not-allowed opacity-35'
             }`}
             title="Rehacer"
+            aria-label="Rehacer acción deshecha"
           >
             <Redo2 size={15} />
           </button>
@@ -233,12 +265,13 @@ export const Toolbar: React.FC = () => {
                 : 'text-slate-600 cursor-not-allowed opacity-35'
             }`}
             title="Eliminar Selección"
+            aria-label="Eliminar elementos seleccionados"
           >
             <Trash2 size={15} />
           </button>
         </div>
 
-        <div className="w-7 h-px bg-[#242934] my-1" />
+        <div className="w-7 h-px bg-white/10 my-1" />
 
         {/* UML Class Creation Tools (Click to Arm & Drop) */}
         <div data-tour="toolbar-classes" className="flex flex-col items-center gap-1.5">
@@ -252,9 +285,11 @@ export const Toolbar: React.FC = () => {
                 ? 'text-slate-600 cursor-not-allowed opacity-35'
                 : activeTool === 'add-class'
                 ? 'bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-400/50 cursor-pointer'
-                : 'text-slate-400 hover:text-indigo-400 hover:bg-[#1a1f2b] cursor-pointer'
+                : 'text-slate-400 hover:text-indigo-400 hover:bg-white/5 cursor-pointer'
             }`}
             title="Añadir Clase Entidad"
+            aria-label="Añadir Clase Entidad"
+            aria-pressed={activeTool === 'add-class'}
           >
             <Box size={16} />
           </button>
@@ -269,9 +304,11 @@ export const Toolbar: React.FC = () => {
                 ? 'text-slate-600 cursor-not-allowed opacity-35'
                 : activeTool === 'add-interface'
                 ? 'bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-400/50 cursor-pointer'
-                : 'text-slate-400 hover:text-indigo-400 hover:bg-[#1a1f2b] cursor-pointer'
+                : 'text-slate-400 hover:text-indigo-400 hover:bg-white/5 cursor-pointer'
             }`}
             title="Añadir Interfaz"
+            aria-label="Añadir Interfaz"
+            aria-pressed={activeTool === 'add-interface'}
           >
             <Component size={16} />
           </button>
@@ -286,9 +323,11 @@ export const Toolbar: React.FC = () => {
                 ? 'text-slate-600 cursor-not-allowed opacity-35'
                 : activeTool === 'add-abstract'
                 ? 'bg-amber-600 text-white shadow-sm ring-1 ring-amber-400/50 cursor-pointer'
-                : 'text-slate-400 hover:text-amber-400 hover:bg-[#1a1f2b] cursor-pointer'
+                : 'text-slate-400 hover:text-amber-400 hover:bg-white/5 cursor-pointer'
             }`}
             title="Añadir Clase Abstracta"
+            aria-label="Añadir Clase Abstracta"
+            aria-pressed={activeTool === 'add-abstract'}
           >
             <Layers size={16} />
           </button>
@@ -333,6 +372,32 @@ export const Toolbar: React.FC = () => {
               <Camera size={16} />
             </button>
           )}
+
+          {/* Motor de Inferencia IA del Proyecto (CU15: Ollama, LM Studio & BYOK) */}
+          <button
+            onClick={() => {
+              if (!project?.id) {
+                toast.error('Abre o crea un modelo para consultar o configurar el motor de IA');
+                return;
+              }
+              openAiModal();
+            }}
+            onMouseEnter={showTip(`Motor IA: ${activeEngineLabel}`)}
+            onMouseLeave={hideTip}
+            className={`p-2 rounded-lg transition-all cursor-pointer relative ${
+              isAiModalOpen
+                ? 'bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-400'
+                : 'text-slate-400 hover:text-indigo-400 hover:bg-[#181c24]'
+            }`}
+            title={`Motor IA: ${activeEngineLabel}`}
+          >
+            <div className="relative">
+              <Cpu size={16} />
+              {activeProvider !== 'SYSTEM_DEFAULT' && (
+                <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-[#0f1115] animate-pulse" />
+              )}
+            </div>
+          </button>
         </div>
 
         <div className="w-7 h-px bg-[#242934] my-1" />
@@ -549,6 +614,16 @@ export const Toolbar: React.FC = () => {
 
       {/* Live Collaboration Modal (CU18) */}
       <LiveCollabModal />
+
+      {/* AI Engine & Provider Config Modal (CU15) */}
+      {project && (
+        <AiConfigModal
+          isOpen={isAiModalOpen}
+          onClose={closeAiModal}
+          projectId={project.id}
+          projectName={project.name}
+        />
+      )}
     </aside>
   );
 };

@@ -16,7 +16,12 @@ import java.util.List;
 @AllArgsConstructor
 public class VoiceModelingResponse {
 
-    private boolean success;
+    @Builder.Default
+    private Boolean success = true;
+
+    public boolean isSuccess() {
+        return Boolean.TRUE.equals(success);
+    }
     private String intent;
     private String providerUsed;
     private long latencyMs;

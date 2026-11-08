@@ -27,7 +27,7 @@ interface PostmanModalProps {
 }
 
 export const PostmanModal: React.FC<PostmanModalProps> = ({ isOpen, onClose }) => {
-  const { project, nodes } = useDiagramStore();
+  const { project, nodes, saveDiagram } = useDiagramStore();
 
   // Configuration state
   const [baseUrl, setBaseUrl] = useState<string>('http://localhost:8081');
@@ -49,6 +49,12 @@ export const PostmanModal: React.FC<PostmanModalProps> = ({ isOpen, onClose }) =
 
     setLoading(true);
     try {
+      try {
+        await saveDiagram();
+      } catch (syncErr) {
+        console.warn('Auto-sync prior to postman generation:', syncErr);
+      }
+
       const config: GeneratePostmanConfig = {
         baseUrl: baseUrl.trim() || 'http://localhost:8081',
         includeTests,
@@ -64,7 +70,7 @@ export const PostmanModal: React.FC<PostmanModalProps> = ({ isOpen, onClose }) =
     } finally {
       setLoading(false);
     }
-  }, [project?.id, isModelEmpty, baseUrl, includeTests, includeMockData]);
+  }, [project?.id, isModelEmpty, baseUrl, includeTests, includeMockData, saveDiagram]);
 
   useEffect(() => {
     if (isOpen && project?.id && !isModelEmpty) {
@@ -258,7 +264,7 @@ export const PostmanModal: React.FC<PostmanModalProps> = ({ isOpen, onClose }) =
               <button
                 onClick={fetchCollection}
                 disabled={loading || isModelEmpty}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 disabled:bg-[#181c24] disabled:text-slate-500 transition-all cursor-pointer shadow-md shadow-indigo-600/20"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-md shadow-indigo-600/20"
               >
                 <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
                 Regenerar Colección
@@ -434,7 +440,7 @@ export const PostmanModal: React.FC<PostmanModalProps> = ({ isOpen, onClose }) =
             <button
               onClick={handleDownload}
               disabled={downloading || loading || isModelEmpty || !postmanData?.json}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 disabled:bg-[#181c24] disabled:text-slate-500 transition-all cursor-pointer shadow-md shadow-indigo-600/20"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-md shadow-indigo-600/20"
             >
               <Download size={14} />
               <span>Descargar .json</span>

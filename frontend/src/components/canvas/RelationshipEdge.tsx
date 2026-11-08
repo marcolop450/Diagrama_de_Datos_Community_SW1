@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { 
   EdgeProps, 
   getSmoothStepPath,
@@ -53,23 +53,36 @@ const RelationshipEdge = React.memo(function RelationshipEdge({
   const isM2M = isManyToManyCardinality(relData?.sourceCardinality, relData?.targetCardinality);
   const routing: EdgeRoutingType = relData?.routing || 'smoothstep';
 
-  // Detectar relaciones paralelas entre el mismo par de clases para trazar líneas distintas
-  const edges = useDiagramStore((s) => s.edges);
-  const currentEdge = edges.find((e) => e.id === id);
-  const srcId = currentEdge?.source;
-  const tgtId = currentEdge?.target;
+  // Detectar relaciones paralelas entre el mismo par de clases optimizado con selectores atomicos primitivos
+  const srcId = useDiagramStore(useCallback((s) => s.edges.find((e) => e.id === id)?.source, [id]));
+  const tgtId = useDiagramStore(useCallback((s) => s.edges.find((e) => e.id === id)?.target, [id]));
 
-  let parallelIndex = 0;
-  let parallelCount = 1;
+  const parallelCount = useDiagramStore(
+    useCallback(
+      (s) => {
+        if (!srcId || !tgtId) return 1;
+        const count = s.edges.filter(
+          (e) => (e.source === srcId && e.target === tgtId) || (e.source === tgtId && e.target === srcId)
+        ).length;
+        return count || 1;
+      },
+      [srcId, tgtId]
+    )
+  );
 
-  if (srcId && tgtId) {
-    const parallelEdges = edges.filter(
-      (e) => (e.source === srcId && e.target === tgtId) || (e.source === tgtId && e.target === srcId)
-    );
-    parallelCount = parallelEdges.length;
-    parallelIndex = parallelEdges.findIndex((e) => e.id === id);
-    if (parallelIndex === -1) parallelIndex = 0;
-  }
+  const parallelIndex = useDiagramStore(
+    useCallback(
+      (s) => {
+        if (!srcId || !tgtId) return 0;
+        const matches = s.edges.filter(
+          (e) => (e.source === srcId && e.target === tgtId) || (e.source === tgtId && e.target === srcId)
+        );
+        const idx = matches.findIndex((e) => e.id === id);
+        return idx === -1 ? 0 : idx;
+      },
+      [srcId, tgtId, id]
+    )
+  );
 
   // 1. Calculate Geometry & SVG Paths
   let edgePath = '';

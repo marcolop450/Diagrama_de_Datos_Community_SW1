@@ -282,16 +282,16 @@ export const WhiteboardVisionModal: React.FC<WhiteboardVisionModalProps> = ({
 
         {/* Tab Selection (Subir Archivo vs Cámara) */}
         {!resultSummary && (
-          <div className="flex border-b border-[#242934] bg-[#0f1115]/60 px-6 pt-3 gap-2">
+          <div className="flex border-b border-[#242934] bg-[#0f1115]/60 px-6 py-2.5 gap-2">
             <button
               onClick={() => {
                 setActiveTab('upload');
                 stopCamera();
               }}
-              className={`flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-t-xl transition-all border-b-2 cursor-pointer ${
+              className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                 activeTab === 'upload'
-                  ? 'border-indigo-500 text-indigo-300 bg-[#181c24]'
-                  : 'border-transparent text-slate-400 hover:text-white hover:bg-[#181c24]/50'
+                  ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
               }`}
             >
               <UploadCloud className="w-4 h-4" />
@@ -302,10 +302,10 @@ export const WhiteboardVisionModal: React.FC<WhiteboardVisionModalProps> = ({
                 setActiveTab('camera');
                 startCamera();
               }}
-              className={`flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-t-xl transition-all border-b-2 cursor-pointer ${
+              className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                 activeTab === 'camera'
-                  ? 'border-indigo-500 text-indigo-300 bg-[#181c24]'
-                  : 'border-transparent text-slate-400 hover:text-white hover:bg-[#181c24]/50'
+                  ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
               }`}
             >
               <Video className="w-4 h-4" />

@@ -26,6 +26,37 @@ export interface GenerateSqlDdlConfig {
   schema?: string;
 }
 
+export type SqlDialectEngine = 'POSTGRESQL' | 'MYSQL' | 'SQL_SERVER' | 'ORACLE';
+
+export interface GenerateMultiSqlDdlConfig {
+  engine?: SqlDialectEngine;
+  dialect?: SqlDialectEngine;
+  dropTables?: boolean;
+  createIndexes?: boolean;
+  includeComments?: boolean;
+  includeForeignKeys?: boolean;
+  schema?: string;
+}
+
+export interface MultiSqlDdlResponse {
+  engine?: SqlDialectEngine;
+  engineLabel?: string;
+  dialect?: string;
+  dialectDisplayName?: string;
+  projectName?: string;
+  fileName: string;
+  sql?: string;
+  ddlScript?: string;
+  totalTables?: number;
+  tableCount?: number;
+  totalColumns?: number;
+  totalForeignKeys?: number;
+  relationshipCount?: number;
+  totalIndexes?: number;
+  indexCount?: number;
+  warnings?: string[];
+}
+
 export interface SqlDdlResponse {
   projectName: string;
   fileName: string;
@@ -120,6 +151,59 @@ export const downloadSqlDdl = async (
     .toLowerCase()
     .replace(/[^a-z0-9_-]/g, '-');
   const filename = `${cleanProjectName}-schema.sql`;
+
+  const blob = new Blob([response.data], { type: 'application/sql' });
+  const downloadUrl = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = downloadUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(downloadUrl);
+};
+
+export const generateMultiSqlDdl = async (
+  projectId: string,
+  config?: GenerateMultiSqlDdlConfig
+): Promise<MultiSqlDdlResponse> => {
+  const chosen = config?.engine || config?.dialect || 'POSTGRESQL';
+  const payload = {
+    ...config,
+    dialect: chosen,
+    engine: chosen,
+  };
+  const response = await apiClient.post<{ success: boolean; data: MultiSqlDdlResponse }>(
+    `/projects/${projectId}/generate/sql-ddl-multi`,
+    payload
+  );
+  return response.data.data;
+};
+
+export const downloadMultiSqlDdl = async (
+  projectId: string,
+  projectName: string,
+  config?: GenerateMultiSqlDdlConfig
+): Promise<void> => {
+  const chosen = config?.engine || config?.dialect || 'POSTGRESQL';
+  const payload = {
+    ...config,
+    dialect: chosen,
+    engine: chosen,
+  };
+  const response = await apiClient.post(
+    `/projects/${projectId}/generate/sql-ddl-multi/download`,
+    payload,
+    {
+      responseType: 'blob',
+    }
+  );
+
+  const engineSuffix = `-${chosen.toLowerCase().replace('_', '-')}`;
+  const cleanProjectName = (projectName || 'esquema')
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, '-');
+  const filename = `${cleanProjectName}${engineSuffix}-schema.sql`;
 
   const blob = new Blob([response.data], { type: 'application/sql' });
   const downloadUrl = window.URL.createObjectURL(blob);

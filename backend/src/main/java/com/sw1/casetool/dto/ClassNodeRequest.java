@@ -10,7 +10,11 @@ public class ClassNodeRequest {
     @NotBlank
     private String name;
     private String stereotype;
-    private boolean abstractClass;
+    private Boolean abstractClass = false;
+
+    public boolean isAbstractClass() {
+        return Boolean.TRUE.equals(abstractClass);
+    }
     private double positionX;
     private double positionY;
     private double width;

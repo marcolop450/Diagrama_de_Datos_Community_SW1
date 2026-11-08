@@ -52,6 +52,7 @@ class AuditLogServiceTest {
 
     @Test
     void testRecordAction_PersistsImmutableLog() {
+        when(userProfileRepository.existsById(testUserId)).thenReturn(true);
         Map<String, Object> details = Map.of("reason", "Security audit check");
         UUID entityId = UUID.randomUUID();
 

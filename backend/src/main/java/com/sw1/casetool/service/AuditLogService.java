@@ -42,9 +42,19 @@ public class AuditLogService {
             Map<String, Object> details
     ) {
         try {
+            // Defensa FK: Verificar que actorUserId exista realmente en user_profiles
+            UUID validActorId = null;
+            if (actorUserId != null) {
+                if (userProfileRepository != null && userProfileRepository.existsById(actorUserId)) {
+                    validActorId = actorUserId;
+                } else {
+                    log.warn("actorUserId {} no existe en user_profiles. Registrando en audit_logs como accion de sistema (null).", actorUserId);
+                }
+            }
+
             AuditLog log = AuditLog.builder()
                     .id(UUID.randomUUID())
-                    .userId(actorUserId)
+                    .userId(validActorId)
                     .actionType(actionType)
                     .entityName(entityName)
                     .entityId(entityId)

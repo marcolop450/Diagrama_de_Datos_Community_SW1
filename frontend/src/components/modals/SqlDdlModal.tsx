@@ -15,10 +15,17 @@ import {
   AlertTriangle,
   Settings2,
   CheckCircle2,
-  Loader2
+  Loader2,
+  Server
 } from 'lucide-react';
 import { useDiagramStore } from '../../stores/diagramStore';
-import { generateSqlDdl, downloadSqlDdl, SqlDdlResponse, GenerateSqlDdlConfig } from '../../services/generatorService';
+import { 
+  generateMultiSqlDdl, 
+  downloadMultiSqlDdl, 
+  MultiSqlDdlResponse, 
+  GenerateMultiSqlDdlConfig,
+  SqlDialectEngine 
+} from '../../services/generatorService';
 import toast from 'react-hot-toast';
 
 interface SqlDdlModalProps {
@@ -26,8 +33,25 @@ interface SqlDdlModalProps {
   onClose: () => void;
 }
 
+interface EngineOption {
+  id: SqlDialectEngine;
+  name: string;
+  badge: string;
+  desc: string;
+}
+
+const ENGINES: EngineOption[] = [
+  { id: 'POSTGRESQL', name: 'PostgreSQL 17', badge: 'Supabase / Neon', desc: 'IDENTITY ALWAYS + CASCADE' },
+  { id: 'MYSQL', name: 'MySQL 8.x', badge: 'InnoDB / MariaDB', desc: 'AUTO_INCREMENT + ON DELETE CASCADE' },
+  { id: 'SQL_SERVER', name: 'SQL Server', badge: 'T-SQL 2019+', desc: 'IDENTITY(1,1) + T-SQL Constraints' },
+  { id: 'ORACLE', name: 'Oracle Database', badge: 'PL/SQL 19c/21c', desc: 'GENERATED AS IDENTITY' },
+];
+
 export const SqlDdlModal: React.FC<SqlDdlModalProps> = ({ isOpen, onClose }) => {
-  const { project, nodes } = useDiagramStore();
+  const { project, nodes, saveDiagram } = useDiagramStore();
+
+  // Engine selection (CU16 Multi-Motor)
+  const [selectedEngine, setSelectedEngine] = useState<SqlDialectEngine>('POSTGRESQL');
 
   // Configuration options
   const [dropTables, setDropTables] = useState<boolean>(true);
@@ -39,18 +63,34 @@ export const SqlDdlModal: React.FC<SqlDdlModalProps> = ({ isOpen, onClose }) => 
 
   // Generation state
   const [loading, setLoading] = useState<boolean>(false);
-  const [ddlData, setDdlData] = useState<SqlDdlResponse | null>(null);
+  const [ddlData, setDdlData] = useState<MultiSqlDdlResponse | null>(null);
   const [copied, setCopied] = useState<boolean>(false);
   const [downloading, setDownloading] = useState<boolean>(false);
 
   const isModelEmpty = !nodes || nodes.length === 0;
 
-  const fetchDdl = useCallback(async () => {
+  const sqlScript = ddlData?.sql || ddlData?.ddlScript || '';
+  const totalTables = ddlData?.totalTables ?? ddlData?.tableCount ?? 0;
+  const totalColumns = ddlData?.totalColumns ?? 0;
+  const totalForeignKeys = ddlData?.totalForeignKeys ?? ddlData?.relationshipCount ?? 0;
+  const totalIndexes = ddlData?.totalIndexes ?? ddlData?.indexCount ?? 0;
+
+  const fetchDdl = useCallback(async (engineOverride?: SqlDialectEngine) => {
     if (!project?.id || isModelEmpty) return;
 
+    const targetEngine = engineOverride || selectedEngine;
     setLoading(true);
     try {
-      const config: GenerateSqlDdlConfig = {
+      // Sincronizar automáticamente el lienzo con la base de datos para que el compilador tenga el modelo al día
+      try {
+        await saveDiagram();
+      } catch (saveErr) {
+        console.warn('Auto-sincronización previa al DDL SQL:', saveErr);
+      }
+
+      const config: GenerateMultiSqlDdlConfig = {
+        engine: targetEngine,
+        dialect: targetEngine,
         dropTables,
         createIndexes,
         includeComments,
@@ -58,31 +98,36 @@ export const SqlDdlModal: React.FC<SqlDdlModalProps> = ({ isOpen, onClose }) => 
         schema: schema.trim() || 'public',
       };
 
-      const result = await generateSqlDdl(project.id, config);
+      const result = await generateMultiSqlDdl(project.id, config);
       setDdlData(result);
     } catch (error: any) {
-      console.error('Error al generar DDL SQL:', error);
+      console.error('Error al generar DDL SQL multi-motor:', error);
       const msg = error.response?.data?.message || 'No se pudo generar el script DDL SQL';
       toast.error(msg);
     } finally {
       setLoading(false);
     }
-  }, [project?.id, isModelEmpty, dropTables, createIndexes, includeComments, includeForeignKeys, schema]);
+  }, [project?.id, isModelEmpty, selectedEngine, dropTables, createIndexes, includeComments, includeForeignKeys, schema, saveDiagram]);
 
   useEffect(() => {
     if (isOpen && project?.id && !isModelEmpty) {
-      fetchDdl();
+      fetchDdl(selectedEngine);
     }
-  }, [isOpen, project?.id, isModelEmpty]);
+  }, [isOpen, project?.id, isModelEmpty, selectedEngine]);
 
   if (!isOpen) return null;
 
+  const handleEngineChange = (engine: SqlDialectEngine) => {
+    if (engine === selectedEngine) return;
+    setSelectedEngine(engine);
+  };
+
   const handleCopy = async () => {
-    if (!ddlData?.sql) return;
+    if (!sqlScript) return;
     try {
-      await navigator.clipboard.writeText(ddlData.sql);
+      await navigator.clipboard.writeText(sqlScript);
       setCopied(true);
-      toast.success('Script SQL copiado al portapapeles');
+      toast.success(`Script SQL (${ddlData?.engineLabel || activeEngineObj.name}) copiado al portapapeles`);
       setTimeout(() => setCopied(false), 2000);
     } catch {
       toast.error('No se pudo copiar el texto');
@@ -93,22 +138,26 @@ export const SqlDdlModal: React.FC<SqlDdlModalProps> = ({ isOpen, onClose }) => 
     if (!project?.id) return;
     setDownloading(true);
     try {
-      const config: GenerateSqlDdlConfig = {
+      const config: GenerateMultiSqlDdlConfig = {
+        engine: selectedEngine,
+        dialect: selectedEngine,
         dropTables,
         createIndexes,
         includeComments,
         includeForeignKeys,
         schema: schema.trim() || 'public',
       };
-      await downloadSqlDdl(project.id, project.name, config);
-      toast.success('Script schema.sql descargado exitosamente');
+      await downloadMultiSqlDdl(project.id, project.name, config);
+      toast.success(`Script ${ddlData?.fileName || 'schema.sql'} descargado exitosamente`);
     } catch (error: any) {
-      console.error('Error al descargar schema.sql:', error);
+      console.error('Error al descargar DDL multi-motor:', error);
       toast.error('Error al descargar el archivo SQL');
     } finally {
       setDownloading(false);
     }
   };
+
+  const activeEngineObj = ENGINES.find(e => e.id === selectedEngine) || ENGINES[0];
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 bg-black/75 backdrop-blur-md animate-fade-in font-sans">
@@ -125,13 +174,13 @@ export const SqlDdlModal: React.FC<SqlDdlModalProps> = ({ isOpen, onClose }) => 
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <h2 className="text-sm sm:text-base font-semibold text-white truncate font-display">
-                  Generar Esquema DDL SQL
+                  Generar Esquema DDL Multi-Motor
                 </h2>
                 <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 shrink-0">
-                  PostgreSQL 17
+                  {activeEngineObj.name}
                 </span>
                 <span className="hidden sm:inline-flex px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 shrink-0">
-                  Supabase Ready
+                  {activeEngineObj.badge}
                 </span>
               </div>
               <p className="text-xs text-slate-400 truncate">
@@ -164,12 +213,50 @@ export const SqlDdlModal: React.FC<SqlDdlModalProps> = ({ isOpen, onClose }) => 
           </div>
         </div>
 
+        {/* Engine Tabs Bar (CU16 - PostgreSQL 17, MySQL 8.x, SQL Server, Oracle) */}
+        <div className="px-5 py-2.5 bg-[#0f1115] border-b border-[#242934] shrink-0">
+          <div className="flex items-center justify-between gap-2 overflow-x-auto scrollbar-none">
+            <div className="flex items-center gap-1.5 min-w-max">
+              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mr-1.5 flex items-center gap-1 font-display">
+                <Server size={12} className="text-indigo-400" />
+                Motor:
+              </span>
+              {ENGINES.map((eng) => {
+                const isActive = selectedEngine === eng.id;
+                return (
+                  <button
+                    key={eng.id}
+                    type="button"
+                    onClick={() => handleEngineChange(eng.id)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
+                      isActive
+                        ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 border border-indigo-500 font-semibold'
+                        : 'bg-[#181c24] hover:bg-[#202532] text-slate-300 border border-[#242934]'
+                    }`}
+                    title={eng.desc}
+                  >
+                    <span>{eng.name}</span>
+                    <span className={`text-[9px] font-mono px-1 rounded ${
+                      isActive ? 'bg-indigo-700/60 text-indigo-100' : 'bg-[#11141a] text-slate-400'
+                    }`}>
+                      {eng.badge.split(' ')[0]}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="hidden lg:flex items-center text-[10px] text-slate-400 font-mono">
+              Dialecto Nativo • {activeEngineObj.desc}
+            </div>
+          </div>
+        </div>
+
         {/* Configuration Drawer (Collapsible) */}
         {showOptions && (
           <div className="p-4 border-b border-[#242934] bg-[#0f1115]/90 transition-all shrink-0 animate-fade-in">
             <div className="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-1.5 font-display">
               <Settings2 size={13} className="text-indigo-400" />
-              Parámetros de Generación SQL
+              Parámetros de Generación SQL ({activeEngineObj.name})
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -183,7 +270,7 @@ export const SqlDdlModal: React.FC<SqlDdlModalProps> = ({ isOpen, onClose }) => 
                 />
                 <div className="min-w-0">
                   <div className="text-xs font-medium text-slate-200">DROP TABLE IF EXISTS</div>
-                  <div className="text-[10px] text-slate-400">Limpieza con CASCADE</div>
+                  <div className="text-[10px] text-slate-400">Limpieza y recreación</div>
                 </div>
               </label>
 
@@ -225,27 +312,27 @@ export const SqlDdlModal: React.FC<SqlDdlModalProps> = ({ isOpen, onClose }) => 
                 />
                 <div className="min-w-0">
                   <div className="text-xs font-medium text-slate-200">Comentarios Diccionario</div>
-                  <div className="text-[10px] text-slate-400">COMMENT ON TABLE/COL</div>
+                  <div className="text-[10px] text-slate-400">Metadatos de tabla/columna</div>
                 </div>
               </label>
             </div>
 
             <div className="mt-3 flex items-center justify-between gap-3 pt-2 border-t border-[#242934]">
               <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-400">Esquema PostgreSQL:</span>
+                <span className="text-xs text-slate-400">Esquema / Base de datos:</span>
                 <input
                   type="text"
                   value={schema}
                   onChange={(e) => setSchema(e.target.value)}
-                  placeholder="public"
+                  placeholder={selectedEngine === 'SQL_SERVER' ? 'dbo' : 'public'}
                   className="px-2.5 py-1 text-xs rounded-xl bg-[#0f1115] border border-[#242934] text-white focus:outline-hidden focus:border-indigo-500 font-mono w-28"
                 />
               </div>
 
               <button
-                onClick={fetchDdl}
+                onClick={() => fetchDdl()}
                 disabled={loading || isModelEmpty}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 disabled:bg-[#181c24] disabled:text-slate-500 transition-all cursor-pointer shadow-md shadow-indigo-600/20"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-md shadow-indigo-600/20"
               >
                 <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
                 Regenerar Script
@@ -280,7 +367,7 @@ export const SqlDdlModal: React.FC<SqlDdlModalProps> = ({ isOpen, onClose }) => 
                   <div className="min-w-0">
                     <div className="text-[11px] font-medium text-slate-400">Total Tablas</div>
                     <div className="text-base font-bold text-white font-mono">
-                      {loading ? '...' : ddlData?.totalTables ?? 0}
+                      {loading ? '...' : totalTables}
                     </div>
                   </div>
                 </div>
@@ -292,7 +379,7 @@ export const SqlDdlModal: React.FC<SqlDdlModalProps> = ({ isOpen, onClose }) => 
                   <div className="min-w-0">
                     <div className="text-[11px] font-medium text-slate-400">Total Columnas</div>
                     <div className="text-base font-bold text-white font-mono">
-                      {loading ? '...' : ddlData?.totalColumns ?? 0}
+                      {loading ? '...' : totalColumns}
                     </div>
                   </div>
                 </div>
@@ -304,7 +391,7 @@ export const SqlDdlModal: React.FC<SqlDdlModalProps> = ({ isOpen, onClose }) => 
                   <div className="min-w-0">
                     <div className="text-[11px] font-medium text-slate-400">Claves Foráneas</div>
                     <div className="text-base font-bold text-white font-mono">
-                      {loading ? '...' : ddlData?.totalForeignKeys ?? 0}
+                      {loading ? '...' : totalForeignKeys}
                     </div>
                   </div>
                 </div>
@@ -316,7 +403,7 @@ export const SqlDdlModal: React.FC<SqlDdlModalProps> = ({ isOpen, onClose }) => 
                   <div className="min-w-0">
                     <div className="text-[11px] font-medium text-slate-400">Índices B-Tree</div>
                     <div className="text-base font-bold text-white font-mono">
-                      {loading ? '...' : ddlData?.totalIndexes ?? 0}
+                      {loading ? '...' : totalIndexes}
                     </div>
                   </div>
                 </div>
@@ -329,7 +416,10 @@ export const SqlDdlModal: React.FC<SqlDdlModalProps> = ({ isOpen, onClose }) => 
                   <div className="flex items-center gap-2 min-w-0">
                     <FileCode2 size={14} className="text-indigo-400 shrink-0" />
                     <span className="font-mono text-slate-300 font-semibold truncate">
-                      {ddlData?.fileName || 'schema.sql'}
+                      {ddlData?.fileName || `${activeEngineObj.name.toLowerCase().replace(' ', '-')}-schema.sql`}
+                    </span>
+                    <span className="hidden sm:inline-block px-1.5 py-0.5 rounded text-[10px] font-mono text-indigo-300 bg-indigo-500/10 border border-indigo-500/30">
+                      {activeEngineObj.name}
                     </span>
                     <span className="hidden sm:inline-block px-1.5 py-0.5 rounded text-[10px] font-mono text-slate-400 bg-[#181c24] border border-[#242934]">
                       UTF-8
@@ -339,7 +429,7 @@ export const SqlDdlModal: React.FC<SqlDdlModalProps> = ({ isOpen, onClose }) => 
                   <div className="flex items-center gap-2 shrink-0">
                     <button
                       onClick={handleCopy}
-                      disabled={loading || !ddlData?.sql}
+                      disabled={loading || !sqlScript}
                       className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#181c24] hover:bg-[#1f2430] text-slate-200 border border-[#242934] text-xs font-medium transition-all active:scale-95 cursor-pointer disabled:opacity-50"
                       title="Copiar script SQL al portapapeles"
                     >
@@ -358,9 +448,9 @@ export const SqlDdlModal: React.FC<SqlDdlModalProps> = ({ isOpen, onClose }) => 
 
                     <button
                       onClick={handleDownload}
-                      disabled={downloading || loading || !ddlData?.sql}
+                      disabled={downloading || loading || !sqlScript}
                       className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-all active:scale-95 cursor-pointer disabled:opacity-50 shadow-md shadow-indigo-600/20"
-                      title="Descargar archivo schema.sql"
+                      title={`Descargar archivo SQL compilado para ${activeEngineObj.name}`}
                     >
                       {downloading ? (
                         <>
@@ -378,19 +468,19 @@ export const SqlDdlModal: React.FC<SqlDdlModalProps> = ({ isOpen, onClose }) => 
                 </div>
 
                 {/* Preformatted SQL Output */}
-                <div className="relative flex-1 overflow-auto p-4 font-mono text-[12px] sm:text-[13px] leading-relaxed text-slate-200 select-text max-h-[52vh]">
+                <div className="flex-1 overflow-auto p-4 font-mono text-xs text-slate-200 select-text leading-relaxed">
                   {loading ? (
-                    <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-400">
-                      <Loader2 size={24} className="animate-spin text-indigo-400" />
-                      <span className="text-xs">Sintetizando esquema DDL para PostgreSQL 17...</span>
+                    <div className="h-full flex flex-col items-center justify-center text-slate-400 py-12">
+                      <Loader2 size={28} className="animate-spin text-indigo-400 mb-2" />
+                      <span>Compilando dialecto {activeEngineObj.name}...</span>
                     </div>
-                  ) : ddlData?.sql ? (
-                    <pre className="whitespace-pre font-mono selection:bg-indigo-500/30 selection:text-indigo-200">
-                      {ddlData.sql}
+                  ) : sqlScript ? (
+                    <pre className="whitespace-pre font-mono text-[12px] leading-relaxed text-slate-300">
+                      <code>{sqlScript}</code>
                     </pre>
                   ) : (
-                    <div className="text-center py-12 text-slate-500 text-xs">
-                      Presiona "Regenerar Script" para obtener el código SQL.
+                    <div className="h-full flex items-center justify-center text-slate-500 py-12">
+                      Sin datos generados. Presiona "Regenerar Script".
                     </div>
                   )}
                 </div>
@@ -400,36 +490,24 @@ export const SqlDdlModal: React.FC<SqlDdlModalProps> = ({ isOpen, onClose }) => 
         </div>
 
         {/* Modal Footer */}
-        <div className="flex items-center justify-between px-5 py-3 border-t border-[#242934] bg-[#11141a] shrink-0 text-xs text-slate-400">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between px-5 py-3 border-t border-[#242934] bg-[#11141a] shrink-0 text-xs">
+          <div className="flex items-center gap-2 text-slate-400">
             <CheckCircle2 size={14} className="text-emerald-400" />
-            <span className="hidden sm:inline">
-              Script DDL 100% compatible con Supabase SQL Editor, psql y DBeaver
-            </span>
-            <span className="sm:hidden">
-              Compatible con PostgreSQL 17
-            </span>
+            <span className="hidden sm:inline">Normalización e Integridad Relacional Verificada (1NF-3NF)</span>
+            <span className="sm:hidden">1NF-3NF Verificado</span>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={onClose}
-              className="px-3.5 py-1.5 rounded-xl text-xs font-medium text-slate-300 hover:text-white hover:bg-[#181c24] border border-[#242934] transition-colors cursor-pointer"
-            >
-              Cerrar
-            </button>
-            <button
-              onClick={handleDownload}
-              disabled={downloading || loading || isModelEmpty || !ddlData?.sql}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 disabled:bg-[#181c24] disabled:text-slate-500 transition-all cursor-pointer shadow-md shadow-indigo-600/20"
-            >
-              <Download size={14} />
-              <span>Descargar .sql</span>
-            </button>
-          </div>
+          <button
+            onClick={onClose}
+            className="px-4 py-1.5 rounded-xl bg-[#181c24] hover:bg-[#1f2430] text-slate-300 hover:text-white border border-[#242934] transition-colors cursor-pointer font-medium"
+          >
+            Cerrar
+          </button>
         </div>
       </div>
     </div>,
     document.body
   );
 };
+
+export default SqlDdlModal;

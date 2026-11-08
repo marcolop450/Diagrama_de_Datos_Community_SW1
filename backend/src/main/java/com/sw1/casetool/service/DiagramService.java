@@ -38,6 +38,7 @@ public class DiagramService {
     private final DiagramHistoryRepository diagramHistoryRepository;
     private final DomainTemplateRepository domainTemplateRepository;
     private final SessionParticipantRepository sessionParticipantRepository;
+    private final com.sw1.casetool.service.notification.PushNotificationService pushNotificationService;
 
     @Transactional
     public ProjectResponse createProject(CreateProjectRequest request, String userEmail, String ip, String userAgent) {
@@ -1260,6 +1261,16 @@ public class DiagramService {
         );
 
         List<ClassNode> finalClasses = classNodeRepository.findByProjectId(projectId);
+        try {
+            pushNotificationService.sendPushToProjectCollaborators(
+                    project.getId(),
+                    user.getId(),
+                    com.sw1.casetool.dto.notification.PushNotificationType.MODEL_SAVED,
+                    "Modelo Guardado en la Nube",
+                    user.getFullName() + " ha guardado cambios en " + project.getName() + " (" + keptNodeIds.size() + " clases).",
+                    Map.of("projectId", project.getId().toString(), "action", "VIEW_PROJECT")
+            );
+        } catch (Exception ignored) {}
         List<Relationship> finalRelationships = relationshipRepository.findByProjectId(projectId);
 
         return FullDiagramResponse.builder()

@@ -60,6 +60,9 @@ public class DiagramServiceTest {
     @Mock
     private DomainTemplateRepository domainTemplateRepository;
 
+    @Mock
+    private com.sw1.casetool.service.notification.PushNotificationService pushNotificationService;
+
     @InjectMocks
     private DiagramService diagramService;
 

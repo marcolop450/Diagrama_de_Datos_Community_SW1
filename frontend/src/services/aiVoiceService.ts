@@ -59,10 +59,33 @@ export interface VoiceModelingResponse {
   mutations: UmlMutationDto[];
 }
 
+export interface AiTeamChatRequest {
+  prompt: string;
+  sessionCode?: string;
+  projectId?: string;
+  diagramSnapshot?: any;
+}
+
+export interface AiTeamResponseDto {
+  intent: 'CATCH_UP_SUMMARY' | 'CONSISTENCY_AUDIT' | 'APPLY_REPAIR' | 'THEORY_EXPLANATION' | 'STRUCTURAL_MUTATION' | 'OUT_OF_SCOPE';
+  chatResponse: string;
+  actionSummary?: string;
+  mutations?: UmlMutationDto[];
+  requesterName?: string;
+}
+
 export const aiVoiceService = {
   async parseVoiceCommand(request: VoiceModelingRequest): Promise<VoiceModelingResponse> {
     const response = await apiClient.post<{ success: boolean; message: string; data: VoiceModelingResponse }>(
       '/ai/voice/parse',
+      request
+    );
+    return response.data.data;
+  },
+
+  async sendTeamChat(request: AiTeamChatRequest): Promise<AiTeamResponseDto> {
+    const response = await apiClient.post<{ success: boolean; message: string; data: AiTeamResponseDto }>(
+      '/ai/team/chat',
       request
     );
     return response.data.data;

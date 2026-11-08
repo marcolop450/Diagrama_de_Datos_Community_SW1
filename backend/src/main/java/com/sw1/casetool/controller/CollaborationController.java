@@ -5,6 +5,10 @@ import com.sw1.casetool.dto.collab.CollaborationSessionDto;
 import com.sw1.casetool.dto.collab.JoinSessionRequest;
 import com.sw1.casetool.dto.collab.StartSessionRequest;
 import com.sw1.casetool.service.CollaborationService;
+import com.sw1.casetool.service.notification.PushNotificationService;
+import com.sw1.casetool.dto.notification.PushNotificationType;
+import lombok.extern.slf4j.Slf4j;
+import java.util.Map;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/collaboration")
 @RequiredArgsConstructor
@@ -23,6 +28,7 @@ import org.springframework.web.bind.annotation.*;
 public class CollaborationController {
 
     private final CollaborationService collaborationService;
+    private final PushNotificationService pushNotificationService;
 
     @PostMapping("/start")
     @Operation(summary = "Iniciar una nueva sala colaborativa en vivo (Host / Arquitecto)")
@@ -35,6 +41,25 @@ public class CollaborationController {
         String userAgent = servletRequest.getHeader(HttpHeaders.USER_AGENT);
 
         CollaborationSessionDto session = collaborationService.startSession(request, userEmail, ip, userAgent);
+
+        try {
+            pushNotificationService.sendPushToProjectCollaborators(
+                    session.getProjectId(),
+                    session.getHostId(),
+                    PushNotificationType.ROOM_STARTED,
+                    "Sala Colaborativa Iniciada",
+                    (session.getHostName() != null ? session.getHostName() : "El Arquitecto") +
+                            " inició la sala " + session.getSessionCode() + " en " +
+                            (session.getProjectName() != null ? session.getProjectName() : "el proyecto"),
+                    Map.of(
+                            "roomCode", session.getSessionCode(),
+                            "projectId", session.getProjectId() != null ? session.getProjectId().toString() : ""
+                    )
+            );
+        } catch (Exception ex) {
+            log.warn("Error al emitir push de inicio de sala: {}", ex.getMessage());
+        }
+
         return new ResponseEntity<>(
                 ApiResponse.success("Sesión colaborativa iniciada con éxito", session),
                 HttpStatus.CREATED

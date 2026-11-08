@@ -31,6 +31,7 @@ public class CollaborationService {
     private final AuditLogService auditLogService;
     private final SimpMessagingTemplate messagingTemplate;
     private final JwtTokenProvider jwtTokenProvider;
+    private final com.sw1.casetool.service.notification.PushNotificationService pushNotificationService;
 
     private static final List<String> COLLAB_PALETTE = List.of(
             "#10B981", // Esmeralda
@@ -57,6 +58,7 @@ public class CollaborationService {
         if (!activeSessions.isEmpty()) {
             CollaborationSession existing = activeSessions.get(0);
             log.info("Reutilizando sesión colaborativa activa '{}' para proyecto '{}'", existing.getSessionCode(), project.getName());
+            emitRoomNotification(existing.getSessionCode(), project.getId(), project.getName(), host.getId(), host.getFullName());
             return buildSessionDto(existing);
         }
 
@@ -101,7 +103,35 @@ public class CollaborationService {
         );
 
         log.info("Sesión colaborativa iniciada con éxito. Código: '{}' por Host '{}'", sessionCode, host.getFullName());
+        emitRoomNotification(sessionCode, project.getId(), project.getName(), host.getId(), host.getFullName());
         return buildSessionDto(saved);
+    }
+
+    private void emitRoomNotification(String sessionCode, UUID projectId, String projectName, UUID hostId, String hostName) {
+        try {
+            pushNotificationService.sendPushToProjectCollaborators(
+                    projectId,
+                    hostId,
+                    com.sw1.casetool.dto.notification.PushNotificationType.ROOM_STARTED,
+                    "Sala Colaborativa Iniciada",
+                    hostName + " ha iniciado la sala colaborativa " + sessionCode + " para el modelo " + projectName + ".",
+                    Map.of("sessionCode", sessionCode, "projectId", projectId.toString(), "action", "JOIN_ROOM")
+            );
+        } catch (Exception ignored) {}
+
+        try {
+            Map<String, Object> globalPayload = new HashMap<>();
+            globalPayload.put("type", "ROOM_STARTED");
+            globalPayload.put("sessionCode", sessionCode);
+            globalPayload.put("projectId", projectId.toString());
+            globalPayload.put("projectName", projectName);
+            globalPayload.put("hostName", hostName);
+            globalPayload.put("timestamp", System.currentTimeMillis());
+            messagingTemplate.convertAndSend((String) "/topic/global/events", (Object) globalPayload);
+            log.info("Difusión global STOMP emitida para inicio de sala '{}'", sessionCode);
+        } catch (Exception e) {
+            log.warn("No se pudo emitir difusión global STOMP: {}", e.getMessage());
+        }
     }
 
     @Transactional

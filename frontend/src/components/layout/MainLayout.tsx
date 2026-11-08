@@ -11,6 +11,7 @@ import { useUiStore } from '../../stores/uiStore';
 import { useAuthStore } from '../../stores/authStore';
 import { useDiagramStore } from '../../stores/diagramStore';
 import { useCollabStore } from '../../stores/collabStore';
+import { useProjectAiStore } from '../../stores/projectAiStore';
 import { ReactFlowProvider } from '@xyflow/react';
 import toast from 'react-hot-toast';
 
@@ -30,6 +31,7 @@ const MainLayout: React.FC = () => {
   useEffect(() => {
     if (id) {
       if (isUUID(id)) {
+        useProjectAiStore.getState().loadProjectAiConfig(id);
         if (project?.id !== id) {
           loadDiagram(id).catch((err: any) => {
             const errMsg = err?.response?.data?.message || 'El proyecto no existe o fue eliminado';
@@ -53,6 +55,11 @@ const MainLayout: React.FC = () => {
       }
     }
   }, [id, project?.id, loadDiagram, resetDiagram, navigate]);
+
+  // Defensa ante F5: Auto-reconexión a sala colaborativa continua si existía sesión previa activa
+  useEffect(() => {
+    useCollabStore.getState().checkAndRestoreActiveCollabSession();
+  }, []);
 
   // Defense-in-depth: SUPER_ADMIN is a governance role and must never see or use the drawing canvas
   if (user?.role === 'SUPER_ADMIN') {

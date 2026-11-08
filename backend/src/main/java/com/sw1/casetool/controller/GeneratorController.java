@@ -7,6 +7,9 @@ import com.sw1.casetool.dto.generator.GenerateSqlDdlRequest;
 import com.sw1.casetool.dto.generator.GenerationPreviewResponse;
 import com.sw1.casetool.dto.generator.PostmanResponse;
 import com.sw1.casetool.dto.generator.SqlDdlResponse;
+import com.sw1.casetool.dto.generator.MultiSqlDdlRequest;
+import com.sw1.casetool.dto.generator.MultiSqlDdlResponse;
+import com.sw1.casetool.service.generator.MultiSqlDdlGeneratorService;
 import com.sw1.casetool.service.generator.PostmanGeneratorService;
 import com.sw1.casetool.service.generator.SpringBootGeneratorService;
 import com.sw1.casetool.service.generator.SqlDdlGeneratorService;
@@ -21,6 +24,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import com.sw1.casetool.model.UserProfile;
+import com.sw1.casetool.repository.UserProfileRepository;
 import java.util.UUID;
 
 @RestController
@@ -32,7 +37,9 @@ public class GeneratorController {
 
     private final SpringBootGeneratorService generatorService;
     private final SqlDdlGeneratorService sqlDdlGeneratorService;
+    private final MultiSqlDdlGeneratorService multiSqlDdlGeneratorService;
     private final PostmanGeneratorService postmanGeneratorService;
+    private final UserProfileRepository userProfileRepository;
 
     @PostMapping("/backend/preview")
     @Operation(summary = "Obtener vista previa de la estructura de archivos que generará el backend")
@@ -127,6 +134,54 @@ public class GeneratorController {
                 .body(sqlBytes);
     }
 
+
+    @PostMapping("/sql-ddl-multi")
+    @Operation(summary = "Compilar esquema DDL multi-dialecto (PostgreSQL, MySQL, SQL Server, Oracle) - CU16")
+    public ResponseEntity<ApiResponse<MultiSqlDdlResponse>> generateMultiSqlDdl(
+            @PathVariable UUID projectId,
+            @RequestBody(required = false) MultiSqlDdlRequest request,
+            @AuthenticationPrincipal String email
+    ) {
+        MultiSqlDdlRequest finalReq = request != null ? request : new MultiSqlDdlRequest();
+        UUID userId = resolveUserId(email);
+
+        MultiSqlDdlResponse response = multiSqlDdlGeneratorService.generateMultiSqlDdl(
+                projectId,
+                finalReq,
+                userId
+        );
+
+        return ResponseEntity.ok(ApiResponse.success(
+                "Esquema DDL para " + response.getDialectDisplayName() + " compilado exitosamente",
+                response
+        ));
+    }
+
+    @PostMapping(value = "/sql-ddl-multi/download", produces = "application/sql")
+    @Operation(summary = "Descargar archivo .sql compilado para el motor objetivo seleccionado - CU16")
+    public ResponseEntity<byte[]> downloadMultiSqlDdl(
+            @PathVariable UUID projectId,
+            @RequestBody(required = false) MultiSqlDdlRequest request,
+            @AuthenticationPrincipal String email
+    ) {
+        MultiSqlDdlRequest finalReq = request != null ? request : new MultiSqlDdlRequest();
+        UUID userId = resolveUserId(email);
+
+        MultiSqlDdlResponse response = multiSqlDdlGeneratorService.generateMultiSqlDdl(
+                projectId,
+                finalReq,
+                userId
+        );
+
+        byte[] sqlBytes = response.getDdlScript().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        String filename = response.getFileName() != null ? response.getFileName() : "schema.sql";
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .contentType(MediaType.parseMediaType("application/sql"))
+                .body(sqlBytes);
+    }
+
     @PostMapping("/postman")
     @Operation(summary = "Generar colección de pruebas Postman v2.1.0 con 5 peticiones CRUD por entidad y scripts de test")
     public ResponseEntity<ApiResponse<PostmanResponse>> generatePostman(
@@ -185,5 +240,12 @@ public class GeneratorController {
             return xf.split(",")[0].trim();
         }
         return request.getRemoteAddr() != null ? request.getRemoteAddr() : "127.0.0.1";
+    }
+
+    private UUID resolveUserId(String email) {
+        if (email == null || email.isBlank()) return null;
+        return userProfileRepository.findByEmailIgnoreCase(email)
+                .map(UserProfile::getId)
+                .orElse(null);
     }
 }

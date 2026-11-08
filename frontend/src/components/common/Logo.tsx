@@ -74,7 +74,7 @@ export const Logo: React.FC<LogoProps> = ({ size = 'md', showText = true, classN
         <div className="flex flex-col leading-none">
           <div className="flex items-center gap-1.5">
             <span className={`${dimensions.font} font-display font-bold text-white tracking-wide`}>CASE</span>
-            <span className={`${dimensions.font} font-display font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-indigo-300`}>Tool</span>
+            <span className={`${dimensions.font} font-display font-bold text-indigo-400`}>Tool</span>
           </div>
           <span className="text-[10px] uppercase font-mono tracking-widest text-slate-400 font-medium">UML Architecture</span>
         </div>
