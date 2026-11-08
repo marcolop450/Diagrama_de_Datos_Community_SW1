@@ -81,19 +81,23 @@ export const useMobileProjectStore = create<MobileProjectState>((set, get) => ({
         },
       }));
 
-      const mappedEdges: MobileRelationshipEdge[] = (payload.relationships || []).map((rel: any) => ({
-        id: rel.id,
-        source: rel.sourceClass?.id || rel.source_class_id || rel.source,
-        target: rel.targetClass?.id || rel.target_class_id || rel.target,
-        type: (rel.type || rel.data?.type || 'association').toLowerCase(),
-        sourceCardinality: rel.sourceCardinality || rel.source_cardinality || rel.data?.sourceCardinality || '1',
-        targetCardinality: rel.targetCardinality || rel.target_cardinality || rel.data?.targetCardinality || '*',
-        label: rel.label || rel.data?.label || '',
-        sourceRole: rel.sourceRole || rel.source_role || rel.data?.sourceRole || '',
-        targetRole: rel.targetRole || rel.target_role || rel.data?.targetRole || '',
-        sourceHandle: rel.sourceHandle || rel.source_handle || rel.data?.sourceHandle || 'right',
-        targetHandle: rel.targetHandle || rel.target_handle || rel.data?.targetHandle || 'left',
-      }));
+      const mappedEdges: MobileRelationshipEdge[] = (payload.relationships || []).map((rel: any) => {
+        const sHandle = rel.sourceHandle || rel.source_handle || rel.data?.sourceHandle;
+        const tHandle = rel.targetHandle || rel.target_handle || rel.data?.targetHandle;
+        return {
+          id: rel.id,
+          source: rel.sourceClass?.id || rel.source_class_id || rel.source,
+          target: rel.targetClass?.id || rel.target_class_id || rel.target,
+          type: (rel.type || rel.data?.type || 'association').toLowerCase(),
+          sourceCardinality: rel.sourceCardinality || rel.source_cardinality || rel.data?.sourceCardinality || '1',
+          targetCardinality: rel.targetCardinality || rel.target_cardinality || rel.data?.targetCardinality || '*',
+          label: rel.label || rel.data?.label || '',
+          sourceRole: rel.sourceRole || rel.source_role || rel.data?.sourceRole || '',
+          targetRole: rel.targetRole || rel.target_role || rel.data?.targetRole || '',
+          sourceHandle: sHandle ? String(sHandle).toLowerCase() : undefined,
+          targetHandle: tHandle ? String(tHandle).toLowerCase() : undefined,
+        };
+      });
 
       set({
         currentProject: payload.project,
@@ -178,6 +182,8 @@ export const useMobileProjectStore = create<MobileProjectState>((set, get) => ({
     if (!edge || !edge.id) return;
     set((state) => {
       if (state.edges.some((e) => e.id === edge.id)) return state;
+      const sHandle = edge.sourceHandle || edge.source_handle || edge.data?.sourceHandle;
+      const tHandle = edge.targetHandle || edge.target_handle || edge.data?.targetHandle;
       const formatted: MobileRelationshipEdge = {
         id: edge.id,
         source: edge.source,
@@ -188,8 +194,8 @@ export const useMobileProjectStore = create<MobileProjectState>((set, get) => ({
         label: edge.data?.label || edge.label || '',
         sourceRole: edge.data?.sourceRole || edge.sourceRole || edge.source_role || '',
         targetRole: edge.data?.targetRole || edge.targetRole || edge.target_role || '',
-        sourceHandle: edge.sourceHandle || edge.source_handle || edge.data?.sourceHandle || 'right',
-        targetHandle: edge.targetHandle || edge.target_handle || edge.data?.targetHandle || 'left',
+        sourceHandle: sHandle ? String(sHandle).toLowerCase() : undefined,
+        targetHandle: tHandle ? String(tHandle).toLowerCase() : undefined,
       };
       return { edges: [...state.edges, formatted] };
     });
@@ -197,7 +203,24 @@ export const useMobileProjectStore = create<MobileProjectState>((set, get) => ({
 
   applyEdgeUpdate: (edgeId: string, edgeData: any) => {
     set((state) => ({
-      edges: state.edges.map((e) => (e.id === edgeId ? { ...e, ...edgeData } : e)),
+      edges: state.edges.map((e) => {
+        if (e.id !== edgeId) return e;
+        const d = edgeData?.data || edgeData || {};
+        const sHandle = d.sourceHandle ?? d.source_handle ?? edgeData?.sourceHandle ?? edgeData?.source_handle ?? e.sourceHandle;
+        const tHandle = d.targetHandle ?? d.target_handle ?? edgeData?.targetHandle ?? edgeData?.target_handle ?? e.targetHandle;
+        return {
+          ...e,
+          ...edgeData,
+          type: (d.type || edgeData?.type || e.type || 'association').toLowerCase(),
+          sourceCardinality: d.sourceCardinality ?? d.source_cardinality ?? edgeData?.sourceCardinality ?? e.sourceCardinality ?? '1',
+          targetCardinality: d.targetCardinality ?? d.target_cardinality ?? edgeData?.targetCardinality ?? e.targetCardinality ?? '*',
+          label: d.label ?? edgeData?.label ?? e.label ?? '',
+          sourceRole: d.sourceRole ?? d.source_role ?? edgeData?.sourceRole ?? e.sourceRole ?? '',
+          targetRole: d.targetRole ?? d.target_role ?? edgeData?.targetRole ?? e.targetRole ?? '',
+          sourceHandle: sHandle ? String(sHandle).toLowerCase() : undefined,
+          targetHandle: tHandle ? String(tHandle).toLowerCase() : undefined,
+        };
+      }),
     }));
   },
 
@@ -222,19 +245,23 @@ export const useMobileProjectStore = create<MobileProjectState>((set, get) => ({
       },
     }));
 
-    const mappedEdges: MobileRelationshipEdge[] = (rawEdges || []).map((e: any) => ({
-      id: e.id,
-      source: e.source,
-      target: e.target,
-      type: (e.data?.type || e.type || 'association').toLowerCase(),
-      sourceCardinality: e.data?.sourceCardinality || e.sourceCardinality || e.source_cardinality || '1',
-      targetCardinality: e.data?.targetCardinality || e.targetCardinality || e.target_cardinality || '*',
-      label: e.data?.label || e.label || '',
-      sourceRole: e.data?.sourceRole || e.sourceRole || e.source_role || '',
-      targetRole: e.data?.targetRole || e.targetRole || e.target_role || '',
-      sourceHandle: e.sourceHandle || e.source_handle || e.data?.sourceHandle || 'right',
-      targetHandle: e.targetHandle || e.target_handle || e.data?.targetHandle || 'left',
-    }));
+    const mappedEdges: MobileRelationshipEdge[] = (rawEdges || []).map((e: any) => {
+      const sHandle = e.sourceHandle || e.source_handle || e.data?.sourceHandle;
+      const tHandle = e.targetHandle || e.target_handle || e.data?.targetHandle;
+      return {
+        id: e.id,
+        source: e.source,
+        target: e.target,
+        type: (e.data?.type || e.type || 'association').toLowerCase(),
+        sourceCardinality: e.data?.sourceCardinality || e.sourceCardinality || e.source_cardinality || '1',
+        targetCardinality: e.data?.targetCardinality || e.targetCardinality || e.target_cardinality || '*',
+        label: e.data?.label || e.label || '',
+        sourceRole: e.data?.sourceRole || e.sourceRole || e.source_role || '',
+        targetRole: e.data?.targetRole || e.targetRole || e.target_role || '',
+        sourceHandle: sHandle ? String(sHandle).toLowerCase() : undefined,
+        targetHandle: tHandle ? String(tHandle).toLowerCase() : undefined,
+      };
+    });
 
     set({ nodes: mappedNodes, edges: mappedEdges });
   },

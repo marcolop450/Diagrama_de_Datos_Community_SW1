@@ -209,7 +209,7 @@ export const CanvasSvgViewer: React.FC = () => {
     if ((p1.handle === 'left' || p1.handle === 'right') && (p2.handle === 'top' || p2.handle === 'bottom')) {
       return {
         path: `M ${x1} ${y1} L ${x2} ${y1} L ${x2} ${y2}`,
-        midPoint: { x: x2, y: (y1 + y2) / 2 }
+        midPoint: { x: (x1 + x2) / 2, y: y1 }
       };
     }
 
@@ -308,10 +308,10 @@ export const CanvasSvgViewer: React.FC = () => {
     isTarget: boolean
   ): { x: number; y: number } => {
     const { x, y, handle } = point;
-    if (handle === 'bottom') return { x: x + 8, y: y + (isTarget ? 16 : 14) };
-    if (handle === 'top') return { x: x + 8, y: y - (isTarget ? 14 : 8) };
-    if (handle === 'left') return { x: x - (isTarget ? 24 : 18), y: y - 6 };
-    return { x: x + (isTarget ? 10 : 8), y: y - 6 };
+    if (handle === 'bottom') return { x: x + 18, y: y + (isTarget ? 20 : 14) };
+    if (handle === 'top') return { x: x + 18, y: y - (isTarget ? 20 : 14) };
+    if (handle === 'left') return { x: x - (isTarget ? 24 : 18), y: y - 10 };
+    return { x: x + (isTarget ? 24 : 18), y: y - 10 };
   };
 
   return (
@@ -377,117 +377,7 @@ export const CanvasSvgViewer: React.FC = () => {
               );
             })}
 
-            {/* 3. CAPA SUPERIOR: PUNTAS DE FLECHA, CARDINALIDADES Y ETIQUETAS DE RELACIÓN */}
-            {edges.map((edge) => {
-              const srcNode = nodes.find((n) => n.id === edge.source);
-              const tgtNode = nodes.find((n) => n.id === edge.target);
-              if (!srcNode || !tgtNode) return null;
-
-              const srcDim = getNodeDimensions(srcNode);
-              const tgtDim = getNodeDimensions(tgtNode);
-
-              if (edge.source === edge.target) return null;
-
-              const p1 = getHandlePoint(srcNode, srcDim, edge.sourceHandle, tgtNode, tgtDim);
-              const p2 = getHandlePoint(tgtNode, tgtDim, edge.targetHandle, srcNode, srcDim);
-              const { midPoint } = computeOrthogonalPath(p1, p2);
-              const pos1 = getCardinalityPosition(p1, false);
-              const pos2 = getCardinalityPosition(p2, true);
-
-              const srcCard = edge.sourceCardinality || '1';
-              const tgtCard = edge.targetCardinality || '*';
-              const label = edge.label?.trim() || '';
-
-              const srcCardWidth = Math.max(srcCard.length * 7 + 8, 16);
-              const tgtCardWidth = Math.max(tgtCard.length * 7 + 8, 16);
-              const labelWidth = label ? label.length * 7 + 14 : 0;
-
-              return (
-                <G key={`overlay-${edge.id}`}>
-                  {/* Punta de Flecha UML Orientada en el Destino */}
-                  {renderArrowHead(p2, edge.type)}
-
-                  {/* Etiqueta / Nombre de la Relación (Centrado) */}
-                  {label ? (
-                    <G>
-                      <Rect
-                        x={midPoint.x - labelWidth / 2}
-                        y={midPoint.y - 9}
-                        width={labelWidth}
-                        height={18}
-                        rx="4"
-                        fill="#0f172a"
-                        stroke="#334155"
-                        strokeWidth="1"
-                      />
-                      <SvgText
-                        x={midPoint.x}
-                        y={midPoint.y + 4}
-                        fill="#cbd5e1"
-                        fontSize="10"
-                        fontWeight="600"
-                        fontFamily={THEME.typography.fontFamilyMono}
-                        textAnchor="middle"
-                      >
-                        {label}
-                      </SvgText>
-                    </G>
-                  ) : null}
-
-                  {/* Cardinalidad en Origen */}
-                  <G>
-                    <Rect
-                      x={pos1.x - srcCardWidth / 2}
-                      y={pos1.y - 8}
-                      width={srcCardWidth}
-                      height={16}
-                      rx="3"
-                      fill="#0f172a"
-                      stroke="#334155"
-                      strokeWidth="1"
-                    />
-                    <SvgText
-                      x={pos1.x}
-                      y={pos1.y + 4}
-                      fill="#f8fafc"
-                      fontSize="10"
-                      fontWeight="700"
-                      fontFamily={THEME.typography.fontFamilyMono}
-                      textAnchor="middle"
-                    >
-                      {srcCard}
-                    </SvgText>
-                  </G>
-
-                  {/* Cardinalidad en Destino */}
-                  <G>
-                    <Rect
-                      x={pos2.x - tgtCardWidth / 2}
-                      y={pos2.y - 8}
-                      width={tgtCardWidth}
-                      height={16}
-                      rx="3"
-                      fill="#0f172a"
-                      stroke="#334155"
-                      strokeWidth="1"
-                    />
-                    <SvgText
-                      x={pos2.x}
-                      y={pos2.y + 4}
-                      fill="#f8fafc"
-                      fontSize="10"
-                      fontWeight="700"
-                      fontFamily={THEME.typography.fontFamilyMono}
-                      textAnchor="middle"
-                    >
-                      {tgtCard}
-                    </SvgText>
-                  </G>
-                </G>
-              );
-            })}
-
-            {/* NODOS DE CLASE UML (3 COMPARTIMENTOS ESTÁNDAR) */}
+            {/* 2. NODOS DE CLASE UML (3 COMPARTIMENTOS ESTÁNDAR) */}
             {nodes.map((node) => {
               const { width, totalHeight, attrsHeight, methodsHeight } = getNodeDimensions(node);
               const isLocked = Boolean(activeLocks[node.id]);
@@ -631,7 +521,7 @@ export const CanvasSvgViewer: React.FC = () => {
               );
             })}
 
-            {/* CAPA DE ETIQUETAS, MULTIPLICIDADES Y ROLES EN ALTO CONTRASTE (SOBREPUESTOS) */}
+            {/* 3. CAPA SUPERIOR: PUNTAS DE FLECHA UML, ETIQUETAS Y CARDINALIDADES (SIEMPRE VISIBLES) */}
             {edges.map((edge) => {
               const srcNode = nodes.find((n) => n.id === edge.source);
               const tgtNode = nodes.find((n) => n.id === edge.target);
@@ -644,20 +534,20 @@ export const CanvasSvgViewer: React.FC = () => {
                 const loopStartX = srcNode.position.x + srcDim.width - 20;
                 const loopStartY = srcNode.position.y;
                 return (
-                  <G key={`label-${edge.id}`}>
+                  <G key={`overlay-${edge.id}`}>
                     <Rect
                       x={loopStartX + 18}
                       y={loopStartY - 24}
                       width={38}
-                      height={14}
+                      height={16}
                       rx={3}
-                      fill="#0F172A"
-                      stroke="#334155"
+                      fill="#0F172AF0"
+                      stroke="#475569"
                       strokeWidth="1"
                     />
                     <SvgText
                       x={loopStartX + 37}
-                      y={loopStartY - 14}
+                      y={loopStartY - 12}
                       fill={THEME.colors.accentWarning}
                       fontSize="9"
                       fontFamily={THEME.typography.fontFamilyMono}
@@ -681,72 +571,83 @@ export const CanvasSvgViewer: React.FC = () => {
 
               const roleText = edge.label || edge.targetRole || edge.sourceRole || '';
 
-              return (
-                <G key={`label-${edge.id}`}>
-                  {/* Multiplicidad Origen con fondo protector */}
-                  <Rect
-                    x={pSrcCard.x - 3}
-                    y={pSrcCard.y - 10}
-                    width={Math.max(srcCard.length * 7 + 8, 16)}
-                    height={13}
-                    rx={3}
-                    fill="#0F172ACC"
-                    stroke="#334155"
-                    strokeWidth="0.8"
-                  />
-                  <SvgText
-                    x={pSrcCard.x + Math.max(srcCard.length * 7 + 8, 16) / 2 - 3}
-                    y={pSrcCard.y}
-                    fill={THEME.colors.accentWarning}
-                    fontSize="9"
-                    fontFamily={THEME.typography.fontFamilyMono}
-                    fontWeight="bold"
-                    textAnchor="middle"
-                  >
-                    {srcCard}
-                  </SvgText>
+              const srcBadgeW = Math.max(srcCard.length * 7 + 8, 18);
+              const tgtBadgeW = Math.max(tgtCard.length * 7 + 8, 18);
+              const roleBadgeW = roleText ? roleText.length * 7 + 12 : 0;
 
-                  {/* Multiplicidad Destino con fondo protector */}
-                  <Rect
-                    x={pTgtCard.x - 3}
-                    y={pTgtCard.y - 10}
-                    width={Math.max(tgtCard.length * 7 + 8, 16)}
-                    height={13}
-                    rx={3}
-                    fill="#0F172ACC"
-                    stroke="#334155"
-                    strokeWidth="0.8"
-                  />
-                  <SvgText
-                    x={pTgtCard.x + Math.max(tgtCard.length * 7 + 8, 16) / 2 - 3}
-                    y={pTgtCard.y}
-                    fill={THEME.colors.accentWarning}
-                    fontSize="9"
-                    fontFamily={THEME.typography.fontFamilyMono}
-                    fontWeight="bold"
-                    textAnchor="middle"
-                  >
-                    {tgtCard}
-                  </SvgText>
+              return (
+                <G key={`overlay-${edge.id}`}>
+                  {/* Punta de Flecha UML Orientada en el Destino */}
+                  {renderArrowHead(p2, edge.type)}
+
+                  {/* Cardinalidad en Origen */}
+                  <G>
+                    <Rect
+                      x={pSrcCard.x - srcBadgeW / 2}
+                      y={pSrcCard.y - 8}
+                      width={srcBadgeW}
+                      height={16}
+                      rx={3}
+                      fill="#0F172AF2"
+                      stroke="#475569"
+                      strokeWidth="1"
+                    />
+                    <SvgText
+                      x={pSrcCard.x}
+                      y={pSrcCard.y + 4}
+                      fill={THEME.colors.accentWarning}
+                      fontSize="10"
+                      fontFamily={THEME.typography.fontFamilyMono}
+                      fontWeight="bold"
+                      textAnchor="middle"
+                    >
+                      {srcCard}
+                    </SvgText>
+                  </G>
+
+                  {/* Cardinalidad en Destino */}
+                  <G>
+                    <Rect
+                      x={pTgtCard.x - tgtBadgeW / 2}
+                      y={pTgtCard.y - 8}
+                      width={tgtBadgeW}
+                      height={16}
+                      rx={3}
+                      fill="#0F172AF2"
+                      stroke="#475569"
+                      strokeWidth="1"
+                    />
+                    <SvgText
+                      x={pTgtCard.x}
+                      y={pTgtCard.y + 4}
+                      fill={THEME.colors.accentWarning}
+                      fontSize="10"
+                      fontFamily={THEME.typography.fontFamilyMono}
+                      fontWeight="bold"
+                      textAnchor="middle"
+                    >
+                      {tgtCard}
+                    </SvgText>
+                  </G>
 
                   {/* Etiqueta / Rol de la Relación en el Punto Medio */}
                   {roleText ? (
                     <G>
                       <Rect
-                        x={midPoint.x - (roleText.length * 6 + 10) / 2}
-                        y={midPoint.y - 14}
-                        width={roleText.length * 6 + 10}
-                        height={14}
-                        rx={3}
-                        fill="#0F172AEE"
-                        stroke={THEME.colors.accentPrimary + '80'}
+                        x={midPoint.x - roleBadgeW / 2}
+                        y={midPoint.y - 9}
+                        width={roleBadgeW}
+                        height={18}
+                        rx={4}
+                        fill="#0F172AF2"
+                        stroke="#38BDF8A0"
                         strokeWidth="1"
                       />
                       <SvgText
                         x={midPoint.x}
-                        y={midPoint.y - 3}
-                        fill={THEME.colors.textPrimary}
-                        fontSize="9"
+                        y={midPoint.y + 4}
+                        fill="#38BDF8"
+                        fontSize="10"
                         fontFamily={THEME.typography.fontFamilyMono}
                         fontWeight="600"
                         textAnchor="middle"
