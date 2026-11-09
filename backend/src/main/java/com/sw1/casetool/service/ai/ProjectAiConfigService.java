@@ -60,7 +60,7 @@ public class ProjectAiConfigService {
                 .header("Bypass-Tunnel-Reminder", "true")
                 .header("ngrok-skip-browser-warning", "69420")
                 .header("User-Agent", "CASE-Tool-Agent/1.0")
-                .timeout(timeout != null ? timeout : Duration.ofSeconds(60))
+                .timeout(timeout != null ? timeout : Duration.ofSeconds(120))
                 .POST(HttpRequest.BodyPublishers.ofString(jsonBody, StandardCharsets.UTF_8));
 
         if (headers != null) {

@@ -104,7 +104,7 @@ public class CircuitBreakerAiService {
                     .header("Bypass-Tunnel-Reminder", "true")
                     .header("ngrok-skip-browser-warning", "69420")
                     .header("User-Agent", "CASE-Tool-Agent/1.0")
-                    .timeout(Duration.ofSeconds(60))
+                    .timeout(Duration.ofSeconds(120))
                     .POST(HttpRequest.BodyPublishers.ofString(jsonPayload, StandardCharsets.UTF_8));
 
             if (headers != null) {
