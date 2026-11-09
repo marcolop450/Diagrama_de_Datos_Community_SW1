@@ -101,6 +101,9 @@ public class CircuitBreakerAiService {
                     .uri(URI.create(url))
                     .header("Content-Type", "application/json")
                     .header("Accept", "application/json, text/plain, */*")
+                    .header("Bypass-Tunnel-Reminder", "true")
+                    .header("ngrok-skip-browser-warning", "69420")
+                    .header("User-Agent", "CASE-Tool-Agent/1.0")
                     .timeout(Duration.ofSeconds(60))
                     .POST(HttpRequest.BodyPublishers.ofString(jsonPayload, StandardCharsets.UTF_8));
 

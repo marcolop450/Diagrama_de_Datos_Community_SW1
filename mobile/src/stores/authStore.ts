@@ -53,6 +53,7 @@ export const useMobileAuthStore = create<MobileAuthState>((set) => ({
           role: data.role,
           subscriptionPlan: data.subscriptionPlan,
           avatarUrl: data.avatarUrl,
+          architectId: data.architectId,
         },
         isAuthenticated: true,
         isLoading: false,

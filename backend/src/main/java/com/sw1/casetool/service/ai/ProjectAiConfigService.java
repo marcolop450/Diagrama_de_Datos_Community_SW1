@@ -37,6 +37,9 @@ public class ProjectAiConfigService {
 
     private final RestClient restClient = RestClient.builder()
             .requestFactory(createRequestFactory(10000, 120000))
+            .defaultHeader("Bypass-Tunnel-Reminder", "true")
+            .defaultHeader("ngrok-skip-browser-warning", "69420")
+            .defaultHeader("User-Agent", "CASE-Tool-Agent/1.0")
             .messageConverters(converters -> {
                 org.springframework.http.converter.StringHttpMessageConverter stringConverter =
                         new org.springframework.http.converter.StringHttpMessageConverter(java.nio.charset.StandardCharsets.UTF_8);
@@ -54,6 +57,9 @@ public class ProjectAiConfigService {
                 .uri(URI.create(url))
                 .header("Content-Type", "application/json")
                 .header("Accept", "application/json, text/plain, */*")
+                .header("Bypass-Tunnel-Reminder", "true")
+                .header("ngrok-skip-browser-warning", "69420")
+                .header("User-Agent", "CASE-Tool-Agent/1.0")
                 .timeout(timeout != null ? timeout : Duration.ofSeconds(60))
                 .POST(HttpRequest.BodyPublishers.ofString(jsonBody, StandardCharsets.UTF_8));
 

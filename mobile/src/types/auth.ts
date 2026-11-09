@@ -8,6 +8,7 @@ export interface UserSession {
   role: UserRole;
   subscriptionPlan: 'COMMUNITY' | 'PRO_ARCHITECT' | 'ENTERPRISE' | string;
   avatarUrl?: string;
+  architectId?: string;
 }
 
 export interface LoginResponseData {
@@ -19,6 +20,7 @@ export interface LoginResponseData {
   role: UserRole;
   subscriptionPlan: string;
   avatarUrl?: string;
+  architectId?: string;
 }
 
 export interface ApiResponse<T> {

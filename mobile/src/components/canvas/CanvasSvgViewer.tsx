@@ -445,7 +445,7 @@ export const CanvasSvgViewer: React.FC = () => {
                       fontSize="9"
                       fontFamily={THEME.typography.fontFamilyMono}
                     >
-                      «{node.data.stereotype}»
+                      {`<<${node.data.stereotype}>>`}
                     </SvgText>
                   ) : null}
 

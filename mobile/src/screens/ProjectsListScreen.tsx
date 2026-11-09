@@ -19,7 +19,8 @@ import {
   Layers, 
   ArrowRight,
   Play,
-  ShieldCheck 
+  ShieldCheck,
+  AlertCircle
 } from 'lucide-react-native';
 import { THEME } from '../constants/theme';
 import { HeaderBar } from '../components/common/HeaderBar';
@@ -40,6 +41,7 @@ export const ProjectsListScreen: React.FC<ProjectsListScreenProps> = ({ onOpenDi
   const [searchQuery, setSearchQuery] = useState('');
   const [quickRoom, setQuickRoom] = useState('');
   const [isJoining, setIsJoining] = useState(false);
+  const [roomError, setRoomError] = useState<string | null>(null);
 
   // Estado para Snapshots de MongoDB Atlas
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
@@ -90,13 +92,20 @@ export const ProjectsListScreen: React.FC<ProjectsListScreenProps> = ({ onOpenDi
   };
 
   const handleQuickJoinRoom = async (codeToJoin?: string) => {
-    const code = codeToJoin || quickRoom;
-    if (!code.trim()) return;
+    const code = (codeToJoin || quickRoom).trim().toUpperCase();
+    if (!code) {
+      setRoomError('Ingresa un código de sala');
+      return;
+    }
+    setRoomError(null);
     setIsJoining(true);
-    const ok = await joinSession(code.trim());
+    const ok = await joinSession(code);
     setIsJoining(false);
     if (ok) {
       onOpenDiagram();
+    } else {
+      const storeErr = useMobileCollabStore.getState().error;
+      setRoomError(storeErr || 'No se pudo conectar a la sala');
     }
   };
 
@@ -126,6 +135,60 @@ export const ProjectsListScreen: React.FC<ProjectsListScreenProps> = ({ onOpenDi
           </Text>
         </TouchableOpacity>
       </View>
+
+      {/* Tarjeta de Entrada a Sala Colaborativa */}
+      {activeTab === 'projects' && (
+        <View style={styles.joinCard}>
+          <View style={styles.joinHeader}>
+            <View style={styles.joinHeaderLeft}>
+              <Radio size={15} color={THEME.colors.accentSuccess} />
+              <Text style={styles.joinTitle}>Unirse a Pizarra en Vivo</Text>
+            </View>
+            <View style={styles.liveTag}>
+              <Text style={styles.liveTagText}>Tiempo Real</Text>
+            </View>
+          </View>
+          <Text style={styles.joinDesc}>
+            Ingresa el código de sala compartido por tu Arquitecto:
+          </Text>
+          <View style={styles.joinInputRow}>
+            <TextInput
+              style={styles.joinInput}
+              value={quickRoom}
+              onChangeText={(t) => {
+                setQuickRoom(t.toUpperCase());
+                if (roomError) setRoomError(null);
+              }}
+              placeholder="SW1-MCP"
+              placeholderTextColor={THEME.colors.textMuted}
+              autoCapitalize="characters"
+              autoCorrect={false}
+              maxLength={12}
+            />
+            <TouchableOpacity
+              style={[styles.joinBtn, (!quickRoom.trim() || isJoining) && styles.joinBtnDisabled]}
+              onPress={() => handleQuickJoinRoom()}
+              disabled={!quickRoom.trim() || isJoining}
+              activeOpacity={0.8}
+            >
+              {isJoining ? (
+                <ActivityIndicator size="small" color="#ffffff" />
+              ) : (
+                <>
+                  <Text style={styles.joinBtnText}>Conectar</Text>
+                  <ArrowRight size={13} color="#ffffff" />
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+          {roomError ? (
+            <View style={styles.errorRow}>
+              <AlertCircle size={12} color={THEME.colors.accentDanger} />
+              <Text style={styles.errorText}>{roomError}</Text>
+            </View>
+          ) : null}
+        </View>
+      )}
 
       {/* Buscador de Proyectos */}
       {activeTab === 'projects' && (
@@ -534,5 +597,95 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: THEME.colors.textMuted,
     fontFamily: THEME.typography.fontFamilyMono,
+  },
+  joinCard: {
+    marginHorizontal: 16,
+    marginTop: 10,
+    marginBottom: 4,
+    backgroundColor: '#161922',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(56, 189, 248, 0.25)',
+    padding: 12,
+  },
+  joinHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  joinHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  joinTitle: {
+    color: THEME.colors.textPrimary,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  liveTag: {
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.4)',
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  liveTagText: {
+    color: THEME.colors.accentSuccess,
+    fontSize: 9,
+    fontFamily: THEME.typography.fontFamilyMono,
+    fontWeight: '700',
+  },
+  joinDesc: {
+    color: THEME.colors.textMuted,
+    fontSize: 11,
+    marginBottom: 8,
+  },
+  joinInputRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  joinInput: {
+    flex: 1,
+    backgroundColor: '#0F1219',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#262A36',
+    color: THEME.colors.textPrimary,
+    fontFamily: THEME.typography.fontFamilyMono,
+    fontWeight: '700',
+    fontSize: 14,
+    letterSpacing: 2,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  joinBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    backgroundColor: THEME.colors.accentPrimary,
+    borderRadius: 8,
+    paddingHorizontal: 14,
+  },
+  joinBtnDisabled: {
+    opacity: 0.45,
+  },
+  joinBtnText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  errorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: 6,
+  },
+  errorText: {
+    color: THEME.colors.accentDanger,
+    fontSize: 11,
   },
 });

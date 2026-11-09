@@ -87,6 +87,10 @@ function MainApp() {
         const sessionCode = (data as any).sessionCode ? String((data as any).sessionCode) : null;
         const projectId = (data as any).projectId ? String((data as any).projectId) : null;
 
+        // Asegurar que la configuración y autenticación estén listas antes de invocar la API
+        await apiConfig.init();
+        await useMobileAuthStore.getState().initAuth();
+
         const authState = useMobileAuthStore.getState();
         const user = authState.user;
 

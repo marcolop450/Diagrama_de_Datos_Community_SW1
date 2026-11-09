@@ -329,7 +329,7 @@ public class AiTeamMemberService {
         }
 
         StringBuilder sb = new StringBuilder();
-        sb.append("🛠️ **Auto-Reparación de Inconsistencias Aplicada**\n\n");
+        sb.append("**Auto-Reparación de Inconsistencias Aplicada**\n\n");
         sb.append("He aplicado las siguientes correcciones de normalización en el lienzo a solicitud de @").append(senderName).append(":\n");
         for (UmlMutationDto mut : repairs) {
             sb.append("- **").append(mut.getAction()).append("**: ").append(mut.getDetails()).append("\n");

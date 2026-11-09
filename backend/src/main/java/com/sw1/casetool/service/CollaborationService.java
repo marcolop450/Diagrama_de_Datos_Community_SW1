@@ -126,6 +126,7 @@ public class CollaborationService {
             globalPayload.put("projectId", projectId.toString());
             globalPayload.put("projectName", projectName);
             globalPayload.put("hostName", hostName);
+            globalPayload.put("hostId", hostId != null ? hostId.toString() : "");
             globalPayload.put("timestamp", System.currentTimeMillis());
             messagingTemplate.convertAndSend((String) "/topic/global/events", (Object) globalPayload);
             log.info("Difusión global STOMP emitida para inicio de sala '{}'", sessionCode);

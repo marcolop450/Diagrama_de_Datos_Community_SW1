@@ -2,6 +2,7 @@ import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
 import { apiConfig } from '../config/apiConfig';
 import { CollabWsMessage } from '../types/collab';
 import { pushNotificationService } from './pushNotificationService';
+import { useMobileAuthStore } from '../stores/authStore';
 
 class MobileCollabWsService {
   private client: Client | null = null;
@@ -43,6 +44,22 @@ class MobileCollabWsService {
       try {
         const parsed = JSON.parse(stompMsg.body);
         if (parsed.type === 'ROOM_STARTED') {
+          const authUser = useMobileAuthStore.getState().user;
+          // Si el usuario móvil no está autenticado o es el propio anfitrión que abrió la sala, no notificar
+          if (!authUser || authUser.userId === parsed.hostId) {
+            return;
+          }
+          // Si es colaborador, sólo notificar si pertenece al arquitecto anfitrión
+          if (authUser.role === 'COLABORADOR') {
+            if (authUser.architectId && parsed.hostId && authUser.architectId !== parsed.hostId) {
+              return; // Es de otro arquitecto, no mostrar notificación
+            }
+          }
+          // Si es arquitecto pero no es el anfitrión, no notificar sobre proyectos ajenos
+          if (authUser.role === 'ARQUITECTO' && authUser.userId !== parsed.hostId) {
+            return;
+          }
+
           pushNotificationService.triggerLocalNotification(
             'Sala en Vivo Iniciada',
             `${parsed.hostName || 'El Arquitecto'} abrió la sala ${parsed.sessionCode} para ${parsed.projectName}. Toca para unirte.`,
