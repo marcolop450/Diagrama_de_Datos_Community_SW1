@@ -429,34 +429,286 @@ public class CircuitBreakerAiService {
         }
         cleaned = cleaned.trim();
 
+        // 1. Intentar deserializar directamente si el modelo respetó el esquema canónico
         try {
             VoiceModelingResponse resp = objectMapper.readValue(cleaned, VoiceModelingResponse.class);
-            if (resp != null && resp.getMutations() != null) {
+            if (resp != null && resp.getMutations() != null && !resp.getMutations().isEmpty()
+                    && resp.getMutations().get(0) != null && resp.getMutations().get(0).getAction() != null) {
                 resp.setSuccess(true);
                 resp.setProviderUsed(providerName);
                 return resp;
             }
+        } catch (Exception ignored) {
+            // Continuar hacia el reparador defensivo de JSON y parser adaptativo DDL/UML
+        }
+
+        // 2. Autoreparar JSON defensivamente en caso de que haya sido cortado por longitud
+        String repaired = autoRepairTruncatedJson(cleaned);
+        try {
+            JsonNode root = objectMapper.readTree(repaired);
+            VoiceModelingResponse adapted = adaptGenericJsonToVoiceResponse(root, providerName);
+            if (adapted != null && adapted.getMutations() != null && !adapted.getMutations().isEmpty()) {
+                adapted.setSuccess(true);
+                adapted.setProviderUsed(providerName);
+                return adapted;
+            }
         } catch (Exception e) {
-            log.warn("Fallo al deserializar JSON de {}: {}. Texto recibido: {}", providerName, e.getMessage(), cleaned);
+            log.warn("Fallo al deserializar y adaptar JSON de {}: {}. Texto recibido: {}", providerName, e.getMessage(), cleaned);
         }
         return null;
     }
 
+    private String autoRepairTruncatedJson(String json) {
+        if (json == null || json.isBlank()) return "{}";
+        String s = json.trim();
+
+        // Quitar comas o caracteres incompletos al final
+        s = s.replaceAll("[,:\\s]+$", "");
+
+        // Si termina con una clave o apertura incompleta, retroceder hasta el último delimitador seguro
+        while (s.length() > 0 && (s.endsWith("{") || s.endsWith("[") || s.endsWith("\"") || s.endsWith(",") || s.endsWith(":"))) {
+            s = s.substring(0, s.length() - 1).trim();
+        }
+
+        int openBraces = 0;
+        int openBrackets = 0;
+        boolean inQuote = false;
+        boolean escape = false;
+
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (escape) {
+                escape = false;
+                continue;
+            }
+            if (c == '\\') {
+                escape = true;
+                continue;
+            }
+            if (c == '"') {
+                inQuote = !inQuote;
+                continue;
+            }
+            if (!inQuote) {
+                if (c == '{') openBraces++;
+                else if (c == '}') openBraces = Math.max(0, openBraces - 1);
+                else if (c == '[') openBrackets++;
+                else if (c == ']') openBrackets = Math.max(0, openBrackets - 1);
+            }
+        }
+
+        StringBuilder sb = new StringBuilder(s);
+        if (inQuote) {
+            sb.append("\"");
+        }
+        sb = new StringBuilder(sb.toString().replaceAll("[,:\\s]+$", ""));
+
+        while (openBrackets > 0) {
+            sb.append("]");
+            openBrackets--;
+        }
+        while (openBraces > 0) {
+            sb.append("}");
+            openBraces--;
+        }
+
+        return sb.toString();
+    }
+
+    private VoiceModelingResponse adaptGenericJsonToVoiceResponse(JsonNode root, String providerName) {
+        if (root == null || !root.isObject()) return null;
+
+        List<UmlMutationDto> mutations = new ArrayList<>();
+        String intent = root.path("intent").asText("CREATE_CLASS");
+        String message = root.path("message").asText("Modelo UML actualizado con éxito");
+
+        JsonNode mutationsNode = root.path("mutations");
+        if (mutationsNode.isArray() && !mutationsNode.isEmpty()) {
+            for (JsonNode mNode : mutationsNode) {
+                UmlMutationDto dto = parseSingleMutationNode(mNode);
+                if (dto != null) {
+                    mutations.add(dto);
+                }
+            }
+        } else {
+            UmlMutationDto directDto = parseSingleMutationNode(root);
+            if (directDto != null) {
+                mutations.add(directDto);
+            }
+        }
+
+        if (mutations.isEmpty()) {
+            return null;
+        }
+
+        VoiceModelingResponse resp = new VoiceModelingResponse();
+        resp.setSuccess(true);
+        resp.setIntent(intent);
+        resp.setMessage(message);
+        resp.setProviderUsed(providerName);
+        resp.setMutations(mutations);
+        return resp;
+    }
+
+    private UmlMutationDto parseSingleMutationNode(JsonNode node) {
+        if (node == null || !node.isObject()) return null;
+
+        // Si ya viene con el formato canónico de UmlMutationDto
+        if (node.has("action") && node.has("classData")) {
+            try {
+                return objectMapper.treeToValue(node, UmlMutationDto.class);
+            } catch (Exception ignored) {}
+        }
+
+        // Si viene con formato SQL/DDL (table, columns, operation) generado por Qwen/DeepSeek
+        String tableName = node.path("table").asText("");
+        if (tableName.isBlank()) tableName = node.path("tableName").asText("");
+        if (tableName.isBlank()) tableName = node.path("name").asText("");
+        if (tableName.isBlank()) tableName = node.path("className").asText("");
+
+        JsonNode columnsNode = node.path("columns");
+        if (columnsNode.isMissingNode() || columnsNode.isNull()) {
+            columnsNode = node.path("attributes");
+        }
+        if (columnsNode.isMissingNode() || columnsNode.isNull()) {
+            columnsNode = node.path("fields");
+        }
+
+        if (tableName.isBlank() && (columnsNode == null || !columnsNode.isArray())) {
+            return null;
+        }
+
+        if (tableName.isBlank()) {
+            tableName = "EntidadGenerada";
+        }
+
+        List<Map<String, Object>> attributes = new ArrayList<>();
+        boolean hasPk = false;
+
+        if (columnsNode != null && columnsNode.isArray()) {
+            for (JsonNode col : columnsNode) {
+                String colName = col.path("name").asText("campo");
+                String rawType = col.path("type").asText("String");
+                String mappedType = mapSqlTypeToJava(rawType);
+
+                boolean isPk = false;
+                JsonNode constraints = col.path("constraints");
+                if (constraints.isArray()) {
+                    for (JsonNode c : constraints) {
+                        if (c.asText("").toUpperCase().contains("PRIMARY KEY")) {
+                            isPk = true;
+                            break;
+                        }
+                    }
+                }
+                if (col.path("isPrimaryKey").asBoolean(false) || col.path("primaryKey").asBoolean(false) || "id".equalsIgnoreCase(colName)) {
+                    isPk = true;
+                }
+                if (isPk) hasPk = true;
+
+                Map<String, Object> attr = new LinkedHashMap<>();
+                attr.put("id", UUID.randomUUID().toString());
+                attr.put("name", colName);
+                attr.put("type", mappedType);
+                attr.put("visibility", "-");
+                attr.put("isPrimaryKey", isPk);
+                attr.put("nullable", !isPk && !col.path("constraints").toString().toUpperCase().contains("NOT NULL"));
+                attributes.add(attr);
+            }
+        }
+
+        // Garantizar regla 1NF canónica ({PK} id: Long)
+        if (!hasPk) {
+            Map<String, Object> pkAttr = new LinkedHashMap<>();
+            pkAttr.put("id", UUID.randomUUID().toString());
+            pkAttr.put("name", "id");
+            pkAttr.put("type", "Long");
+            pkAttr.put("visibility", "-");
+            pkAttr.put("isPrimaryKey", true);
+            pkAttr.put("nullable", false);
+            attributes.add(0, pkAttr);
+        }
+
+        List<Map<String, Object>> methods = new ArrayList<>();
+        Map<String, Object> mId = new LinkedHashMap<>();
+        mId.put("id", UUID.randomUUID().toString());
+        mId.put("name", "getId");
+        mId.put("returnType", "Long");
+        mId.put("visibility", "+");
+        methods.add(mId);
+
+        Map<String, Object> classData = new LinkedHashMap<>();
+        classData.put("name", tableName);
+        classData.put("isAbstract", false);
+        classData.put("stereotype", "entity");
+        classData.put("attributes", attributes);
+        classData.put("methods", methods);
+
+        return UmlMutationDto.builder()
+                .action("CREATE_CLASS")
+                .targetClassName(tableName)
+                .classData(classData)
+                .details("Creación de la clase/tabla UML '" + tableName + "' con " + attributes.size() + " atributo(s).")
+                .build();
+    }
+
+    private String mapSqlTypeToJava(String raw) {
+        if (raw == null || raw.isBlank()) return "String";
+        String r = raw.trim().toUpperCase();
+        if (r.contains("BIGINT") || r.contains("IDENTITY") || r.contains("LONG") || r.contains("SERIAL")) return "Long";
+        if (r.contains("INT")) return "Integer";
+        if (r.contains("NUMERIC") || r.contains("DECIMAL") || r.contains("DOUBLE") || r.contains("FLOAT")) return "BigDecimal";
+        if (r.contains("BOOL")) return "Boolean";
+        if (r.contains("DATE")) return "LocalDate";
+        if (r.contains("TIME")) return "LocalDateTime";
+        if (r.contains("UUID")) return "UUID";
+        return "String";
+    }
+
     public static String cleanSpeechPrompt(String raw) {
         if (raw == null) return "";
-        String cleaned = raw.replaceAll("^[\s,.]+", "").replaceAll("[\s,.]+$", "").trim();
-        cleaned = cleaned.replaceAll("^(por favor|oye|ok|bueno)\s+", "");
+        String cleaned = raw.replaceAll("^[\\s,.]+", "").replaceAll("[\\s,.]+$", "").trim();
+        cleaned = cleaned.replaceAll("^(por favor|oye|ok|bueno)\\s+", "");
         return cleaned;
     }
 
     private String buildSystemPrompt(List<String> existingClasses) {
-        return "Eres un Arquitecto de Software experto en OMG UML 2.5 y normalización relacional.\n" +
-                "Tu objetivo es transformar el comando dictado en un lote de mutaciones canónicas JSON.\n\n" +
+        return "Eres un Arquitecto de Software experto en OMG UML 2.5 y diseño de bases de datos relacionales normalizadas (1NF-3NF).\n" +
+                "Tu objetivo es transformar el comando del usuario en un lote de mutaciones canónicas en formato JSON estricto.\n\n" +
                 "Clases actuales en el modelo: " + existingClasses + "\n\n" +
-                "REGLAS INVIOLABLES:\n" +
-                "1. Toda clase debe poseer identificador clave primaria '{PK} id: Long'.\n" +
-                "2. Responde exclusivamente con un objeto JSON sin markdown exterior.\n" +
-                "Estructura: { \"intent\": \"CREATE_CLASS\", \"message\": \"...\", \"mutations\": [...] }";
+                "REGLAS OBLIGATORIAS:\n" +
+                "1. Toda clase debe incluir como clave primaria: { \"visibility\": \"-\", \"name\": \"id\", \"type\": \"Long\", \"isPrimaryKey\": true, \"nullable\": false }.\n" +
+                "2. Genera los atributos de dominio típicos y normalizados según la entidad solicitada (ej. si es Gato: nombre, edad, raza, color, peso, fechaNacimiento).\n" +
+                "3. Responde exclusivamente con un objeto JSON sin markdown.\n\n" +
+                "ESTRUCTURA JSON EXACTA:\n" +
+                "{\n" +
+                "  \"intent\": \"CREATE_CLASS\",\n" +
+                "  \"message\": \"Creación de la clase Gato con atributos normalizados según UML 2.5\",\n" +
+                "  \"mutations\": [\n" +
+                "    {\n" +
+                "      \"action\": \"CREATE_CLASS\",\n" +
+                "      \"classData\": {\n" +
+                "        \"name\": \"Gato\",\n" +
+                "        \"isAbstract\": false,\n" +
+                "        \"stereotype\": \"entity\",\n" +
+                "        \"attributes\": [\n" +
+                "          { \"visibility\": \"-\", \"name\": \"id\", \"type\": \"Long\", \"isPrimaryKey\": true, \"nullable\": false },\n" +
+                "          { \"visibility\": \"-\", \"name\": \"nombre\", \"type\": \"String\", \"isPrimaryKey\": false, \"nullable\": false },\n" +
+                "          { \"visibility\": \"-\", \"name\": \"edad\", \"type\": \"Integer\", \"isPrimaryKey\": false, \"nullable\": true },\n" +
+                "          { \"visibility\": \"-\", \"name\": \"raza\", \"type\": \"String\", \"isPrimaryKey\": false, \"nullable\": true },\n" +
+                "          { \"visibility\": \"-\", \"name\": \"color\", \"type\": \"String\", \"isPrimaryKey\": false, \"nullable\": true },\n" +
+                "          { \"visibility\": \"-\", \"name\": \"peso\", \"type\": \"Double\", \"isPrimaryKey\": false, \"nullable\": true },\n" +
+                "          { \"visibility\": \"-\", \"name\": \"fechaNacimiento\", \"type\": \"LocalDate\", \"isPrimaryKey\": false, \"nullable\": true }\n" +
+                "        ],\n" +
+                "        \"methods\": [\n" +
+                "          { \"visibility\": \"+\", \"name\": \"getId\", \"returnType\": \"Long\" },\n" +
+                "          { \"visibility\": \"+\", \"name\": \"getNombre\", \"returnType\": \"String\" }\n" +
+                "        ]\n" +
+                "      },\n" +
+                "      \"details\": \"Creación de la clase/tabla UML 'Gato' con atributos normalizados\"\n" +
+                "    }\n" +
+                "  ]\n" +
+                "}";
     }
 
     public VoiceModelingResponse processVisionPrompt(byte[] imageBytes, String mimeType, List<String> existingClasses) {
@@ -796,7 +1048,7 @@ public class CircuitBreakerAiService {
         Map<String, Object> requestBody = new LinkedHashMap<>();
         requestBody.put("model", selectedModel);
         requestBody.put("temperature", 0.1);
-        requestBody.put("max_tokens", 450);
+        requestBody.put("max_tokens", 2048);
         requestBody.put("stream", false);
 
         List<Map<String, String>> messages = new ArrayList<>();
@@ -825,7 +1077,7 @@ public class CircuitBreakerAiService {
         Map<String, Object> requestBody = new LinkedHashMap<>();
         requestBody.put("model", selectedModel);
         requestBody.put("temperature", 0.2);
-        requestBody.put("max_tokens", 450);
+        requestBody.put("max_tokens", 2048);
         requestBody.put("stream", false);
 
         List<Map<String, String>> messages = new ArrayList<>();

@@ -9,6 +9,7 @@ import com.sw1.casetool.model.SessionParticipant;
 import com.sw1.casetool.model.UserPushToken;
 import com.sw1.casetool.repository.CollaborationSessionRepository;
 import com.sw1.casetool.repository.DiagramProjectRepository;
+import com.sw1.casetool.repository.UserProfileRepository;
 import com.sw1.casetool.repository.UserPushTokenRepository;
 import com.sw1.casetool.service.notification.PushNotificationService;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,6 +37,9 @@ class PushNotificationServiceTest {
     @Mock
     private CollaborationSessionRepository sessionRepository;
 
+    @Mock
+    private UserProfileRepository userProfileRepository;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private PushNotificationService pushNotificationService;
@@ -50,6 +54,7 @@ class PushNotificationServiceTest {
                 pushTokenRepository,
                 projectRepository,
                 sessionRepository,
+                userProfileRepository,
                 objectMapper
         );
     }
@@ -155,8 +160,17 @@ class PushNotificationServiceTest {
                 .isActive(true)
                 .build();
 
-        when(pushTokenRepository.findByIsActiveTrue())
-                .thenReturn(List.of(tokenActor, tokenCollab));
+        com.sw1.casetool.model.UserProfile collabUser = com.sw1.casetool.model.UserProfile.builder()
+                .id(collaboratorId)
+                .role("COLABORADOR")
+                .architectId(actorId)
+                .build();
+
+        when(userProfileRepository.findByRoleAndArchitectIdOrderByCreatedAtDesc("COLABORADOR", actorId))
+                .thenReturn(List.of(collabUser));
+
+        when(pushTokenRepository.findByUserIdInAndIsActiveTrue(anyList()))
+                .thenReturn(List.of(tokenCollab));
 
         assertDoesNotThrow(() -> {
             pushNotificationService.sendPushToProjectCollaborators(
@@ -169,6 +183,6 @@ class PushNotificationServiceTest {
             );
         });
 
-        verify(pushTokenRepository, times(1)).findByIsActiveTrue();
+        verify(pushTokenRepository, times(1)).findByUserIdInAndIsActiveTrue(anyList());
     }
 }

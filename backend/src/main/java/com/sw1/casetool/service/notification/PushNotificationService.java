@@ -6,6 +6,8 @@ import com.sw1.casetool.dto.notification.PushTokenRegistrationRequest;
 import com.sw1.casetool.model.CollaborationSession;
 import com.sw1.casetool.model.DiagramProject;
 import com.sw1.casetool.model.UserPushToken;
+import com.sw1.casetool.model.UserProfile;
+import com.sw1.casetool.repository.UserProfileRepository;
 import com.sw1.casetool.repository.CollaborationSessionRepository;
 import com.sw1.casetool.repository.DiagramProjectRepository;
 import com.sw1.casetool.repository.UserPushTokenRepository;
@@ -35,6 +37,7 @@ public class PushNotificationService {
     private final UserPushTokenRepository pushTokenRepository;
     private final DiagramProjectRepository projectRepository;
     private final CollaborationSessionRepository sessionRepository;
+    private final UserProfileRepository userProfileRepository;
     private final ObjectMapper objectMapper;
 
     private final HttpClient httpClient = HttpClient.newBuilder()
@@ -123,9 +126,29 @@ public class PushNotificationService {
                 });
             }
 
-            // 2. Todos los dispositivos móviles registrados en el sistema para alertas generales
-            // (excluyendo únicamente al actor que realizó la acción)
-            List<UserPushToken> activeTokens = pushTokenRepository.findByIsActiveTrue();
+            // 2. Colaboradores asignados al Arquitecto / Anfitrión del proyecto
+            UUID architectId = excludeActorId;
+            if (projectId != null) {
+                UUID ownerId = projectRepository.findById(projectId).map(p -> p.getOwnerId()).orElse(null);
+                if (ownerId != null) {
+                    architectId = ownerId;
+                }
+            }
+            if (architectId != null) {
+                List<UserProfile> assigned = userProfileRepository.findByRoleAndArchitectIdOrderByCreatedAtDesc("COLABORADOR", architectId);
+                for (UserProfile u : assigned) {
+                    if (excludeActorId == null || !u.getId().equals(excludeActorId)) {
+                        recipientUserIds.add(u.getId());
+                    }
+                }
+            }
+
+            if (recipientUserIds.isEmpty()) {
+                log.debug("No hay colaboradores ni destinatarios válidos para notificar en proyecto {}", projectId);
+                return CompletableFuture.completedFuture(null);
+            }
+
+            List<UserPushToken> activeTokens = pushTokenRepository.findByUserIdInAndIsActiveTrue(new ArrayList<>(recipientUserIds));
             List<String> targetTokens = activeTokens.stream()
                     .filter(t -> excludeActorId == null || !t.getUserId().equals(excludeActorId))
                     .map(UserPushToken::getPushToken)
