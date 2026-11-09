@@ -10,25 +10,45 @@ class MobileCollabWsService {
   private roomSubscription: StompSubscription | null = null;
   private globalSubscription: StompSubscription | null = null;
   private isConnected = false;
+  private messageHandler: ((msg: CollabWsMessage) => void) | null = null;
+  private onConnectHandler: (() => void) | null = null;
+  private onDisconnectHandler: (() => void) | null = null;
 
-  private ensureClient(onConnectCallback?: () => void): Client {
+  private ensureClient(): Client {
     if (!this.client) {
       const wsUrl = apiConfig.getWsUrl();
       this.client = new Client({
         brokerURL: wsUrl,
-        reconnectDelay: 4000,
+        reconnectDelay: 2500,
         heartbeatIncoming: 10000,
         heartbeatOutgoing: 10000,
         onConnect: () => {
+          console.log('[WS] STOMP Conectado con éxito');
           this.isConnected = true;
           this.subscribeGlobal();
-          if (onConnectCallback) onConnectCallback();
+          this.resubscribeRoom();
+          if (this.onConnectHandler) {
+            this.onConnectHandler();
+          }
         },
         onDisconnect: () => {
+          console.log('[WS] STOMP Desconectado');
           this.isConnected = false;
+          if (this.roomSubscription) {
+            try {
+              this.roomSubscription.unsubscribe();
+            } catch {}
+            this.roomSubscription = null;
+          }
+          if (this.onDisconnectHandler) {
+            this.onDisconnectHandler();
+          }
         },
         onStompError: (frame) => {
           console.warn('Error STOMP en móvil:', frame.headers['message']);
+        },
+        onWebSocketClose: () => {
+          this.isConnected = false;
         },
       });
       this.client.activate();
@@ -38,24 +58,26 @@ class MobileCollabWsService {
 
   private subscribeGlobal(): void {
     if (!this.client || !this.isConnected) return;
-    if (this.globalSubscription) return;
+    if (this.globalSubscription) {
+      try {
+        this.globalSubscription.unsubscribe();
+      } catch {}
+      this.globalSubscription = null;
+    }
 
     this.globalSubscription = this.client.subscribe('/topic/global/events', (stompMsg: IMessage) => {
       try {
         const parsed = JSON.parse(stompMsg.body);
         if (parsed.type === 'ROOM_STARTED') {
           const authUser = useMobileAuthStore.getState().user;
-          // Si el usuario móvil no está autenticado o es el propio anfitrión que abrió la sala, no notificar
           if (!authUser || authUser.userId === parsed.hostId) {
             return;
           }
-          // Si es colaborador, sólo notificar si pertenece al arquitecto anfitrión
           if (authUser.role === 'COLABORADOR') {
             if (authUser.architectId && parsed.hostId && authUser.architectId !== parsed.hostId) {
-              return; // Es de otro arquitecto, no mostrar notificación
+              return;
             }
           }
-          // Si es arquitecto pero no es el anfitrión, no notificar sobre proyectos ajenos
           if (authUser.role === 'ARQUITECTO' && authUser.userId !== parsed.hostId) {
             return;
           }
@@ -70,6 +92,34 @@ class MobileCollabWsService {
         console.warn('Error parseando evento global en móvil:', e);
       }
     });
+  }
+
+  private resubscribeRoom(): void {
+    if (!this.client || !this.isConnected || !this.currentSessionCode || !this.messageHandler) {
+      return;
+    }
+
+    if (this.roomSubscription) {
+      try {
+        this.roomSubscription.unsubscribe();
+      } catch {}
+      this.roomSubscription = null;
+    }
+
+    this.roomSubscription = this.client.subscribe(
+      `/topic/room/${this.currentSessionCode}`,
+      (stompMsg: IMessage) => {
+        try {
+          const parsed: CollabWsMessage = JSON.parse(stompMsg.body);
+          if (this.messageHandler) {
+            this.messageHandler(parsed);
+          }
+        } catch (e) {
+          console.warn('Error parseando mensaje colaborativo en móvil:', e);
+        }
+      }
+    );
+    console.log(`[WS] Suscripción activa a sala /topic/room/${this.currentSessionCode}`);
   }
 
   connectGlobal(): void {
@@ -87,44 +137,42 @@ class MobileCollabWsService {
   ): void {
     const cleanCode = sessionCode.trim().toUpperCase();
     this.currentSessionCode = cleanCode;
+    this.messageHandler = onMessage;
+    this.onConnectHandler = onConnect || null;
+    this.onDisconnectHandler = onDisconnect || null;
 
-    if (this.roomSubscription) {
-      try {
-        this.roomSubscription.unsubscribe();
-      } catch {}
-      this.roomSubscription = null;
-    }
+    this.ensureClient();
 
-    const onConnected = () => {
-      this.isConnected = true;
-      this.subscribeGlobal();
-
-      if (this.currentSessionCode) {
-        this.roomSubscription = this.client?.subscribe(
-          `/topic/room/${this.currentSessionCode}`,
-          (stompMsg: IMessage) => {
-            try {
-              const parsed: CollabWsMessage = JSON.parse(stompMsg.body);
-              onMessage(parsed);
-            } catch (e) {
-              console.warn('Error parseando mensaje colaborativo en móvil:', e);
-            }
-          }
-        ) || null;
-      }
-
+    if (this.isConnected) {
+      this.resubscribeRoom();
       if (onConnect) onConnect();
-    };
+    }
+  }
 
-    if (this.client && this.isConnected) {
-      onConnected();
-    } else {
-      this.ensureClient(onConnected);
+  reconnectIfStale(): void {
+    const isClientActive = this.client && this.client.active;
+    const isClientConnected = this.client && this.client.connected;
+
+    if (!isClientActive || !isClientConnected || !this.isConnected) {
+      console.log('[WS] Reanudando cliente STOMP tras segundo plano...');
+      if (this.client) {
+        try {
+          this.client.deactivate();
+        } catch {}
+        this.client = null;
+      }
+      this.isConnected = false;
+      this.ensureClient();
+    } else if (this.currentSessionCode && !this.roomSubscription) {
+      this.resubscribeRoom();
     }
   }
 
   sendMessage(message: any): void {
     if (!this.client || !this.isConnected || !this.currentSessionCode) {
+      if (this.currentSessionCode) {
+        this.reconnectIfStale();
+      }
       return;
     }
     this.client.publish({
@@ -141,6 +189,9 @@ class MobileCollabWsService {
       this.roomSubscription = null;
     }
     this.currentSessionCode = null;
+    this.messageHandler = null;
+    this.onConnectHandler = null;
+    this.onDisconnectHandler = null;
   }
 
   disconnectAll(): void {

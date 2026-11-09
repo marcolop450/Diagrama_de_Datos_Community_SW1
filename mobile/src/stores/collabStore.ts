@@ -24,6 +24,7 @@ interface MobileCollabState {
   addNotification: (title: string, message: string, type?: 'info' | 'success' | 'warning' | 'alert') => void;
   removeNotification: (id: string) => void;
   clearNotifications: () => void;
+  syncCurrentRoomDiagram: () => Promise<void>;
   handleIncomingMessage: (msg: CollabWsMessage) => void;
 }
 
@@ -192,6 +193,16 @@ export const useMobileCollabStore = create<MobileCollabState>((set, get) => ({
       get().addNotification('Fallo de Conexión', 'Código de sala inválido o finalizada.', 'alert');
       return false;
     }
+  },
+
+  syncCurrentRoomDiagram: async () => {
+    const { sessionCode, isLive } = get();
+    if (!isLive || !sessionCode) return;
+    const projId = useMobileProjectStore.getState().currentProject?.id;
+    if (projId) {
+      await useMobileProjectStore.getState().openProject(projId);
+    }
+    mobileCollabWs.reconnectIfStale();
   },
 
   leaveSession: () => {

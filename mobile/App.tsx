@@ -1,5 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode, useEffect, useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, SafeAreaView, ActivityIndicator, Platform, StatusBar as NativeStatusBar } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, SafeAreaView, ActivityIndicator, Platform, StatusBar as NativeStatusBar, AppState } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as Notifications from 'expo-notifications';
 import { THEME } from './src/constants/theme';
@@ -116,6 +116,24 @@ function MainApp() {
 
     return () => {
       responseSubscription.remove();
+    };
+  }, []);
+
+  // Oyente de ciclo de vida del movil para reanudar WebSocket y sincronizar diagrama al volver de segundo plano
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active') {
+        console.log('[App] Aplicacion reanudada en primer plano. Sincronizando estado y WebSocket...');
+        mobileCollabWs.reconnectIfStale();
+        const collab = useMobileCollabStore.getState();
+        if (collab.isLive) {
+          collab.syncCurrentRoomDiagram();
+        }
+      }
+    });
+
+    return () => {
+      subscription.remove();
     };
   }, []);
 
