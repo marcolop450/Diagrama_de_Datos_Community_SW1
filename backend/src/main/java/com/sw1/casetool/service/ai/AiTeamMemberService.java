@@ -917,9 +917,9 @@ public class AiTeamMemberService {
         } catch (Exception ignored) {}
 
         try {
-            Optional<CollaborationSession> s = sessionRepository.findBySessionCode(sessionCode);
-            return s.map(cs -> cs.getProject() != null ? cs.getProject().getId() : null).orElse(null);
+            return sessionRepository.findProjectIdBySessionCode(sessionCode.trim()).orElse(null);
         } catch (Exception e) {
+            log.warn("Error resolviendo projectId para sessionCode {}: {}", sessionCode, e.getMessage());
             return null;
         }
     }

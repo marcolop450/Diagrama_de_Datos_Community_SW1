@@ -151,9 +151,9 @@ export const useMobileCollabStore = create<MobileCollabState>((set, get) => ({
       // 1. Unirse vía REST para validar existencia de sala
       const sessionData = await mobileApi.joinCollabSession(cleanCode, dni, fullName);
 
-      // Si la sala incluye diagrama inicial, cargarlo en projectStore
+      // Si la sala incluye diagrama inicial, cargarlo en projectStore de forma atómica antes de montar el lienzo
       if (sessionData && sessionData.projectId) {
-        useMobileProjectStore.getState().openProject(sessionData.projectId);
+        await useMobileProjectStore.getState().openProject(sessionData.projectId);
       }
 
       const initialLocks: Record<string, string> = {};

@@ -160,6 +160,22 @@ public class CollaborationService {
             throw new IllegalArgumentException("Los administradores no participan en sesiones de modelado colaborativo.");
         }
 
+        // VALIDACIÓN ESTRICTA DE GOBERNANZA MULTI-ARQUITECTO (CU02/CU03/CU13)
+        // Solo el Arquitecto anfitrión del proyecto o sus colaboradores asignados pueden ingresar a la sala.
+        boolean isHost = participantUser.getId().equals(session.getHostId());
+        boolean isAssignedCollaborator = "COLABORADOR".equalsIgnoreCase(participantUser.getRole()) &&
+                session.getHostId().equals(participantUser.getArchitectId());
+
+        if (!isHost && !isAssignedCollaborator) {
+            String hostName = userProfileRepository.findById(session.getHostId())
+                    .map(UserProfile::getFullName)
+                    .orElse("Anfitrión");
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Acceso denegado: Esta sala es privada y exclusiva para el Arquitecto anfitrión (" +
+                    hostName + ") y su equipo de colaboradores asignados. No está permitido el acceso a usuarios de otros equipos."
+            );
+        }
+
         // Verificar si ya está en la sala
         List<SessionParticipant> currentParticipants = participantRepository.findBySessionId(session.getId());
         boolean alreadyJoined = currentParticipants.stream()
@@ -613,6 +629,7 @@ public class CollaborationService {
                 messagingTemplate.convertAndSend("/topic/room/" + code, endMsg);
             } else {
                 lockRepository.deleteBySessionIdAndLockedBy(session.getId(), userId);
+                participantRepository.deleteBySessionIdAndUserId(session.getId(), userId);
                 participantRepository.deleteBySessionIdAndUserId(session.getId(), userId);
 
                 CollabMessageDto leaveMsg = CollabMessageDto.builder()

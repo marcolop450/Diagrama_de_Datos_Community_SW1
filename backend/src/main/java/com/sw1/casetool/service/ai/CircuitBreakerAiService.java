@@ -586,6 +586,9 @@ public class CircuitBreakerAiService {
     }
 
     public ChatCompletionResult executeChatTextCompletionDetailed(java.util.UUID projectId, String systemInstruction, String userPrompt) {
+        boolean customProviderAttempted = false;
+        String attemptedProviderName = "";
+
         if (projectId != null && projectAiConfigRepository != null) {
             try {
                 ProjectAiConfig config = projectAiConfigRepository.findByProjectId(projectId).orElse(null);
@@ -593,15 +596,25 @@ public class CircuitBreakerAiService {
                     String provider = config.getProvider();
                     String modelName = config.getSelectedModel() != null && !config.getSelectedModel().isBlank() ? config.getSelectedModel() : "default";
 
+                    if (!"SYSTEM_DEFAULT".equalsIgnoreCase(provider)) {
+                        customProviderAttempted = true;
+                        attemptedProviderName = "LMSTUDIO_LOCAL".equalsIgnoreCase(provider) ? "LM Studio" :
+                                                "OLLAMA_LOCAL".equalsIgnoreCase(provider) ? "Ollama" : provider;
+                    }
+
                     if ("LMSTUDIO_LOCAL".equalsIgnoreCase(provider) && config.getOllamaEndpoint() != null && !config.getOllamaEndpoint().isBlank()) {
                         String resp = callLmStudioText(config.getOllamaEndpoint(), config.getSelectedModel(), systemInstruction, userPrompt);
                         if (resp != null && !resp.isBlank()) {
                             return new ChatCompletionResult(resp, "LM Studio (" + modelName + ")");
+                        } else {
+                            log.warn("LM Studio en '{}' no respondió. Activando Circuit Breaker hacia proveedores Cloud...", config.getOllamaEndpoint());
                         }
                     } else if ("OLLAMA_LOCAL".equalsIgnoreCase(provider) && config.getOllamaEndpoint() != null && !config.getOllamaEndpoint().isBlank()) {
                         String resp = callOllamaText(config.getOllamaEndpoint(), config.getSelectedModel(), systemInstruction, userPrompt);
                         if (resp != null && !resp.isBlank()) {
                             return new ChatCompletionResult(resp, "Ollama (" + modelName + ")");
+                        } else {
+                            log.warn("Ollama en '{}' no respondió. Activando Circuit Breaker hacia proveedores Cloud...", config.getOllamaEndpoint());
                         }
                     } else if ("GROQ_CLOUD".equalsIgnoreCase(provider)) {
                         String key = decryptKeySafe(config.getApiKeyEncrypted());
@@ -642,23 +655,25 @@ public class CircuitBreakerAiService {
             }
         }
 
+        String suffix = customProviderAttempted ? " (Fallback por " + attemptedProviderName + " inalcanzable)" : " (Sistema)";
+
         // Cascada del sistema (Circuit Breaker predeterminado)
         if (geminiApiKey != null && !geminiApiKey.trim().isEmpty() && !geminiApiKey.equalsIgnoreCase("none")) {
             String resp = callGeminiText(systemInstruction, userPrompt);
             if (resp != null && !resp.isBlank()) {
-                return new ChatCompletionResult(resp, "Google Gemini Flash (Sistema)");
+                return new ChatCompletionResult(resp, "Google Gemini Flash" + suffix);
             }
         }
         if (groqApiKey != null && !groqApiKey.trim().isEmpty() && !groqApiKey.equalsIgnoreCase("none")) {
             String resp = callGroqText(systemInstruction, userPrompt);
             if (resp != null && !resp.isBlank()) {
-                return new ChatCompletionResult(resp, "Groq Cloud Llama 3.3 (Sistema)");
+                return new ChatCompletionResult(resp, "Groq Cloud Llama 3.3" + suffix);
             }
         }
         if (openrouterApiKey != null && !openrouterApiKey.trim().isEmpty() && !openrouterApiKey.equalsIgnoreCase("none")) {
             String resp = callOpenRouterText(systemInstruction, userPrompt);
             if (resp != null && !resp.isBlank()) {
-                return new ChatCompletionResult(resp, "OpenRouter (Sistema)");
+                return new ChatCompletionResult(resp, "OpenRouter" + suffix);
             }
         }
 

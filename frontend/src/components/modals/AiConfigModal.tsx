@@ -631,6 +631,25 @@ export const AiConfigModal: React.FC<AiConfigModalProps> = ({
                         <span>{isDetecting ? 'Detectando...' : 'Escanear'}</span>
                       </button>
                     </div>
+
+                    {/* Guía Contextual si se accede desde la Web Cloud */}
+                    {typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' && (
+                      <div className="mt-2 p-2.5 bg-indigo-950/30 border border-indigo-500/20 rounded-lg text-[11px] text-indigo-200/90 space-y-1">
+                        <div className="font-semibold text-indigo-300 flex items-center gap-1.5">
+                          <Info size={13} />
+                          <span>Conexión desde la Web hacia tu PC Local</span>
+                        </div>
+                        <p className="text-[10.5px] leading-relaxed text-slate-300">
+                          Al estar en la nube, el backend en AWS no puede ver el <code>127.0.0.1</code> de tu laptop privada. Para enlazar tu servidor local a esta web, ejecuta en una terminal de tu PC:
+                        </p>
+                        <code className="block bg-[#0f1115] px-2 py-1 rounded text-[11px] font-mono text-amber-300 select-all border border-[#242934]">
+                          npx localtunnel --port {localServerType === 'LMSTUDIO' ? '1234' : '11434'}
+                        </code>
+                        <p className="text-[10px] text-slate-400">
+                          Copia la URL pública generada (ej. <code>https://xxx.loca.lt</code>) y pégala arriba para escanear y usar tus modelos.
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   {/* Modelo detectado o manual */}

@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, SafeAreaView, ActivityIndicator, Platform, StatusBar as NativeStatusBar } from 'react-native';
+import React, { Component, ErrorInfo, ReactNode, useEffect, useState } from 'react';
+import { StyleSheet, View, Text, TouchableOpacity, SafeAreaView, ActivityIndicator, Platform, StatusBar as NativeStatusBar } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as Notifications from 'expo-notifications';
 import { THEME } from './src/constants/theme';
@@ -13,7 +13,57 @@ import { LoginScreen } from './src/screens/LoginScreen';
 import { ProjectsListScreen } from './src/screens/ProjectsListScreen';
 import { DiagramViewerScreen } from './src/screens/DiagramViewerScreen';
 
-export default function App() {
+interface ErrorBoundaryProps {
+  children: ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  errorMessage: string;
+}
+
+class MobileErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false, errorMessage: '' };
+  }
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, errorMessage: error?.message || 'Error inesperado de renderizado' };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.warn('[MobileErrorBoundary] Error capturado en cliente móvil:', error, errorInfo);
+  }
+
+  handleReset = () => {
+    useMobileCollabStore.getState().leaveSession();
+    useMobileProjectStore.getState().resetDiagram();
+    this.setState({ hasError: false, errorMessage: '' });
+  };
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorTitle}>Visor Móvil Recuperado</Text>
+          <Text style={styles.errorDesc}>
+            Se produjo un conflicto visual temporal al renderizar el lienzo. El estado se ha protegido.
+          </Text>
+          <Text style={styles.errorDetail} numberOfLines={2}>
+            {this.state.errorMessage}
+          </Text>
+          <TouchableOpacity style={styles.retryBtn} onPress={this.handleReset} activeOpacity={0.8}>
+            <Text style={styles.retryBtnText}>Regresar a Mis Proyectos</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+function MainApp() {
   const { isAuthenticated, isLoading: isAuthLoading, initAuth } = useMobileAuthStore();
   const { currentProject, resetDiagram, openProject } = useMobileProjectStore();
   const { isLive, leaveSession, joinSession } = useMobileCollabStore();
@@ -29,7 +79,7 @@ export default function App() {
     });
 
     // Listener para cuando el usuario pulsa sobre la notificación push (incluso con app cerrada o minimizada)
-    const responseSubscription = Notifications.addNotificationResponseReceivedListener(response => {
+    const responseSubscription = Notifications.addNotificationResponseReceivedListener(async (response) => {
       const data = response.notification.request.content.data;
       console.log('[App] Notificación push pulsada por el usuario:', data);
 
@@ -37,14 +87,25 @@ export default function App() {
         const sessionCode = (data as any).sessionCode ? String((data as any).sessionCode) : null;
         const projectId = (data as any).projectId ? String((data as any).projectId) : null;
 
-        if (sessionCode) {
-          joinSession(sessionCode, 'GUEST', 'Observador Push').then(() => {
-            setCurrentScreen('viewer');
-          }).catch(() => {});
-        } else if (projectId) {
-          openProject(projectId).then(() => {
-            setCurrentScreen('viewer');
-          }).catch(() => {});
+        const authState = useMobileAuthStore.getState();
+        const user = authState.user;
+
+        try {
+          if (sessionCode) {
+            const dni = user?.username || user?.email || 'COLAB-M';
+            const fullName = user?.fullName || 'Observador Móvil';
+            const ok = await joinSession(sessionCode, dni, fullName);
+            if (ok) {
+              setCurrentScreen('viewer');
+            }
+          } else if (projectId) {
+            const ok = await openProject(projectId);
+            if (ok) {
+              setCurrentScreen('viewer');
+            }
+          }
+        } catch (e) {
+          console.warn('[App] Error manejando pulsación de notificación:', e);
         }
       }
     });
@@ -110,6 +171,14 @@ export default function App() {
   );
 }
 
+export default function App() {
+  return (
+    <MobileErrorBoundary>
+      <MainApp />
+    </MobileErrorBoundary>
+  );
+}
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -119,5 +188,47 @@ const styles = StyleSheet.create({
   centered: {
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    backgroundColor: THEME.colors.bgDark,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  errorTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: THEME.colors.accentWarning,
+    marginBottom: 8,
+  },
+  errorDesc: {
+    fontSize: 13,
+    color: THEME.colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 18,
+    marginBottom: 12,
+  },
+  errorDetail: {
+    fontSize: 11,
+    fontFamily: THEME.typography.fontFamilyMono,
+    color: THEME.colors.textMuted,
+    backgroundColor: THEME.colors.bgSurface,
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 20,
+    width: '100%',
+    textAlign: 'center',
+  },
+  retryBtn: {
+    backgroundColor: THEME.colors.accentPrimary,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 10,
+  },
+  retryBtnText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

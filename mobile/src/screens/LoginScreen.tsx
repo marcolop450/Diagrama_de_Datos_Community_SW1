@@ -170,7 +170,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
               style={styles.modalInput}
               value={hostInput}
               onChangeText={setHostInput}
-              placeholder="192.168.1.10:8080"
+              placeholder="marcolop-sw1-case.duckdns.org"
               placeholderTextColor={THEME.colors.textMuted}
               autoCapitalize="none"
               autoCorrect={false}
@@ -179,15 +179,21 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
             <View style={styles.quickHostRow}>
               <TouchableOpacity
                 style={styles.quickHostChip}
+                onPress={() => setHostInput('marcolop-sw1-case.duckdns.org')}
+              >
+                <Text style={styles.quickHostText}>Nube (DuckDNS)</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.quickHostChip}
                 onPress={() => setHostInput('192.168.1.10:8080')}
               >
-                <Text style={styles.quickHostText}>WiFi (192.168.1.10)</Text>
+                <Text style={styles.quickHostText}>WiFi Local</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.quickHostChip}
                 onPress={() => setHostInput('localhost:8080')}
               >
-                <Text style={styles.quickHostText}>USB (localhost)</Text>
+                <Text style={styles.quickHostText}>USB</Text>
               </TouchableOpacity>
             </View>
 

@@ -238,10 +238,10 @@ export const CanvasSvgViewer: React.FC = () => {
   // Renderizado vectorial de puntas de flecha UML estándar
   const renderArrowHead = (
     p2: { x: number; y: number; handle: string },
-    relType: string = 'association'
+    relType?: string
   ) => {
     const { x, y, handle } = p2;
-    const t = relType.toLowerCase();
+    const t = (relType != null ? String(relType) : 'association').toLowerCase();
 
     let rot = 0;
     if (handle === 'bottom') rot = 0;    // Apunta hacia arriba (entra por abajo)
@@ -484,7 +484,7 @@ export const CanvasSvgViewer: React.FC = () => {
                           fontFamily={THEME.typography.fontFamilyMono}
                           fontWeight={attr.isPrimaryKey ? 'bold' : 'normal'}
                         >
-                          {attr.isPrimaryKey ? '🔑 ' : attr.visibility === 'private' ? '- ' : '+ '}
+                          {attr.isPrimaryKey ? '{PK} ' : attr.visibility === 'private' ? '- ' : '+ '}
                           {attr.name} : {attr.type || 'String'}
                         </SvgText>
                       </G>
@@ -564,8 +564,8 @@ export const CanvasSvgViewer: React.FC = () => {
               const p2 = getHandlePoint(tgtNode, tgtDim, edge.targetHandle, srcNode, srcDim);
               const { midPoint } = computeOrthogonalPath(p1, p2);
 
-              const srcCard = edge.sourceCardinality || '1';
-              const tgtCard = edge.targetCardinality || '*';
+              const srcCard = String(edge.sourceCardinality || '1');
+              const tgtCard = String(edge.targetCardinality || '*');
               const pSrcCard = getCardinalityPosition(p1, false);
               const pTgtCard = getCardinalityPosition(p2, true);
 
