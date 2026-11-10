@@ -1621,8 +1621,8 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
           }
           return n;
         });
-      } else if (mut.action === 'CREATE_RELATIONSHIP' && mut.relationshipData) {
-        const rData = mut.relationshipData;
+      } else if (((mut.action as string) === 'CREATE_RELATIONSHIP' || (mut.action as string) === 'CREATE_ASSOCIATION' || (mut as any).action === 'ADD_RELATIONSHIP' || (mut as any).action === 'ASSOCIATION') && (mut.relationshipData || (mut as any).classData)) {
+        const rData = mut.relationshipData || (mut as any).classData;
         const srcNode = currentNodes.find((n) => matchesClassName(n.data?.name, rData.sourceClass));
         const tgtNode = currentNodes.find((n) => matchesClassName(n.data?.name, rData.targetClass));
 

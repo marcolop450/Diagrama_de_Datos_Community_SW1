@@ -183,6 +183,22 @@ public class VoiceModelingService {
                 rData.put("targetRole", tRole != null ? tRole.trim() : "");
             }
 
+            String actUpper = mut.getAction() != null ? mut.getAction().toUpperCase() : "";
+            boolean isRelAction = actUpper.contains("RELATION") || actUpper.contains("ASSOCIAT") || actUpper.contains("VINCUL") || actUpper.contains("CONNECT");
+            if (isRelAction) {
+                mut.setAction("CREATE_RELATIONSHIP");
+                if (mut.getRelationshipData() == null && mut.getClassData() != null) {
+                    Map<String, Object> cData = mut.getClassData();
+                    if (cData.containsKey("sourceClass") || cData.containsKey("targetClass") || cData.containsKey("source") || cData.containsKey("target")) {
+                        Map<String, Object> rData = new LinkedHashMap<>(cData);
+                        if (rData.containsKey("source") && !rData.containsKey("sourceClass")) rData.put("sourceClass", rData.get("source"));
+                        if (rData.containsKey("target") && !rData.containsKey("targetClass")) rData.put("targetClass", rData.get("target"));
+                        mut.setRelationshipData(rData);
+                        mut.setClassData(null);
+                    }
+                }
+            }
+
             // Si el LLM devolvió classData Y relationshipData en un único objeto, descomponer en 2 mutaciones atómicas
             if (mut.getClassData() != null && mut.getRelationshipData() != null) {
                 Map<String, Object> rData = new LinkedHashMap<>(mut.getRelationshipData());

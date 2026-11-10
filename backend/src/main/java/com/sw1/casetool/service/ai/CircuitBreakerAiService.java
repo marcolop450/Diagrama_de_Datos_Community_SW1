@@ -553,11 +553,35 @@ public class CircuitBreakerAiService {
     private UmlMutationDto parseSingleMutationNode(JsonNode node) {
         if (node == null || !node.isObject()) return null;
 
-        // Si ya viene con el formato canónico de UmlMutationDto
-        if (node.has("action") && node.has("classData")) {
+        // Si ya viene con el formato canónico de UmlMutationDto (clase o relación)
+        if (node.has("action") && (node.has("classData") || node.has("relationshipData"))) {
             try {
                 return objectMapper.treeToValue(node, UmlMutationDto.class);
             } catch (Exception ignored) {}
+        }
+        if (node.has("relationshipData")) {
+            try {
+                UmlMutationDto dto = objectMapper.treeToValue(node, UmlMutationDto.class);
+                if (dto.getAction() == null) dto.setAction("CREATE_RELATIONSHIP");
+                return dto;
+            } catch (Exception ignored) {}
+        }
+        // Si viene con formato de relación directo (sourceClass, targetClass)
+        if (node.has("sourceClass") || node.has("targetClass") || node.has("source") || node.has("target")) {
+            Map<String, Object> rData = new LinkedHashMap<>();
+            String s = node.path("sourceClass").asText(node.path("source").asText(""));
+            String t = node.path("targetClass").asText(node.path("target").asText(""));
+            rData.put("sourceClass", s);
+            rData.put("targetClass", t);
+            rData.put("type", node.path("type").asText("association"));
+            rData.put("sourceCardinality", node.path("sourceCardinality").asText("1"));
+            rData.put("targetCardinality", node.path("targetCardinality").asText("*"));
+            rData.put("label", node.path("label").asText(""));
+            return UmlMutationDto.builder()
+                    .action("CREATE_RELATIONSHIP")
+                    .relationshipData(rData)
+                    .details("Relación UML entre '" + s + "' y '" + t + "'.")
+                    .build();
         }
 
         // Si viene con formato SQL/DDL (table, columns, operation) generado por Qwen/DeepSeek
@@ -678,37 +702,12 @@ public class CircuitBreakerAiService {
                 "Clases actuales en el modelo: " + existingClasses + "\n\n" +
                 "REGLAS OBLIGATORIAS:\n" +
                 "1. Toda clase debe incluir como clave primaria: { \"visibility\": \"-\", \"name\": \"id\", \"type\": \"Long\", \"isPrimaryKey\": true, \"nullable\": false }.\n" +
-                "2. Genera los atributos de dominio típicos y normalizados según la entidad solicitada (ej. si es Gato: nombre, edad, raza, color, peso, fechaNacimiento).\n" +
-                "3. Responde exclusivamente con un objeto JSON sin markdown.\n\n" +
-                "ESTRUCTURA JSON EXACTA:\n" +
-                "{\n" +
-                "  \"intent\": \"CREATE_CLASS\",\n" +
-                "  \"message\": \"Creación de la clase Gato con atributos normalizados según UML 2.5\",\n" +
-                "  \"mutations\": [\n" +
-                "    {\n" +
-                "      \"action\": \"CREATE_CLASS\",\n" +
-                "      \"classData\": {\n" +
-                "        \"name\": \"Gato\",\n" +
-                "        \"isAbstract\": false,\n" +
-                "        \"stereotype\": \"entity\",\n" +
-                "        \"attributes\": [\n" +
-                "          { \"visibility\": \"-\", \"name\": \"id\", \"type\": \"Long\", \"isPrimaryKey\": true, \"nullable\": false },\n" +
-                "          { \"visibility\": \"-\", \"name\": \"nombre\", \"type\": \"String\", \"isPrimaryKey\": false, \"nullable\": false },\n" +
-                "          { \"visibility\": \"-\", \"name\": \"edad\", \"type\": \"Integer\", \"isPrimaryKey\": false, \"nullable\": true },\n" +
-                "          { \"visibility\": \"-\", \"name\": \"raza\", \"type\": \"String\", \"isPrimaryKey\": false, \"nullable\": true },\n" +
-                "          { \"visibility\": \"-\", \"name\": \"color\", \"type\": \"String\", \"isPrimaryKey\": false, \"nullable\": true },\n" +
-                "          { \"visibility\": \"-\", \"name\": \"peso\", \"type\": \"Double\", \"isPrimaryKey\": false, \"nullable\": true },\n" +
-                "          { \"visibility\": \"-\", \"name\": \"fechaNacimiento\", \"type\": \"LocalDate\", \"isPrimaryKey\": false, \"nullable\": true }\n" +
-                "        ],\n" +
-                "        \"methods\": [\n" +
-                "          { \"visibility\": \"+\", \"name\": \"getId\", \"returnType\": \"Long\" },\n" +
-                "          { \"visibility\": \"+\", \"name\": \"getNombre\", \"returnType\": \"String\" }\n" +
-                "        ]\n" +
-                "      },\n" +
-                "      \"details\": \"Creación de la clase/tabla UML 'Gato' con atributos normalizados\"\n" +
-                "    }\n" +
-                "  ]\n" +
-                "}";
+                "2. Genera los atributos de dominio requeridos y normalizados según la entidad solicitada.\n" +
+                "3. Para conectar o asociar clases, usa obligatoriamente la acción \"CREATE_RELATIONSHIP\" con \"relationshipData\".\n" +
+                "4. Responde de forma concisa y exclusivamente con un objeto JSON sin markdown.\n\n" +
+                "ESTRUCTURAS JSON VÁLIDAS:\n" +
+                "- Para Crear Clase: { \"intent\": \"CREATE_CLASS\", \"message\": \"...\", \"mutations\": [{ \"action\": \"CREATE_CLASS\", \"classData\": { \"name\": \"Gato\", \"isAbstract\": false, \"stereotype\": \"entity\", \"attributes\": [{ \"visibility\": \"-\", \"name\": \"id\", \"type\": \"Long\", \"isPrimaryKey\": true, \"nullable\": false }, { \"visibility\": \"-\", \"name\": \"nombre\", \"type\": \"String\", \"isPrimaryKey\": false, \"nullable\": false }], \"methods\": [{ \"visibility\": \"+\", \"name\": \"getId\", \"returnType\": \"Long\" }] }, \"details\": \"Creación de clase Gato\" }] }\n" +
+                "- Para Relacionar o Asociar Clases: { \"intent\": \"CREATE_RELATIONSHIP\", \"message\": \"Relación entre clases\", \"mutations\": [{ \"action\": \"CREATE_RELATIONSHIP\", \"relationshipData\": { \"sourceClass\": \"Perro\", \"targetClass\": \"Gato\", \"type\": \"association\", \"sourceCardinality\": \"*\", \"targetCardinality\": \"*\", \"label\": \"perros_gatos\" }, \"details\": \"Relación muchos a muchos entre Perro y Gato\" }] }";
     }
 
     public VoiceModelingResponse processVisionPrompt(byte[] imageBytes, String mimeType, List<String> existingClasses) {
