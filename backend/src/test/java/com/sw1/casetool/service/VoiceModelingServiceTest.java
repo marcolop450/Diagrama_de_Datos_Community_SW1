@@ -483,6 +483,13 @@ class VoiceModelingServiceTest {
         assertEquals("RENAME_CLASS", mut.getAction());
         assertEquals("Factura", mut.getTargetClassName());
         assertEquals("Recibo", mut.getDetails());
+
+        // Test con 'modifica gato por rata'
+        VoiceModelingResponse modResp = localNlpParser.parse("modifica gato por rata", List.of("Gato"));
+        assertTrue(modResp.isSuccess());
+        assertEquals("RENAME_CLASS", modResp.getIntent());
+        assertEquals("Gato", modResp.getMutations().get(0).getTargetClassName());
+        assertEquals("Rata", modResp.getMutations().get(0).getDetails());
     }
 
     @Test

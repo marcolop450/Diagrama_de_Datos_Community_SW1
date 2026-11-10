@@ -1840,8 +1840,9 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
           }
           return n;
         });
-      } else if (mut.action === 'DELETE_ELEMENT' && mut.targetClassName) {
-        const targetNode = currentNodes.find((n) => matchesClassName(n.data?.name, mut.targetClassName));
+      } else if (((mut.action as string) === 'DELETE_ELEMENT' || (mut.action as string) === 'DELETE_CLASS' || (mut as any).action === 'DROP_TABLE' || (mut as any).action === 'REMOVE_CLASS') && (mut.targetClassName || (mut as any).className || mut.details)) {
+        const targetName = mut.targetClassName || (mut as any).className || (mut.details ? mut.details.replace(/(?:eliminaci[oó]n|borrado|drop|delete)\s+(?:de\s+)?(?:la\s+)?(?:clase|tabla)?\s*/i, '').trim() : '');
+        const targetNode = currentNodes.find((n) => matchesClassName(n.data?.name, targetName));
         if (targetNode) {
           currentNodes = currentNodes.filter((n) => n.id !== targetNode.id);
           currentEdges = currentEdges.filter((e) => e.source !== targetNode.id && e.target !== targetNode.id);
@@ -1887,18 +1888,26 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
           }
           return n;
         });
-      } else if (mut.action === 'RENAME_CLASS' && mut.targetClassName && mut.details) {
-        const newName = mut.details.trim();
-        currentNodes = currentNodes.map((n) => {
-          if (matchesClassName(n.data?.name, mut.targetClassName)) {
-            appliedCount++;
-            return {
-              ...n,
-              data: { ...n.data, name: newName }
-            };
-          }
-          return n;
-        });
+      } else if (mut.action === 'RENAME_CLASS' && (mut.targetClassName || (mut as any).className)) {
+        const targetName = mut.targetClassName || (mut as any).className;
+        let rawNewName = (mut.classData?.name || mut.details || '').trim();
+        rawNewName = rawNewName.replace(/^(?:la\s+)?(?:clase|tabla|entidad)\s+/i, '')
+                               .replace(/^(?:renombrar?|cambiar?|modificar?)\s*(?:a|por|hacia)?\s*/i, '')
+                               .replace(/[^a-zA-Z0-9_]/g, '')
+                               .trim();
+        if (rawNewName) {
+          const newName = rawNewName.charAt(0).toUpperCase() + rawNewName.slice(1);
+          currentNodes = currentNodes.map((n) => {
+            if (matchesClassName(n.data?.name, targetName)) {
+              appliedCount++;
+              return {
+                ...n,
+                data: { ...n.data, name: newName }
+              };
+            }
+            return n;
+          });
+        }
       } else if (mut.action === 'UPDATE_ATTRIBUTE' && mut.targetClassName && mut.classData?.attributes) {
         const targetAttrs = mut.classData.attributes;
         currentNodes = currentNodes.map((n) => {

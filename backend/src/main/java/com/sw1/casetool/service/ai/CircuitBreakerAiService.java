@@ -553,6 +553,24 @@ public class CircuitBreakerAiService {
     private UmlMutationDto parseSingleMutationNode(JsonNode node) {
         if (node == null || !node.isObject()) return null;
 
+        // Si viene con formato de mutación canónica directa (RENAME_CLASS, DELETE_ELEMENT, DELETE_CLASS)
+        if (node.has("action")) {
+            String act = node.path("action").asText("");
+            if (act.equalsIgnoreCase("RENAME_CLASS") || act.equalsIgnoreCase("DELETE_ELEMENT")
+                    || act.equalsIgnoreCase("DELETE_CLASS") || act.equalsIgnoreCase("DROP_TABLE") || act.equalsIgnoreCase("REMOVE_CLASS")) {
+                String targetClass = node.path("targetClassName").asText("");
+                if (targetClass.isBlank()) targetClass = node.path("className").asText("");
+                if (targetClass.isBlank()) targetClass = node.path("table").asText("");
+                String details = node.path("details").asText("");
+                if (details.isBlank()) details = node.path("newName").asText("");
+                return UmlMutationDto.builder()
+                        .action(act.equalsIgnoreCase("RENAME_CLASS") ? "RENAME_CLASS" : "DELETE_ELEMENT")
+                        .targetClassName(targetClass)
+                        .details(details)
+                        .build();
+            }
+        }
+
         // Si ya viene con el formato canónico de UmlMutationDto (clase o relación)
         if (node.has("action") && (node.has("classData") || node.has("relationshipData"))) {
             try {
@@ -704,10 +722,14 @@ public class CircuitBreakerAiService {
                 "1. Toda clase debe incluir como clave primaria: { \"visibility\": \"-\", \"name\": \"id\", \"type\": \"Long\", \"isPrimaryKey\": true, \"nullable\": false }.\n" +
                 "2. Genera los atributos de dominio requeridos y normalizados según la entidad solicitada.\n" +
                 "3. Para conectar o asociar clases, usa obligatoriamente la acción \"CREATE_RELATIONSHIP\" con \"relationshipData\".\n" +
-                "4. Responde de forma concisa y exclusivamente con un objeto JSON sin markdown.\n\n" +
+                "4. Para renombrar o modificar el nombre de una clase (ej. 'modifica gato por rata', 'cambia gato a rata', 'renombra gato por rata'), usa obligatoriamente la acción \"RENAME_CLASS\": { \"action\": \"RENAME_CLASS\", \"targetClassName\": \"Gato\", \"details\": \"Rata\" }.\n" +
+                "5. Para eliminar una clase (ej. 'elimina gato', 'borra tabla gato'), usa obligatoriamente la acción \"DELETE_ELEMENT\": { \"action\": \"DELETE_ELEMENT\", \"targetClassName\": \"Gato\", \"details\": \"Eliminación de la clase Gato\" }.\n" +
+                "6. Responde de forma concisa y exclusivamente con un objeto JSON sin markdown.\n\n" +
                 "ESTRUCTURAS JSON VÁLIDAS:\n" +
                 "- Para Crear Clase: { \"intent\": \"CREATE_CLASS\", \"message\": \"...\", \"mutations\": [{ \"action\": \"CREATE_CLASS\", \"classData\": { \"name\": \"Gato\", \"isAbstract\": false, \"stereotype\": \"entity\", \"attributes\": [{ \"visibility\": \"-\", \"name\": \"id\", \"type\": \"Long\", \"isPrimaryKey\": true, \"nullable\": false }, { \"visibility\": \"-\", \"name\": \"nombre\", \"type\": \"String\", \"isPrimaryKey\": false, \"nullable\": false }], \"methods\": [{ \"visibility\": \"+\", \"name\": \"getId\", \"returnType\": \"Long\" }] }, \"details\": \"Creación de clase Gato\" }] }\n" +
-                "- Para Relacionar o Asociar Clases: { \"intent\": \"CREATE_RELATIONSHIP\", \"message\": \"Relación entre clases\", \"mutations\": [{ \"action\": \"CREATE_RELATIONSHIP\", \"relationshipData\": { \"sourceClass\": \"Perro\", \"targetClass\": \"Gato\", \"type\": \"association\", \"sourceCardinality\": \"*\", \"targetCardinality\": \"*\", \"label\": \"perros_gatos\" }, \"details\": \"Relación muchos a muchos entre Perro y Gato\" }] }";
+                "- Para Relacionar o Asociar Clases: { \"intent\": \"CREATE_RELATIONSHIP\", \"message\": \"Relación entre clases\", \"mutations\": [{ \"action\": \"CREATE_RELATIONSHIP\", \"relationshipData\": { \"sourceClass\": \"Perro\", \"targetClass\": \"Gato\", \"type\": \"association\", \"sourceCardinality\": \"*\", \"targetCardinality\": \"*\", \"label\": \"perros_gatos\" }, \"details\": \"Relación muchos a muchos entre Perro y Gato\" }] }\n" +
+                "- Para Renombrar Clase: { \"intent\": \"RENAME_CLASS\", \"message\": \"Clase Gato renombrada a Rata\", \"mutations\": [{ \"action\": \"RENAME_CLASS\", \"targetClassName\": \"Gato\", \"details\": \"Rata\" }] }\n" +
+                "- Para Eliminar Clase: { \"intent\": \"DELETE_ELEMENT\", \"message\": \"Clase Gato eliminada\", \"mutations\": [{ \"action\": \"DELETE_ELEMENT\", \"targetClassName\": \"Gato\", \"details\": \"Eliminación de la clase Gato\" }] }";
     }
 
     public VoiceModelingResponse processVisionPrompt(byte[] imageBytes, String mimeType, List<String> existingClasses) {

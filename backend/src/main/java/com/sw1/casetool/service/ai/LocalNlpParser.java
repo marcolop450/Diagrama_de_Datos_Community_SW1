@@ -907,7 +907,7 @@ public class LocalNlpParser {
 
     private VoiceModelingResponse tryParseRenameClass(String lower, String text, List<String> currentClasses) {
         Pattern p = Pattern.compile(
-                "(?:renombrar|cambiar\\s+(?:el\\s+)?nombre\\s+(?:de|a))\\s+(?:la\\s+)?(?:clase|tabla|entidad)?\\s*([a-zA-Z0-9_]+)\\s+(?:a|por|hacia)\\s+(?:la\\s+)?(?:clase|tabla|entidad)?\\s*([a-zA-Z0-9_]+)",
+                "(?:renombrar?|renombra(?:me)?|cambiar?|cambia(?:me)?|modificar?|modifica(?:me)?|sustituir?|sustituye(?:me)?)\\s+(?:(?:el\\s+)?nombre\\s+(?:de|a)\\s+)?(?:la\\s+)?(?:clase|tabla|entidad)?\\s*([a-zA-Z0-9_áéíóúÁÉÍÓÚñÑ]+)\\s+(?:a|por|hacia)\\s+(?:la\\s+)?(?:clase|tabla|entidad)?\\s*([a-zA-Z0-9_áéíóúÁÉÍÓÚñÑ]+)",
                 Pattern.CASE_INSENSITIVE
         );
         Matcher m = p.matcher(text);

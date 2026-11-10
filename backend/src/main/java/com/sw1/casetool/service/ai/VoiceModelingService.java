@@ -184,6 +184,34 @@ public class VoiceModelingService {
             }
 
             String actUpper = mut.getAction() != null ? mut.getAction().toUpperCase() : "";
+
+            if (actUpper.equals("DELETE_CLASS") || actUpper.equals("DROP_TABLE") || actUpper.equals("REMOVE_CLASS")) {
+                mut.setAction("DELETE_ELEMENT");
+                if (mut.getTargetClassName() == null || mut.getTargetClassName().isBlank()) {
+                    if (mut.getClassData() != null && mut.getClassData().get("name") != null) {
+                        mut.setTargetClassName(sanitizeClassName((String) mut.getClassData().get("name")));
+                    } else if (mut.getDetails() != null) {
+                        String extracted = mut.getDetails().replaceAll("(?i)(?:eliminaci[oó]n|borrado|drop|delete)\\s+(?:de\\s+)?(?:la\\s+)?(?:clase|tabla)?\\s*", "").trim();
+                        mut.setTargetClassName(sanitizeClassName(extracted));
+                    }
+                }
+            } else if (actUpper.equals("RENAME_CLASS")) {
+                if (mut.getTargetClassName() == null || mut.getTargetClassName().isBlank()) {
+                    if (mut.getClassData() != null && mut.getClassData().get("name") != null) {
+                        mut.setTargetClassName(sanitizeClassName((String) mut.getClassData().get("name")));
+                    }
+                }
+                if (mut.getDetails() != null) {
+                    String cleanNew = mut.getDetails().replaceAll("(?i)^(?:la\\s+)?(?:clase|tabla|entidad)\\s+", "")
+                            .replaceAll("(?i)^(?:renombrar?|cambiar?|modificar?)\\s*(?:a|por|hacia)?\\s*", "")
+                            .replaceAll("[^a-zA-Z0-9_]", "")
+                            .trim();
+                    if (!cleanNew.isBlank()) {
+                        mut.setDetails(sanitizeClassName(cleanNew));
+                    }
+                }
+            }
+
             boolean isRelAction = actUpper.contains("RELATION") || actUpper.contains("ASSOCIAT") || actUpper.contains("VINCUL") || actUpper.contains("CONNECT");
             if (isRelAction) {
                 mut.setAction("CREATE_RELATIONSHIP");
@@ -224,6 +252,38 @@ public class VoiceModelingService {
                 addRelationshipOrDecomposeM2M(mut, normalizedMutations);
             } else {
                 normalizedMutations.add(mut);
+            }
+        }
+
+        // Si el LLM devolvió DELETE_ELEMENT (de X) + CREATE_CLASS (de Y en reemplazo de X),
+        // consolidar como RENAME_CLASS para preservar conexiones, atributos y posición en lienzo.
+        if (normalizedMutations.size() == 2) {
+            UmlMutationDto m0 = normalizedMutations.get(0);
+            UmlMutationDto m1 = normalizedMutations.get(1);
+            UmlMutationDto delMut = null;
+            UmlMutationDto createMut = null;
+            if ("DELETE_ELEMENT".equalsIgnoreCase(m0.getAction()) && "CREATE_CLASS".equalsIgnoreCase(m1.getAction())) {
+                delMut = m0;
+                createMut = m1;
+            } else if ("CREATE_CLASS".equalsIgnoreCase(m0.getAction()) && "DELETE_ELEMENT".equalsIgnoreCase(m1.getAction())) {
+                createMut = m0;
+                delMut = m1;
+            }
+            if (delMut != null && createMut != null && delMut.getTargetClassName() != null) {
+                String oldName = delMut.getTargetClassName();
+                String newName = (createMut.getClassData() != null && createMut.getClassData().get("name") != null)
+                        ? (String) createMut.getClassData().get("name") : null;
+                String createDetails = createMut.getDetails() != null ? createMut.getDetails().toLowerCase() : "";
+                if (newName != null && (createDetails.contains("reemplazo") || createDetails.contains("modific") || createDetails.contains("cambi"))) {
+                    UmlMutationDto consolidated = UmlMutationDto.builder()
+                            .action("RENAME_CLASS")
+                            .targetClassName(oldName)
+                            .details(newName)
+                            .build();
+                    normalizedMutations.clear();
+                    normalizedMutations.add(consolidated);
+                    response.setMessage("Clase '" + oldName + "' modificada a '" + newName + "'.");
+                }
             }
         }
 
